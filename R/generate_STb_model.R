@@ -194,6 +194,35 @@ model {{
 }}
 ")
 
+est_acqTime_code <- if (est_acqTime==TRUE) glue::glue("
+    matrix[K, Q] acquisition_time;         // simulated acquisition times
+    for (trial in 1:K) {{
+        for (n in 1:Q) {{ //have to loop through bc stan
+            acquisition_time[trial, n] = time_max[trial];
+        }}
+        for (n in 1:Q) {{
+            int id = ind_id[trial, n];
+            int learn_time = t[trial, id];
+            if (learn_time > 0){{
+                real cum_hazard = 0; //set val before adding
+                int global_time = 1;
+                for (time_step in 1:T[trial]) {{
+                    for (micro_time in 1:D_int[trial, time_step]){{
+                        real ind_term = {ILVi_variable_effects};
+                        real soc_term = {if (N_veff == 2) 's[id]' else 's'} * ({network_term}) {ILVs_variable_effects};
+                        real lambda = {ILVm_variable_effects} {if (N_veff == 2) 'lambda_0[id]' else 'lambda_0'} * (ind_term + soc_term);
+                        real prob = 1-exp(-lambda);
+                        if (bernoulli_rng(prob) && acquisition_time[trial, n]>=time_max[trial]) {{
+                            acquisition_time[trial, n] = global_time;
+                        }}
+                        global_time += 1;
+                    }}
+                }}
+            }}
+        }}
+    }}"
+) else ""
+
     generated_quantities_block <- glue::glue("
 generated quantities {{
     matrix[K, Q] log_lik_matrix = rep_matrix(0.0, K, Q);           // LL for each observation
@@ -206,13 +235,10 @@ generated quantities {{
             if (learn_time > 0){{
                 real cum_hazard = 0; //set val before adding
                 for (time_step in 1:T[trial]) {{
-
                     real ind_term = {ILVi_variable_effects};
                     real soc_term = {if (N_veff == 2) 's[id]' else 's'} * ({network_term}) {ILVs_variable_effects};
                     real lambda = {ILVm_variable_effects} {if (N_veff == 2) 'lambda_0[id]' else 'lambda_0'} * (ind_term + soc_term) * D[trial, time_step];
-
                     cum_hazard += lambda; // accumulate hazard
-
                     //if it learn_time, record the ll
                     if (time_step == learn_time){{
                         log_lik_matrix[trial, n] = log({ILVm_variable_effects} {if (N_veff == 2) 'lambda_0[id]' else 'lambda_0'} * (ind_term + soc_term)) - cum_hazard;
@@ -241,34 +267,7 @@ generated quantities {{
         }}
     }}
 
-    {if (est_acqTime==TRUE) '
-
-    matrix[K, Q] acquisition_time;         // simulated acquisition times
-    for (trial in 1:K) {
-        for (n in 1:Q) { //have to loop through bc stan
-            acquisition_time[trial, n] = time_max[trial];
-        }
-        for (n in 1:Q) {
-            int id = ind_id[trial, n];
-            int learn_time = t[trial, id];
-            if (learn_time > 0){
-                real cum_hazard = 0; //set val before adding
-                int global_time = 1;
-                for (time_step in 1:T[trial]) {
-                    for (micro_time in 1:D_int[trial, time_step]){
-                        real ind_term = {ILVi_variable_effects};
-                        real soc_term = {if (N_veff == 2) 's[id]' else 's'} * ({network_term}) {ILVs_variable_effects};
-                        real lambda = {ILVm_variable_effects} {if (N_veff == 2) 'lambda_0[id]' else 'lambda_0'} * (ind_term + soc_term) * D[trial, time_step];
-                        real prob = 1-exp(-lambda);
-                        if (bernoulli_rng(prob) && acquisition_time[trial, n]>=time_max[trial]) {
-                            acquisition_time[trial, n] = global_time;
-                        }
-                        global_time += 1;
-                    }
-                }
-            }
-        }
-    }' else ''}
+    {est_acqTime_code}
 
     // Flatten log_lik_matrix into log_lik
     array[K * Q] real log_lik;
@@ -287,7 +286,9 @@ generated quantities {{
                              {parameters_block}
                              {transformed_parameters_block}
                              {model_block}
-                             {if (gq==T) generated_quantities_block else ''}")
+                             {if (gq==T) {generated_quantities_block} else ''}")
+
+
 
     return(stan_model)
 }

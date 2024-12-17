@@ -1,4 +1,6 @@
 library(STbayes)
+library(ggplot2)
+
 diffusion_data = STbayes::diffusion_data
 edge_list = STbayes::edge_list
 
@@ -7,7 +9,9 @@ data_list_user = import_user_STb(diffusion_data, edge_list)
 
 #generate models from input data
 full_model = generate_STb_model(data_list_user, gq=T, est_acqTime = T)
+write(full_model, file = "../data/fullmodel_example.stan")
 asocial_model = generate_STb_asocial_model(data_list_user, gq=T, est_acqTime = T)
+write(asocial_model, file = "../data/asocial_example.stan")
 
 # fit models
 full_fit = fit_STb(data_list_user, full_model, chains = 5, cores = 5, iter=2000, control = list(adapt_delta=0.99))
@@ -17,12 +21,19 @@ asocial_fit = fit_STb(data_list_user, asocial_model, chains = 5, cores = 5, iter
 STb_summary(full_fit, digits=4)
 STb_summary(asocial_fit, digits=4)
 
+#extract WAIC
+ll_full = rstan::extract(full_fit, pars="log_lik")
+WAIC_full = loo::waic(ll_full[["log_lik"]])
+label_full = paste0("WAIC=",round(WAIC_full[[5]]) ,"+/-", round(WAIC_full[[6]]))
 
+ll_null = rstan::extract(full_fit, pars="log_lik")
+WAIC_null = loo::waic(ll_full[["log_lik"]])
+label_null = paste0("WAIC=",round(WAIC_null[[5]]) ,"+/-", round(WAIC_null[[6]]))
 #get data for estimated times
-acqdata = extract_acqTime(fit, data_list_user)
-
+acqdata = extract_acqTime(asocial_fit, data_list_user)
 #plot estimated times versus observed times w/ residuals
-ggplot(acqdata, aes(x = observed_time, y = mean_time)) +
+p1 = ggplot(acqdata, aes(x = observed_time, y = mean_time)) +
+    annotate("text", x=50, y=100, label= label_null) +
     geom_segment(
         aes(x = observed_time, xend = observed_time, y = mean_time, yend = observed_time), # connect predicted to slope line
         color = "red",
@@ -32,12 +43,33 @@ ggplot(acqdata, aes(x = observed_time, y = mean_time)) +
     geom_abline(intercept = 0, slope = 1, color = "black", linetype = "dashed") +
     facet_wrap(~trial, scales = "free_x") +
     labs(
-        title = "Estimated acquisition time with residuals",
+        title = "Asocial (null) model estimates",
         x = "Observed time",
         y = "Estimated time"
     ) +
     theme_minimal()
+p1
 
+#plot estimated times versus observed times w/ residuals
+acqdata = extract_acqTime(full_fit, data_list_user)
+acqdata
+p2 = ggplot(acqdata, aes(x = observed_time, y = mean_time)) +
+    annotate("text", x=50, y=100, label= label_full) +
+    geom_segment(
+        aes(x = observed_time, xend = observed_time, y = mean_time, yend = observed_time), # connect predicted to slope line
+        color = "red",
+        alpha = 0.2
+    ) +
+    geom_point(alpha = 0.6, size=2) +
+    geom_abline(intercept = 0, slope = 1, color = "black", linetype = "dashed") +
+    facet_wrap(~trial, scales = "free_x") +
+    labs(
+        title = "Full model estimates",
+        x = "Observed time",
+        y = "Estimated time"
+    ) +
+    theme_minimal()
+p2
 
 #plot estimated times versus observed times w/ HPD
 ggplot(acqdata, aes(x = observed_time, y = mean_time)) +

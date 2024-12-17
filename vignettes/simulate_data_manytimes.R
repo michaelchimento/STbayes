@@ -133,15 +133,15 @@ library(ggplot2)
 p1 = ggplot(final_results, aes(y=est_s, x=model))+
     geom_jitter()+
     stat_summary()+
-    geom_hline(yintercept = 5, color="red") +
+    geom_hline(yintercept = s, color="red") +
     labs(y="Est. S")
 
 p2 = ggplot(final_results, aes(y=est_baseline, x=model))+
     geom_jitter()+
     stat_summary()+
-    geom_hline(yintercept = .0005, color="red") +
+    geom_hline(yintercept = lambda_0, color="red") +
     labs(y="Est. Baseline")
 
 library(ggpubr)
 ggarrange(p1,p2)
-ggsave("../data/model_comparison.png", width=6, height=8, units="cm", scale=2)
+ggsave("../data/NBDA_STbayes_model_comparison", width=6, height=8, units="cm", scale=2)
