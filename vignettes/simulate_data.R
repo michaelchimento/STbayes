@@ -97,7 +97,7 @@ data_list_user = import_user_STb(diffusion_data, edge_list)
 model_obj = generate_STb_model(data_list_user)
 
 # suggest writing to file for debugging
-write(model_obj, file = "../inst/stan/model_from_simulate_data.stan")
+write(model_obj, file = "../data/model_from_simulate_data.stan")
 
 # fit model
 fit = fit_STb(data_list_user, "../inst/stan/model_from_simulate_data.stan", chains = 5, cores = 5, iter=2000, control = list(adapt_delta=0.99))
