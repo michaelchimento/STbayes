@@ -2,6 +2,7 @@
 
 export(STb_summary)
 export(fit_STb)
+export(generate_STb_asocial_model)
 export(generate_STb_model)
 export(import_NBDA_STb)
 export(import_user_STb)

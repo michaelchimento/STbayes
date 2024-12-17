@@ -13,7 +13,12 @@ data_list = import_NBDA_STb(nbdaData_cTADA)
 model_obj = generate_STb_model(data_list)
 
 #fit model
-fit = fit_STb(data_list, model_obj, chains = 2, cores = 2, iter=2000, control = list(adapt_delta=0.99) )
+fit_social = fit_STb(data_list, model_obj, chains = 2, cores = 2, iter=2000, control = list(adapt_delta=0.99) )
 
 #check summary ~ the same as NBDA estimates. the priors could be adjusted to be less skeptical of the large s value
-STb_summary(fit, depth=2)
+STb_summary(fit_social, depth=2)
+
+# Compare with asocial model (no s param)
+model_obj = generate_STb_asocial_model(data_list)
+fit_asocial = fit_STb(data_list, model_obj, chains = 2, cores = 2, iter=2000, control = list(adapt_delta=0.99) )
+STb_summary(fit_asocial, depth=2)

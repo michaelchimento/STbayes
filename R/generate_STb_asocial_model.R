@@ -37,7 +37,7 @@
 #' model = generate_STb_asocial_model(data_list)
 #' model = generate_STb_asocial_model(data_list, N_veff=1) # estimate varying effects lambda_0.
 #' print(model)
-generate_STb_model <- function(STb_data, N_veff = 0) {
+generate_STb_asocial_model <- function(STb_data, N_veff = 0) {
     ILVi_vars = STb_data$ILVi_names[!STb_data$ILVi_names %in% "ILVabsent"]
 
     combined_ILV_vars = unique(c(ILVi_vars))
@@ -58,7 +58,7 @@ generate_STb_model <- function(STb_data, N_veff = 0) {
     } else {
         ILVi_param <- paste0("real beta_ILVi_", ILVi_vars, ";", sep = "\n")
         ILVi_prior <- paste0("beta_ILVi_", ILVi_vars, " ~ normal(0, 1);", sep = "\n")
-        ILVi_variable_effects <- paste0("exp(", paste0("beta_ILVs_", ILVi_vars, " * ", ILVi_vars, "[id])", collapse = " + "),")")
+        ILVi_variable_effects <- paste0("exp(", paste0("beta_ILVi_", ILVi_vars, " * ", ILVi_vars, "[id]", collapse = " + "),")")
     }
 
     stan_model = ""
@@ -112,7 +112,7 @@ generate_STb_model <- function(STb_data, N_veff = 0) {
                     if (learn_time>0){{
                         for (time_step in 1:learn_time) {{
                             real ind_term = {ILVi_variable_effects};
-                            real lambda = {ILVm_variable_effects} lambda_0[id] * ind_term * D[trial, time_step];
+                            real lambda = lambda_0[id] * ind_term * D[trial, time_step];
                             target += -lambda; //cumulative hazard (accumulating)
                             if (time_step == learn_time) {{
                                 target += log(lambda_0[id] * (ind_term)); //inst. hazard
@@ -180,7 +180,7 @@ generate_STb_model <- function(STb_data, N_veff = 0) {
                     if (learn_time>0){{
                         for (time_step in 1:learn_time) {{
                             real ind_term = {ILVi_variable_effects};
-                            real lambda = {ILVm_variable_effects} lambda_0 * ind_term * D[trial, time_step];
+                            real lambda = lambda_0 * ind_term * D[trial, time_step];
                             target += -lambda; //cumulative hazard (accumulating)
                             if (time_step == learn_time) {{
                                 target += log(lambda_0 * ind_term); //inst. hazard

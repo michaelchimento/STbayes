@@ -74,7 +74,7 @@ generate_STb_model <- function(STb_data, N_veff = 0) {
     } else {
         ILVi_param <- paste0("real beta_ILVi_", ILVi_vars, ";", sep = "\n")
         ILVi_prior <- paste0("beta_ILVi_", ILVi_vars, " ~ normal(0, 1);", sep = "\n")
-        ILVi_variable_effects <- paste0("exp(", paste0("beta_ILVs_", ILVi_vars, " * ", ILVi_vars, "[id])", collapse = " + "),")")
+        ILVi_variable_effects <- paste0("exp(", paste0("beta_ILVi_", ILVi_vars, " * ", ILVi_vars, "[id]", collapse = " + "),")")
     }
 
     # Handle social-level information (ILVs)
@@ -85,7 +85,7 @@ generate_STb_model <- function(STb_data, N_veff = 0) {
     } else {
         ILVs_param <- paste0("real beta_ILVs_", ILVs_vars, ";", sep = "\n")
         ILVs_prior <- paste0("beta_ILVs_", ILVs_vars, " ~ normal(0, 1);", sep = "\n")
-        ILVs_variable_effects <- paste0("* exp(", paste0("beta_ILVs_", ILVs_vars, " * ", ILVs_vars, "[id])", collapse = " + "),")")
+        ILVs_variable_effects <- paste0("* exp(", paste0("beta_ILVs_", ILVs_vars, " * ", ILVs_vars, "[id]", collapse = " + "),")")
     }
 
     # Handle social-level information (ILVs)
@@ -96,7 +96,7 @@ generate_STb_model <- function(STb_data, N_veff = 0) {
     } else {
         ILVm_param <- paste0("real beta_ILVm_", ILVm_vars, ";", sep = "\n")
         ILVm_prior <- paste0("beta_ILVm_", ILVm_vars, " ~ normal(0, 1);", sep = "\n")
-        ILVm_variable_effects <- paste0("exp(", paste0("beta_ILVm_", ILVm_vars, " * ", ILVm_vars, "[id]) *", collapse = " + "),")")
+        ILVm_variable_effects <- paste0("exp(", paste0("beta_ILVm_", ILVm_vars, " * ", ILVm_vars, "[id] *", collapse = " + "),")")
     }
 
     stan_model = ""
