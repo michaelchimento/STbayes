@@ -169,7 +169,7 @@ p2 = plot_acq_time(full_fit, data_list_user, "Full model estimates", label_full)
 ```
 ![comparison plot](data/compare_social_asocial.png)
 
-We can see that the full model describes the data much better and obtains a better (lower) WAIC score. Each point is the point estimate, and since individuals learn in random orders in the asocial model according to some static failure rate, the average time of each learner clusters towards the average time. Meanwhile, including social information allows for a better prediction of when individuals have acquired the behavior.
+We can see that the full model describes the data much better and obtains a better (lower) WAIC score. Each point is the point estimate, and since individuals learn in random orders in the asocial model according to some static failure rate, the average time of each learner cluster around a similar time. Meanwhile, including social information allows for a better prediction of when individuals have acquired the behavior.
 
 ### Import your own data
 
