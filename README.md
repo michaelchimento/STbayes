@@ -8,7 +8,8 @@ STbayes (SocialTransmissionbayes[ian]) is a package for building and running Bay
 
 STbayes can currently accomodate:
  - ILVs for additive and multiplicative transmission models
- - dynamic networks
+ - static and dynamic networks
+ - multiple diffusion trials
  - multi-network comparison (with static or dynamic networks)
  - varying effects for individuals for strength of social transmission and baseline hazard rates.
 
