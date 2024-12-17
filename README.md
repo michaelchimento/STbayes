@@ -7,6 +7,7 @@
 STbayes (SocialTransmissionbayes[ian]) is a package for building and running Bayesian inferential models of social transmission across static or dynamic networks. Users may supply their own data in formats given below, or import nbdaData objects directly from the [NBDA package](https://github.com/whoppitt/NBDA).
 
 STbayes can currently accomodate:
+ - WAIC comparison between asocial only (null) models and social + asocial models
  - ILVs for additive and multiplicative transmission models
  - static and dynamic networks
  - multiple diffusion trials
@@ -93,6 +94,82 @@ ggplot(acqdata, aes(x = observed_time, y = mean_time)) +
  creates a residual plot:
  
 ![residual plot](data/estimates_residuals.png)
+
+### Compare full and asocial models
+
+Like NBDA, we can compare a full model with both a social and asocial component, to a model restricted to estimating only an asocial rate. We can extract WAIC scores with ```extract_WAIC``` (really a convenient wrapper for waic from package ```loo```) and compare the estimated learning times from both models. First let's load and fit both models with a convenience function.
+
+```r
+library(STbayes)
+library(ggplot2)
+
+diffusion_data = STbayes::diffusion_data
+edge_list = STbayes::edge_list
+
+# format data
+data_list_user = import_user_STb(diffusion_data, edge_list)
+
+# reusable function to generate and fit a model
+generate_and_fit_model <- function(data, model_type, gq = TRUE, est_acqTime = TRUE, chains = 5, cores = 5, iter = 2000, control = list(adapt_delta = 0.99)) {
+    if (model_type == "full") {
+        model = generate_STb_model(data, gq, est_acqTime)
+    } else if (model_type == "asocial") {
+        model = generate_STb_asocial_model(data, gq, est_acqTime)
+    } else {
+        stop("Invalid model type")
+    }
+    fit = fit_STb(data, model, chains, cores, iter, control)
+    return(fit)
+}
+
+
+# generate, fit, and summarize models
+full_fit = generate_and_fit_model(data_list_user, "full")
+asocial_fit = generate_and_fit_model(data_list_user, "asocial")
+
+#check estimates
+STb_summary(full_fit, digits = 4)
+STb_summary(asocial_fit, digits = 4)
+```
+Next we can extract the WAIC scores and add them to our plots of the estimated times:
+``` r
+# extract WAIC and labels
+WAIC_full = extract_WAIC_label(full_fit)
+WAIC_full = extract_WAIC_label(asocial_fit)
+label_full = paste0("WAIC=", round(WAIC_full[[5]]), "+/-", round(WAIC_full[[6]]))
+label_null = paste0("WAIC=", round(WAIC_null[[5]]), "+/-", round(WAIC_null[[6]]))
+
+# reusable function for plotting
+plot_acq_time <- function(fit, data, title, label) {
+    acqdata = extract_acqTime(fit, data)
+    p = ggplot(acqdata, aes(x = observed_time, y = mean_time)) +
+        annotate("text", x = 100, y = 350, label = label) +
+        geom_segment(
+            aes(x = observed_time, xend = observed_time, y = mean_time, yend = observed_time),
+            color = "red",
+            alpha = 0.2
+        ) +
+        geom_point(alpha = 0.6, size = 2) +
+        geom_abline(intercept = 0, slope = 1, color = "black", linetype = "dashed") +
+        facet_wrap(~trial, scales = "free_x") +
+        labs(
+            title = title,
+            x = "Observed time",
+            y = "Estimated time"
+        ) +
+        theme_minimal()
+    return(p)
+}
+
+
+# plot estimated times
+p1 = plot_acq_time(asocial_fit, data_list_user, "Asocial (null) model estimates", label_null)
+p2 = plot_acq_time(full_fit, data_list_user, "Full model estimates", label_full)
+
+```
+![comparison plot](data/compare_social_asocial.png)
+
+We can see that the full model describes the data much better and obtains a better (lower) WAIC score. Each point is the point estimate, and since individuals learn in random orders in the asocial model according to some static failure rate, the average time of each learner clusters towards the average time. Meanwhile, including social information allows for a better prediction of when individuals have acquired the behavior.
 
 ### Import your own data
 
