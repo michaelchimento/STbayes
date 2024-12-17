@@ -89,13 +89,15 @@ import_user_STb <- function(diffusion_data, networks, ILV_metadata=NULL, ILVi = 
   D_data$duration <- ifelse(is.na(D_data$duration), D_data$time, D_data$duration)
   D_data <- D_data[, !(names(D_data) %in% "time")]
   # pivot wider
-  D_data <- with(D_data, tapply(duration, list(trial_numeric, discrete_time), FUN = max, default = NA))
-  # fill NA values with 0
-  D_data[is.na(D_data)] <- 0
+  D_data_real <- with(D_data, tapply(duration, list(trial_numeric, discrete_time), FUN = max, default = 0))
+  D_data_int <- with(D_data, tapply(duration, list(trial_numeric, discrete_time), FUN = max, default = 0))
 
   # create a matrix where rows are trial_numeric, columns are id_numeric, and values are discrete_time
   t_data <- with(diffusion_data, tapply(discrete_time, list(trial_numeric, id_numeric), FUN = max, default = NA))
-  t_real_data <- with(diffusion_data, tapply(time, list(trial_numeric, id_numeric), FUN = max, default = NA))
+  # create a matrix where rows are trial_numeric, columns are id_numeric, and values are actual time measurements
+  time_data <- with(diffusion_data, tapply(time, list(trial_numeric, id_numeric), FUN = max, default = NA))
+  # gets the end of obs period of each trial
+  time_max <- with(diffusion_data, tapply(max_time, list(trial_numeric), FUN = max, default = NA))
   # Replace NA values with -1 to denote individuals who did not participate in a trial
   #t_data[is.na(t_data)] <- -1
 
@@ -111,13 +113,16 @@ import_user_STb <- function(diffusion_data, networks, ILV_metadata=NULL, ILVi = 
   data_list$T <- N_data$max_periods  # Max time periods (discrete)
   dim(data_list$T) = 1
   data_list$t <- t_data # vector of times (discrete time periods here) for uncensored
-  data_list$t_real <- t_real_data
   data_list$T_max <- max(N_data$max_periods)
+  data_list$time <- time_data
+  data_list$time_max <- time_max
   data_list$Q <- max(diffusion_data$index) # number individuals per trial
-  data_list$D <- D_data # duration data
+  data_list$D <- D_data_real # duration data
+  data_list$D_int = D_data_int #duration data in integer format (experimental)
+  dim(data_list$D_int) <- dim(data_list$D) #why is r so annoying
   data_list$ind_id <- id_data # individual id data
   data_list$C = create_knowledge_matrix(diffusion_data) # knowledge state matrix
-
+  dim(data_list$D)
   #### Metadata ####
   # identify ILVs from ILV_metadata
   if (!is.null(ILV_metadata)){

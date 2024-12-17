@@ -8,7 +8,8 @@ STb_summary(
   fit,
   depth = 1,
   prob = 0.95,
-  ignore_params = c("s", "lambda_0", "lp__"),
+  ignore_params = c("s", "lambda_0", "lp__", "idx", "log_lik", "log_lik_matrix",
+    "acquisition_time"),
   digits = 3
 )
 }

@@ -82,12 +82,17 @@ import_NBDA_STb <- function(nbda_object, network_names= c("default"), ILVi = NUL
     D_data$duration <- with(D_data, ave(time, trial_numeric, FUN = function(x) c(x[1], diff(x))))
     D_data$duration <- ifelse(is.na(D_data$duration), D_data$time, D_data$duration)
     D_data <- D_data[, !(names(D_data) %in% "time")]
-    D_data <- with(D_data, tapply(duration, list(trial_numeric, discrete_time), FUN = max, default = NA))
-    D_data[is.na(D_data)] <- 0
+    # pivot wider
+    D_data_real <- with(D_data, tapply(duration, list(trial_numeric, discrete_time), FUN = max, default = 0))
+    D_data_int <- as.integer(with(D_data, tapply(duration, list(trial_numeric, discrete_time), FUN = max, default = 0)))
 
     #### Discrete Time Matrix ####
+    # create a matrix where rows are trial_numeric, columns are id_numeric, and values are discrete_time
     t_data <- with(diffusion_data, tapply(discrete_time, list(trial_numeric, id_numeric), FUN = max, default = NA))
-    t_real_data <- with(diffusion_data, tapply(time, list(trial_numeric, id_numeric), FUN = max, default = NA))
+    # create a matrix where rows are trial_numeric, columns are id_numeric, and values are actual time measurements
+    time_data <- with(diffusion_data, tapply(time, list(trial_numeric, id_numeric), FUN = max, default = NA))
+    # gets the end of obs period of each trial
+    time_max <- with(diffusion_data, tapply(max_time, list(trial_numeric), FUN = max, default = NA))
     #t_data[is.na(t_data)] <- -1
 
     #### Individual IDs Matrix ####
@@ -102,10 +107,14 @@ import_NBDA_STb <- function(nbda_object, network_names= c("default"), ILVi = NUL
     dim(data_list$N_c) = 1
     data_list$T <- N_data$max_periods  # Max time periods (discrete)
     dim(data_list$T) = 1
-    data_list$T_max <- max(N_data$max_periods)
     data_list$t <- t_data  # Discrete time matrix
+    data_list$T_max <- max(N_data$max_periods)
+    data_list$time <- time_data
+    data_list$time_max <- time_max
     data_list$Q <- max(diffusion_data$index)  # Max individuals per trial
-    data_list$D <- D_data  # Duration matrix
+    data_list$D <- D_data_real # duration data
+    data_list$D_int = D_data_int #duration data in integer format (experimental)
+    dim(data_list$D_int) <- dim(data_list$D) #why is r so annoying
     data_list$ind_id <- id_data  # Individual IDs matrix
     data_list$C = create_knowledge_matrix(diffusion_data) # knowledge state matrix
 

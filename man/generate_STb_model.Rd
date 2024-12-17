@@ -4,7 +4,7 @@
 \alias{generate_STb_model}
 \title{Dynamically generate STAN model based on input data}
 \usage{
-generate_STb_model(STb_data, N_veff = 0)
+generate_STb_model(STb_data, N_veff = 0, gq = TRUE, est_acqTime = FALSE)
 }
 \arguments{
 \item{STb_data}{a list of formatted data returned from the STbayes_data() function}

@@ -35,6 +35,65 @@ Vignettes use packages NBDA, igraph, dplyr, ggplot2, and ggpubr.
 
 ## Examples
 
+### Worked example with simulated data
+
+An example dataset is provided where data was simulated on a random-regular network where k=4, s=5 and the base rate was set to 0.001. You can run your own simulation in the ```simulate_data.R``` vignette.
+
+```r
+library(STbayes)
+diffusion_data = STbayes::example_diffusion_data
+edge_list = STbayes::example_edge_list
+
+#generate STAN model from input data
+data_list_user = import_user_STb(diffusion_data, edge_list)
+
+#generate STAN model from input data
+model_obj = generate_STb_model(data_list_user, gq=T, est_acqTime = T)
+
+# fit model
+fit = fit_STb(data_list_user, model_obj, chains = 5, cores = 5, iter=2000, control = list(adapt_delta=0.99))
+
+# check estimates
+STb_summary(fit, digits=4)
+```
+STb_summary outputs a formatted table of key values for parameters (incl back-transformation of variables fitted on the log scale).
+
+```r
+             Parameter   Mean Median HPDI_Lower HPDI_Upper    n_eff   Rhat
+1    log_lambda_0_mean 6.8992 6.8873     6.1755     7.6616 5000.000 1.0008
+2           log_s_mean 1.6120 1.6082     0.6746     2.4828 5000.000 1.0011
+3 transformed_baserate 0.0011 0.0010     0.0004     0.0019 5000.000 1.0008
+4        transformed_s 5.5959 4.9939     1.6104    11.2023 4339.186 1.0011
+```
+We can see that transformed_s is not far off.
+
+STbayes also provides easy access to estimated learning times with ```extract_acqTime``` if you have fit the model with generated quantities (gq=T) and acquisition time estimates (est_acqTime=T). Generated quantities also includes log-likelihood of observations for WAIC calulations etc.
+
+```r
+#get data for estimated times
+acqdata = extract_acqTime(fit, data_list_user)
+
+#plot estimated times versus observed times w/ residuals
+ggplot(acqdata, aes(x = observed_time, y = mean_time)) +
+    geom_segment(
+        aes(x = observed_time, xend = observed_time, y = mean_time, yend = observed_time), # connect predicted to slope line
+        color = "red",
+        alpha = 0.2
+    ) +
+    geom_point(alpha = 0.6, size=2) +
+    geom_abline(intercept = 0, slope = 1, color = "black", linetype = "dashed") +
+    facet_wrap(~trial, scales = "free_x") +
+    labs(
+        title = "Estimated acquisition time with residuals",
+        x = "Observed time",
+        y = "Estimated time"
+    ) +
+    theme_minimal()
+ ```
+ creates a residual plot:
+ 
+![residual plot](data/estimates_residuals.png)
+
 ### Import your own data
 
 ``` r
