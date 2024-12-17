@@ -52,7 +52,7 @@ ILV_metadata <- data.frame(
   age = c(2, 3, 4, 2, 5, 6),
   sex = c(0, 1, 1, 0, 1, 0) # Factor ILVs must be input as numeric
 )
-import_user_STb <- create_STb_data(
+imported_data <- import_user_STb(
   diffusion_data = diffusion_data,
   networks = networks,
   ILV_metadata = ILV_metadata,

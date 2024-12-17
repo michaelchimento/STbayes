@@ -29,3 +29,6 @@ Summary table
 \description{
 Return summary table
 }
+\examples{
+summary_table <- STb_summary(fit)
+}
