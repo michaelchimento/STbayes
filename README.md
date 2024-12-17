@@ -60,7 +60,7 @@ library(STbayes)
    sex = c(0, 1, 1, 0, 1, 0) # Factor ILVs must be input as numeric
  )
  
- imported_data <- import_user_STb(
+ data_list <- import_user_STb(
    diffusion_data = diffusion_data,
    networks = networks,
    ILV_metadata = ILV_metadata,
