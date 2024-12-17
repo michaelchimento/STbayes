@@ -44,7 +44,7 @@ library(STbayes)
 diffusion_data = STbayes::example_diffusion_data
 edge_list = STbayes::example_edge_list
 
-#generate STAN model from input data
+# import_user_STb formats your data for further steps
 data_list_user = import_user_STb(diffusion_data, edge_list)
 
 #generate STAN model from input data
