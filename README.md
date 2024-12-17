@@ -65,7 +65,7 @@ STb_summary outputs a formatted table of key values for parameters (incl back-tr
 3 transformed_baserate 0.0011 0.0010     0.0004     0.0019 5000.000 1.0008
 4        transformed_s 5.5959 4.9939     1.6104    11.2023 4339.186 1.0011
 ```
-We can see that transformed_s is not far off.
+Estimates are not far off, but depend on network density and stochastic processes of each simulation. See vignette ```simulate_data_manytimes.R``` to quench your thirst for model validation.
 
 STbayes also provides easy access to estimated learning times with ```extract_acqTime``` if you have fit the model with generated quantities (gq=T) and acquisition time estimates (est_acqTime=T). Generated quantities also includes log-likelihood of observations for WAIC calulations etc.
 
