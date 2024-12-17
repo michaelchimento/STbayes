@@ -18,7 +18,7 @@ This package is under development and is not guaranteed to work.
 
 ## Installation
 
-The functions of this package depend on ```rstan``` and ```coda```. You can install ```coda``` through CRAN as usual. You can install ```rstan``` by following the instructions on their [repository](https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started). Don't forget to take advantage of multiple CPU cores by running after installation:
+The functions of this package depend on ```rstan```, ```coda``` and ```loo```. You can install ```rstan``` by following the instructions on the [rstan repository](https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started). Don't forget to take advantage of multiple CPU cores by running after installation:
 
 ``` r
 options(mc.cores = parallel::detectCores())
