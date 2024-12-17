@@ -1,15 +1,12 @@
-unloadNamespace("STbayes")
-devtools::document()
-devtools::install()
 library(STbayes)
 library(igraph)
 library(dplyr)
 library(NBDA)
 
 # Parameters
-N <- 30  # Population size
+N <- 50  # Population size
 k <- 4    # Degree of each node in the random regular graph
-lambda_0=0.001
+lambda_0=0.001 #baseline
 A <- 1  # Individual learning rate
 s <- 7  # Social learning rate per unit connection
 t_steps <- 1000
@@ -17,23 +14,23 @@ max_time = t_steps+1
 
 # create random regular graph
 g <- sample_k_regular(N, k, directed = FALSE, multiple = FALSE)
-V(g)$name <- 1:N  # Name vertices
+V(g)$name <- 1:N
 
 # initialize a dataframe to store the time of acquisition data
-df <- data.frame(id=1:N, time=max_time, knowledgeable_associates=0, max_time = max_time)
+df <- data.frame(id=1:N, time=max_time, max_time = max_time)
 
-# one seed individual that already knows the behavior
-#seed <- sample(1:N, 1)
-#df[df$id == seed, c("time", "knowledgeable_associates")] <- c(0, 0)
+# If you want to set a demonstrator, uncomment below
+# seed <- sample(1:N, 1)
+# df[df$id == seed, c("time", "informed_associates")] <- c(0, 0)
 
-# Simulate the diffusion
+# simulate the diffusion
 for (t in 1:t_steps) {
-    # Identify knowledgeable individuals
-    learners <- df[df$time < max_time, "id"]
+    # identify knowledgeable individuals
+    informed <- df[df$time < max_time, "id"]
 
-    # Identify naive
+    # identify naive
     potential_learners <- c(1:N)
-    potential_learners <- potential_learners[!(potential_learners %in% learners)]
+    potential_learners <- potential_learners[!(potential_learners %in% informed)]
 
     # break the loop if no one left to learn,
     if (length(potential_learners) == 0) break
@@ -41,7 +38,7 @@ for (t in 1:t_steps) {
     # calc the hazard
     learning_rates <- sapply(potential_learners, function(x) {
         neighbors <- neighbors(g, x)
-        C <- sum(neighbors$name %in% learners)
+        C <- sum(neighbors$name %in% informed)
         lambda <- lambda_0 * (A + s*C)
         return(lambda)
     })
@@ -55,24 +52,13 @@ for (t in 1:t_steps) {
     # update their time of acquisition
     new_learners <- potential_learners[learners_this_step == 1]
     df[df$id %in% new_learners, "time"] <- t
-
-    knowledgeable_associates <- sapply(1:N, function(x) {
-        neighbors <- neighbors(g, x)
-        C <- sum(neighbors$name %in% learners)
-        return(C)
-    })
-
-    new_learner_associates <- knowledgeable_associates[match(new_learners, potential_learners)]
-    df[df$id %in% new_learners, "knowledgeable_associates"] <- new_learner_associates
 }
 
 diffusion_data <- df %>%
     arrange(time) %>%
-    group_by(time) %>%
+    group_by(time, .drop = T) %>%
     mutate(tie=ifelse(n()>1,1,0),
-           seed=ifelse(time==0,1,0)) %>%
-    ungroup() %>%
-    select(-c(knowledgeable_associates))
+           seed=ifelse(time==0,1,0))
 
 hist(diffusion_data$time)
 

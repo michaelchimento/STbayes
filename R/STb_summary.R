@@ -12,18 +12,22 @@
 #' @export
 #'
 #' @examples
+#' summary_table <- STb_summary(fit)
 STb_summary <- function(fit, depth = 1, prob = 0.95, ignore_params = c("s", "lambda_0", "lp__"), digits = 3) {
-    # Extract posterior samples
+    # extract posterior samples
     samples <- rstan::extract(fit, permuted = TRUE)
 
-    # Get parameter names and depths
+    # filter by depth and ignore specific parameters
     param_names <- names(samples)
     param_depths <- sapply(strsplit(param_names, "\\["), function(x) length(x))
-
-    # Filter parameters by depth and ignore specific parameters
     selected_params <- param_names[param_depths <= depth & !param_names %in% ignore_params]
 
-    # Initialize summary table
+    # add transformed parameters
+    transformed_params <- list(
+        transformed_s = exp(samples$log_s_mean),
+        transformed_baserate = 1 / exp(samples$log_lambda_0_mean)
+    )
+
     summary_table <- data.frame(
         Parameter = character(),
         Median = numeric(),
@@ -34,22 +38,19 @@ STb_summary <- function(fit, depth = 1, prob = 0.95, ignore_params = c("s", "lam
         stringsAsFactors = FALSE
     )
 
-    # Process each parameter
+    # process each parameter
         for (param in selected_params) {
-            # Extract samples for the parameter
             param_samples <- samples[[param]]
-
-            # Ensure param_samples is treated as a matrix for compatibility with HPDinterval
             param_samples <- coda::as.mcmc(as.matrix(param_samples))
 
-            # Compute statistics
+            # compute statistics
             mean_value <- mean(param_samples)
             median_value <- median(param_samples)
             hpdi <- coda::HPDinterval(param_samples, prob = prob)
             n_eff <- coda::effectiveSize(param_samples)
             rhat <- rstan::Rhat(as.matrix(param_samples))
 
-            # Append to table
+            # append
             summary_table <- rbind(summary_table, data.frame(
                 Parameter = param,
                 Mean = mean_value,
@@ -62,37 +63,26 @@ STb_summary <- function(fit, depth = 1, prob = 0.95, ignore_params = c("s", "lam
             ))
         }
 
-        # Add transformed parameters
-        transformed_params <- list(
-            transformed_s = exp(samples$log_s_mean),
-            transformed_baserate = 1 / exp(samples$log_lambda_0_mean)
-        )
-
         for (param in names(transformed_params)) {
             param_samples <- transformed_params[[param]]
-
-            # Ensure param_samples is treated as a matrix for compatibility with HPDinterval
             param_samples <- coda::as.mcmc(as.matrix(param_samples))
 
+            mean_value <- mean(param_samples)
+            median_value <- median(param_samples)
+            hpdi <- coda::HPDinterval(param_samples, prob = prob)
+            n_eff <- coda::effectiveSize(param_samples)
+            rhat <- rstan::Rhat(as.matrix(param_samples))
 
-        # Compute statistics
-        mean_value <- mean(param_samples)
-        median_value <- median(param_samples)
-        hpdi <- coda::HPDinterval(param_samples, prob = prob)
-        n_eff <- coda::effectiveSize(param_samples)
-        rhat <- rstan::Rhat(as.matrix(param_samples))
-
-        # Append to table
-        summary_table <- rbind(summary_table, data.frame(
-            Parameter = param,
-            Mean = mean_value,
-            Median = median_value,
-            HPDI_Lower = hpdi[1, "lower"],
-            HPDI_Upper = hpdi[1, "upper"],
-            n_eff = n_eff,
-            Rhat = rhat,
-            stringsAsFactors = FALSE
-        ))
+            summary_table <- rbind(summary_table, data.frame(
+                Parameter = param,
+                Mean = mean_value,
+                Median = median_value,
+                HPDI_Lower = hpdi[1, "lower"],
+                HPDI_Upper = hpdi[1, "upper"],
+                n_eff = n_eff,
+                Rhat = rhat,
+                stringsAsFactors = FALSE
+            ))
     }
     row.names(summary_table) = NULL
     numeric_cols <- sapply(summary_table, is.numeric)

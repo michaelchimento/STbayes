@@ -19,7 +19,7 @@
 #' fit = fit_STb(data_list_user, "path/to/your/model.stan", chains = 5, cores = 5, iter=2000, control = list(adapt_delta=0.99))
 fit_STb <- function(data_list, model_obj, chains=1, cores=1, iter=1000, control=list()){
 
-        # Check if the model is a character or a file path
+        # check if the model is a character or a file path
         if (is.character(model_obj) && grepl("data \\{", model_obj)) {
             # Write the model code to a temporary file
             temp_file <- tempfile(fileext = ".stan")

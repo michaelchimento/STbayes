@@ -26,7 +26,7 @@
 #'   age = c(2, 3, 4, 2, 5, 6),
 #'   sex = c(0, 1, 1, 0, 1, 0) # Factor ILVs must be input as numeric
 #' )
-#' data_list <- create_STb_data(
+#' data_list <- import_user_STb(
 #'   diffusion_data = diffusion_data,
 #'   networks = networks,
 #'   ILV_metadata = ILV_metadata,
@@ -49,9 +49,6 @@ generate_STb_model <- function(STb_data, N_veff = 0) {
     if (length(combined_ILV_vars)>0){
         ILV_declaration = paste0('array[Z] real ', combined_ILV_vars, ';', collapse = '\\n')
     }
-
-
-    #combined_ILV_vars = lapply(combined_ILV_vars, FUN = function(x) paste0('ILV_',x))
 
     # Placeholders for dynamic components
     num_networks <- length(STb_data$network_names)

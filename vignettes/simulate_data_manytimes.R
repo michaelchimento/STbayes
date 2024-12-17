@@ -1,11 +1,8 @@
-unloadNamespace("STbayes")
-devtools::document()
-devtools::install()
 library(STbayes)
 library(igraph)
 library(dplyr)
 library(NBDA)
-library(ggplot2)
+
 # Initialize final results dataframe
 final_results <- data.frame(
     sim_id = integer(),
@@ -33,24 +30,24 @@ for (sim in 21:100) {
     V(g)$name <- 1:N  # Name vertices
 
     # Initialize a dataframe to store the time of acquisition data
-    df <- data.frame(id = 1:N, time = max_time, knowledgeable_associates = 0, max_time = max_time)
+    df <- data.frame(id = 1:N, time = max_time, max_time = max_time)
 
     # Simulate the diffusion
     for (t in 1:t_steps) {
         # Identify knowledgeable individuals
-        learners <- df[df$time < max_time, "id"]
+        informed <- df[df$time < max_time, "id"]
 
-        # Identify naive individuals
+        # identify naive individuals
         potential_learners <- c(1:N)
-        potential_learners <- potential_learners[!(potential_learners %in% learners)]
+        potential_learners <- potential_learners[!(potential_learners %in% informed)]
 
-        # Break the loop if no one left to learn
+        # break the loop if no one left to learn
         if (length(potential_learners) == 0) break
 
         # Calculate the hazard
         learning_rates <- sapply(potential_learners, function(x) {
             neighbors <- neighbors(g, x)
-            C <- sum(neighbors$name %in% learners)
+            C <- sum(neighbors$name %in% informed)
             lambda <- lambda_0 * (A + s * C)
             return(lambda)
         })
@@ -68,11 +65,9 @@ for (sim in 21:100) {
 
     diffusion_data <- df %>%
         arrange(time) %>%
-        group_by(time) %>%
+        group_by(time, .drop = T) %>%
         mutate(tie=ifelse(n()>1,1,0),
-               seed=ifelse(time==0,1,0)) %>%
-        ungroup() %>%
-        select(-c(knowledgeable_associates))
+               seed=ifelse(time==0,1,0))
 
     # Define the adjacency matrix
     adj_matrix <- as_adjacency_matrix(g, attr = NULL, sparse = FALSE)
@@ -100,12 +95,9 @@ for (sim in 21:100) {
         est_baseline = 1 / result@outputPar[1],
         est_s = result@outputPar[2]
     )
-
-    # Add NBDA results to final results
     final_results <- rbind(final_results, result_NBDA)
 
     #### Fit STbayes model ####
-    #import into STbayes
     diffusion_data <- diffusion_data %>%
         mutate(trial=1) %>%
         select(-c(tie, seed))
@@ -114,14 +106,10 @@ for (sim in 21:100) {
     edge_list$trial = 1
     edge_list$assoc = 1 #assign named edgeweight since this is just an edge list
 
-    # Import data to STbayes
+    # import data to STbayes
     data_list_user <- import_user_STb(diffusion_data, edge_list)
     model_obj <- generate_STb_model(data_list_user)
-
-    # Fit model
     fit <- fit_STb(data_list_user, model_obj, chains = 4, cores = 4, iter = 2000, control = list(adapt_delta = 0.99))
-
-    # Extract STbayes estimates
     STb_estimates <- STb_summary(fit, digits=5)
     transformed_s <- STb_estimates %>% filter(Parameter == "transformed_s") %>% pull(Mean)
     transformed_baseline <- STb_estimates %>% filter(Parameter == "transformed_baserate") %>% pull(Mean)
@@ -133,16 +121,15 @@ for (sim in 21:100) {
         est_s = transformed_s
     )
 
-    # Add STbayes results to final results
+    # add STbayes results to final results
     final_results <- rbind(final_results, result_STbayes)
 
-    # Print progress
-    cat("Simulation", sim, "completed.\n")
+    message("Simulation", sim, "completed.\n")
 }
 
-# Save or view final results
 print(final_results)
 
+library(ggplot2)
 p1 = ggplot(final_results, aes(y=est_s, x=model))+
     geom_jitter()+
     stat_summary()+

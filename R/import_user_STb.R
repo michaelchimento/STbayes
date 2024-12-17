@@ -30,7 +30,7 @@
 #'   age = c(2, 3, 4, 2, 5, 6),
 #'   sex = c(0, 1, 1, 0, 1, 0) # Factor ILVs must be input as numeric
 #' )
-#' import_user_STb <- create_STb_data(
+#' imported_data <- import_user_STb(
 #'   diffusion_data = diffusion_data,
 #'   networks = networks,
 #'   ILV_metadata = ILV_metadata,
@@ -190,12 +190,11 @@ import_user_STb <- function(diffusion_data, networks, ILV_metadata=NULL, ILVi = 
 
   is_symmetric <- nrow(networks[networks$trial_numeric == 1 & networks$discrete_time == 1, ]) == data_list$Z * (data_list$Z - 1)
   max_timesteps <- max(data_list$T)
-  # Loop through each matrix and populate it based on its corresponding column
-  for (column in network_cols) {
-    # Initialize matrix
-    A_matrix <- array(0, dim = c(data_list$K, max(data_list$T), data_list$Z, data_list$Z))
 
-    # Populate matrix
+  #for each network
+  for (column in network_cols) {
+    # initialize + populate matrix
+    A_matrix <- array(0, dim = c(data_list$K, max(data_list$T), data_list$Z, data_list$Z))
     for (k in 1:data_list$K) {
       temp_df <- networks[networks$trial_numeric == k, ]
       for (i in 1:nrow(temp_df)) {

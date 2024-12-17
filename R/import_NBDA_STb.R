@@ -131,17 +131,15 @@ import_NBDA_STb <- function(nbda_object, network_names= c("default"), ILVi = NUL
     data_list$ILVm_names <- ILVm
 
     #### Networks ####
-    # Extract network from nbdaData object
+    # extract network from nbdaData object
     networks <- nbda_object@assMatrix
 
-    # Check dimensions of networks
-    dim_networks <- dim(networks)
-
     # Extract the number of networks (k) and time periods (t)
+    dim_networks <- dim(networks)
     num_networks <- dim(networks)[3]
     num_time_periods <- dim(networks)[4]
 
-    # Max timesteps (from data_list$T; replace with actual T value if available)
+    # Max timesteps
     max_timesteps <- max(data_list$T)
 
     for (i in seq_len(num_networks)) {
@@ -150,23 +148,22 @@ import_NBDA_STb <- function(nbda_object, network_names= c("default"), ILVi = NUL
         # Extract the network for the current edge type
         network <- networks[, , i, ]  # [n, n, 1]
 
-        # If only one time period, replicate the network across all timesteps
+        # if only one time period, replicate the network across all timesteps
         if (num_time_periods == 1) {
-            # Repeat the same network for each timestep
+            # repeat the same network for each timestep
             network <- array(network, dim = c(dim(network)[1], dim(network)[2], max_timesteps))
             for (t in 2:max_timesteps) {  # Explicitly copy for safety
                 network[ , , t] <- network[ , , 1]
             }
             network <- aperm(network, perm = c(3, 1, 2))
         } else {
-            # Reorder dimensions to [time, row, col] for multi-time networks
+            # reorder dimensions to [time, row, col]
             network <- aperm(network, perm = c(3, 1, 2))  # [t, n, n]
         }
 
-        # Add the first dimension for trials (k = 1)
+        # add the first dimension for trials (k = 1)
         network <- array(network, dim = c(1, dim(network)))  # [k = 1, t, n, n]
 
-        # Add the network to data_list
         data_list[[paste0("A_", network_name)]] <- network
     }
 
