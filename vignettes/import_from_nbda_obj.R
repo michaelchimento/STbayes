@@ -22,3 +22,5 @@ STb_summary(fit_social, depth=2)
 model_obj = generate_STb_asocial_model(data_list)
 fit_asocial = fit_STb(data_list, model_obj, chains = 2, cores = 2, iter=2000, control = list(adapt_delta=0.99) )
 STb_summary(fit_asocial, depth=2)
+
+AIC(fit_social)
