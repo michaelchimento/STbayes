@@ -2,6 +2,8 @@
 #'
 #' @param STb_data a list of formatted data returned from the STbayes_data() function
 #' @param N_veff Number of varying effects. Defaults to 2 (one for strength of SL, one for asocial rate)
+#' @param gq Boolean to indicate whether the generated quantities block is added (incl. ll for WAIC)
+#' @param est_acqTime Boolean to indicate whether gq block includes estimates for acquisition time. At the moment this uses 'one weird trick' to accomplish this and does not support estimates for non-integer learning times.
 #'
 #' @return A STAN model (character) that is customized to the input data.
 #' @export
@@ -254,9 +256,9 @@ generated quantities {{
                 int global_time = 1;
                 for (time_step in 1:T[trial]) {
                     for (micro_time in 1:D_int[trial, time_step]){
-                        real ind_term = 1;
-                        real soc_term = s * (sum(A_assoc[trial, time_step][id, ] .* C[trial][time_step, ]));
-                        real lambda =  lambda_0 * (ind_term + soc_term);
+                        real ind_term = {ILVi_variable_effects};
+                        real soc_term = {if (N_veff == 2) 's[id]' else 's'} * ({network_term}) {ILVs_variable_effects};
+                        real lambda = {ILVm_variable_effects} {if (N_veff == 2) 'lambda_0[id]' else 'lambda_0'} * (ind_term + soc_term) * D[trial, time_step];
                         real prob = 1-exp(-lambda);
                         if (bernoulli_rng(prob) && acquisition_time[trial, n]>=time_max[trial]) {
                             acquisition_time[trial, n] = global_time;

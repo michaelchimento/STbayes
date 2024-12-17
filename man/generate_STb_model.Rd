@@ -10,6 +10,10 @@ generate_STb_model(STb_data, N_veff = 0, gq = TRUE, est_acqTime = FALSE)
 \item{STb_data}{a list of formatted data returned from the STbayes_data() function}
 
 \item{N_veff}{Number of varying effects. Defaults to 2 (one for strength of SL, one for asocial rate)}
+
+\item{gq}{Boolean to indicate whether the generated quantities block is added (incl. ll for WAIC)}
+
+\item{est_acqTime}{Boolean to indicate whether gq block includes estimates for acquisition time. At the moment this uses 'one weird trick' to accomplish this and does not support estimates for non-integer learning times.}
 }
 \value{
 A STAN model (character) that is customized to the input data.

@@ -2,17 +2,21 @@ library(STbayes)
 diffusion_data = STbayes::diffusion_data
 edge_list = STbayes::edge_list
 
-#formate data
+#format data
 data_list_user = import_user_STb(diffusion_data, edge_list)
 
-#generate STAN model from input data
-model_obj = generate_STb_model(data_list_user, gq=T, est_acqTime = T)
+#generate models from input data
+full_model = generate_STb_model(data_list_user, gq=T, est_acqTime = T)
+asocial_model = generate_STb_asocial_model(data_list_user, gq=T, est_acqTime = T)
 
-# fit model
-fit = fit_STb(data_list_user, model_obj, chains = 5, cores = 5, iter=2000, control = list(adapt_delta=0.99))
+# fit models
+full_fit = fit_STb(data_list_user, full_model, chains = 5, cores = 5, iter=2000, control = list(adapt_delta=0.99))
+asocial_fit = fit_STb(data_list_user, asocial_model, chains = 5, cores = 5, iter=2000, control = list(adapt_delta=0.99))
 
 # check estimates
-STb_summary(fit, digits=4)
+STb_summary(full_fit, digits=4)
+STb_summary(asocial_fit, digits=4)
+
 
 #get data for estimated times
 acqdata = extract_acqTime(fit, data_list_user)

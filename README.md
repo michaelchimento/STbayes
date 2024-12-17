@@ -41,8 +41,8 @@ An example dataset is provided where data was simulated on a random-regular netw
 
 ```r
 library(STbayes)
-diffusion_data = STbayes::example_diffusion_data
-edge_list = STbayes::example_edge_list
+diffusion_data = STbayes::diffusion_data
+edge_list = STbayes::edge_list
 
 # import_user_STb formats your data for further steps
 data_list_user = import_user_STb(diffusion_data, edge_list)
