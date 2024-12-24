@@ -173,13 +173,32 @@ We can see that the full model describes the data much better and obtains a bett
 
 ### Import your own data
 
+If you'd prefer to import your own data, STbayes requires two dataframes, and accept an optional third dataframe of individual-level variables. The first dataframe gives information  about the spreading of the behavior or information and must contain columns:
+- ```id```: Character or numeric (all converted to numeric, anyway) column of individual identites.
+- ```trial```: Character or numeric column indicating which trial the diffusion belongs to. If there is only one diffusion, set all values to 1.
+- ```time```: This is an integer or float column indicating when the individual was recorded as first informed/knowledgable. If an ID was a **pretrained demonstrator, or otherwise became informed prior to the start of the observation period, set as 0**. Left censored individuals will not contribute to the likelihood calculation. If an individual **never learned during the observation period, set its value to the duration of the observation period**. These will be treated as right-censored individuals in the likelihood calculation.
+- ```max_time```: this is the duration of the observation period for each trial. If you observed a population for 7 days, max_time=7.
+
+The second dataframe gives information regarding the network connections of each individual in a long format (i.e. an edge list). The edge list can be symmetric (all combinations of individuals provided, useful for directed networks) or asymmetric. The first three columns must be:
+- ```trial```: Character or numeric column indicating which trial the networks belong to. If there is only one diffusion, set all values to 1.
+- ```from```: Character or numeric  column of individual identites.
+- ```to```: Character or numeric  column of individual identites.
+
+Optionally, the user may supply dynamic networks **if time is measured with integer values**. At the moment, the user must organize the data so that each discrete timestep is represented in this dataframe. For example, if your observation period was 7 days, you should supply a network to be used for each day. If the network is a static representation to be used for the entire diffusion, this column is not required.
+- ```time```: This is an integer column indicating which time step the networks belong to.
+
+Finally, the user must supply at least one descriptively named column of integer or float edge weights. The column names will be carried forward in naming variables in the output of the model. In the example code below, I have provided a binary kin network and an inverse distance network (higher values = closer together).
+- ```network_name1```: a column of integer or float edge weights
+- ```network_name2```: another column of integer or float edge weights
+- etc...
+
 ``` r
 library(STbayes)
 
  diffusion_data <- data.frame(
    id = c("A", "B", "C", "D", "E", "F"), #this can be character or numeric
    trial = c(1, 1, 1, 2, 2, 2), #this can be character or numeric
-   time = c(0, 1, 2, 0, 1, 4), #this must be numeric, integer or float. If time=0, demonstrator, if time=max_time, censored
+   time = c(0, 1, 2, 0, 1, 4), #this must be numeric, integer or float. If time=0, left-censored, if time=max_time, right-censored
    max_time = c(3, 3, 3, 4, 4, 4) #this is the duration of the observation period.
  )
  
