@@ -1,7 +1,7 @@
 #' Dynamically generate STAN model based on input data
 #'
 #' @param STb_data a list of formatted data returned from the STbayes_data() function
-#' @param N_veff Number of varying effects. Defaults to 2 (one for strength of SL, one for asocial rate)
+#' @param veff Parameters for which to estimate varying effects by individuals. Default is no varying effects.
 #' @param gq Boolean to indicate whether the generated quantities block is added (incl. ll for WAIC)
 #' @param est_acqTime Boolean to indicate whether gq block includes estimates for acquisition time. At the moment this uses 'one weird trick' to accomplish this and does not support estimates for non-integer learning times.
 #'
@@ -27,6 +27,7 @@
 #'   id = c("A", "B", "C", "D", "E", "F"),
 #'   age = c(2, 3, 4, 2, 5, 6),
 #'   sex = c(0, 1, 1, 0, 1, 0) # Factor ILVs must be input as numeric
+#'   weight = c(0.5, .25, .3, 0, -.2, -.4)
 #' )
 #' data_list <- import_user_STb(
 #'   diffusion_data = diffusion_data,
@@ -34,30 +35,17 @@
 #'   ILV_metadata = ILV_metadata,
 #'   ILVi = c("age"), # Use only 'age' for asocial learning
 #'   ILVs = c("sex") # Use only 'sex' for social learning
+#'   ILVm = c("weight") # Use weight for multiplicative effect on asocial and social learning
 #' )
 #'
-#' model = generate_STb_model(data_list)
-#' model = generate_STb_model(data_list, N_veff=2) # estimate varying effects for s and lambda_0.
+#' model = generate_STb_model(data_list) # no varying effects
+#' model = generate_STb_model(data_list, veff = c("lambda_0", "s")) # estimate varying effects by ID for baseline learning rate and strength of social transmission.
 #' print(model)
-generate_STb_model <- function(STb_data, N_veff = 0, gq = TRUE, est_acqTime = FALSE) {
+generate_STb_model <- function(STb_data, veff = c(), gq = TRUE, est_acqTime = FALSE) {
+
+    # declare network variables and weight parameter if multi-network
     network_names = STb_data$network_names
-    ILVi_vars = STb_data$ILVi_names[!STb_data$ILVi_names %in% "ILVabsent"]
-    ILVs_vars = STb_data$ILVs_names[!STb_data$ILVs_names %in% "ILVabsent"]
-    ILVm_vars = STb_data$ILVm_names[!STb_data$ILVm_names %in% "ILVabsent"]
-
-    combined_ILV_vars = unique(c(ILVi_vars, ILVs_vars, ILVm_vars))
-
-    ILV_declaration = ""
-    if (length(combined_ILV_vars)>0){
-        ILV_declaration = paste0('array[Z] real ', combined_ILV_vars, ';', collapse = '\\n')
-    }
-
-    # Placeholders for dynamic components
     num_networks <- length(STb_data$network_names)
-    num_ILVi = length(ILVi_vars)
-    num_ILVs = length(ILVs_vars)
-    num_ILVm = length(ILVm_vars)
-
     if (num_networks == 1) {
         network_term <- paste0("sum(A_", network_names[1], "[trial, time_step][id, ] .* C[trial][time_step, ])")
         w_param <- ""
@@ -68,15 +56,83 @@ generate_STb_model <- function(STb_data, N_veff = 0, gq = TRUE, est_acqTime = FA
         w_prior <- paste0("w ~ dirichlet(rep_vector(0.5, ", num_networks, "));")
     }
 
+
+
+    # Declare variables that will be used for ILVs
+    ILVi_vars = STb_data$ILVi_names[!STb_data$ILVi_names %in% "ILVabsent"]
+    ILVs_vars = STb_data$ILVs_names[!STb_data$ILVs_names %in% "ILVabsent"]
+    ILVm_vars = STb_data$ILVm_names[!STb_data$ILVm_names %in% "ILVabsent"]
+
+    ILVi_vars_clean = ILVi_vars
+    ILVs_vars_clean = ILVs_vars
+    ILVm_vars_clean= ILVm_vars
+
+    # placeholders for dynamic components
+    num_ILVi = length(ILVi_vars)
+    num_ILVs = length(ILVs_vars)
+    num_ILVm = length(ILVm_vars)
+
+    combined_ILV_vars = unique(c(ILVi_vars, ILVs_vars, ILVm_vars))
+
+    ILV_declaration = ""
+    if (length(combined_ILV_vars)>0){
+        ILV_declaration = paste0('array[Z] real ', combined_ILV_vars, ';', collapse = '\n')
+    }
+
+    # deal with varying effects in transformed parameters
+
+    N_veff = length(veff)
+    #start w empty list
+    transformed_params = c()
+
+    #if user didn't specify veff for baseline
+    if (!is.element('lambda_0', veff)){
+        transformed_params = append(transformed_params,"real<lower=0> lambda_0 = 1 / exp(log_lambda_0_mean);")
+    }
+    #if user didn't specify veff for s
+    if (!is.element('s', veff)){
+        transformed_params = append(transformed_params,"real<lower=0> s = exp(log_s_mean);")
+    }
+    count = 1
+
+    if (N_veff > 0){
+        for (parameter in veff) {
+            if (parameter=="lambda_0"){
+                transformed_params = append(transformed_params, paste0("vector<lower=0>[Z] lambda_0 = 1 / exp(log_lambda_0_mean + v_ID[,",count,"]);"))
+                count = count + 1
+            }
+            else if (parameter=="s"){
+                transformed_params = append(transformed_params, paste0("vector<lower=0>[Z] s = exp(log_s_mean + v_ID[,",count,"]);"))
+                count = count + 1
+            }
+        }
+    }
+
     # Handle individual-level information (ILVi)
+    ILVi_variable_effects = c()
     if (num_ILVi < 1) {
         ILVi_param <- ""
         ILVi_prior <- ""
         ILVi_variable_effects <- "1"
     } else {
-        ILVi_param <- paste0("real beta_ILVi_", ILVi_vars, ";", sep = "\n")
-        ILVi_prior <- paste0("beta_ILVi_", ILVi_vars, " ~ normal(0, 1);", sep = "\n")
-        ILVi_variable_effects <- paste0("exp(", paste0("beta_ILVi_", ILVi_vars, " * ", ILVi_vars, "[id]", collapse = " + "),")")
+        #for each ilv
+        for (ilv in ILVi_vars){
+            #if user specified this should be include a varying effect for id
+            if (is.element(ilv, veff)){
+                #add declaration in transformed parameters
+                transformed_params = append(transformed_params, paste0("vector<lower=0>[Z] ", ilv, " = beta_ILVi_", parameter," + v_ID[,",count,"]);"))
+                count = count + 1
+                #rename with [id] so it can be indexed in the main model loop
+                ILVi_vars[ILVi_vars == ilv] <- paste0(ilv, "[id]")
+            } else {
+                #otherwise append prefix of beta_ILVx_ so it can be accessed directly
+                ILVi_vars[ILVi_vars == ilv] <- paste0("beta_ILVi_", ilv)
+            }
+        }
+        #creates the line to insert into likelihood calculation
+        ILVi_param <- paste0("real beta_ILVi_", ILVi_vars_clean, ";", sep = "\n")
+        ILVi_prior <- paste0("beta_ILVi_", ILVi_vars_clean, " ~ normal(0, 1);", sep = "\n")
+        ILVi_variable_effects <- paste0("exp(", paste0(ILVi_vars, " * ", ILVi_vars_clean, "[id]", collapse = " + "),")")
     }
 
     # Handle social-level information (ILVs)
@@ -85,9 +141,25 @@ generate_STb_model <- function(STb_data, N_veff = 0, gq = TRUE, est_acqTime = FA
         ILVs_prior <- ""
         ILVs_variable_effects <- ""
     } else {
-        ILVs_param <- paste0("real beta_ILVs_", ILVs_vars, ";", sep = "\n")
-        ILVs_prior <- paste0("beta_ILVs_", ILVs_vars, " ~ normal(0, 1);", sep = "\n")
-        ILVs_variable_effects <- paste0("* exp(", paste0("beta_ILVs_", ILVs_vars, " * ", ILVs_vars, "[id]", collapse = " + "),")")
+
+        #for each ilv
+        for (ilv in ILVs_vars){
+            #if user specified this should be include a varying effect for id
+            if (is.element(ilv, veff)){
+                #add declaration in transformed parameters
+                transformed_params = append(transformed_params, paste0("vector<lower=0>[Z] ", ilv, " = beta_ILVs_", parameter," + v_ID[,",count,"]);"))
+                count = count + 1
+                #rename with [id] so it can be indexed in the main model loop
+                ILVs_vars[ILVs_vars == ilv] <- paste0(ilv, "[id]")
+            } else {
+                #otherwise append prefix of beta_ILVx_ so it can be accessed directly
+                ILVs_vars[ILVs_vars == ilv] <- paste0("beta_ILVs_", ilv)
+            }
+        }
+        #creates the line to insert into likelihood calculation
+        ILVs_param <- paste0("real beta_ILVs_", ILVs_vars_clean, ";", sep = "\n")
+        ILVs_prior <- paste0("beta_ILVs_", ILVs_vars_clean, " ~ normal(0, 1);", sep = "\n")
+        ILVs_variable_effects <- paste0("* exp(", paste0(ILVs_vars, " * ", ILVs_vars_clean, "[id]", collapse = " + "),")")
     }
 
     # Handle social-level information (ILVs)
@@ -96,10 +168,26 @@ generate_STb_model <- function(STb_data, N_veff = 0, gq = TRUE, est_acqTime = FA
         ILVm_prior <- ""
         ILVm_variable_effects <- ""
     } else {
-        ILVm_param <- paste0("real beta_ILVm_", ILVm_vars, ";", sep = "\n")
-        ILVm_prior <- paste0("beta_ILVm_", ILVm_vars, " ~ normal(0, 1);", sep = "\n")
-        ILVm_variable_effects <- paste0("exp(", paste0("beta_ILVm_", ILVm_vars, " * ", ILVm_vars, "[id] *", collapse = " + "),")")
+        #for each ilv
+        for (ilv in ILVm_vars){
+            #if user specified this should be include a varying effect for id
+            if (is.element(ilv, veff)){
+                #add declaration in transformed parameters
+                transformed_params = append(transformed_params, paste0("vector<lower=0>[Z] ", ilv, " = beta_ILVm_", parameter," + v_ID[,",count,"]);"))
+                count = count + 1
+                #rename with [id] so it can be indexed in the main model loop
+                ILVm_vars[ILVm_vars == ilv] <- paste0(ilv, "[id]")
+            } else {
+                #otherwise append prefix of beta_ILVx_ so it can be accessed directly
+                ILVm_vars[ILVm_vars == ilv] <- paste0("beta_ILVm_", ilv)
+            }
+        }
+        ILVm_param <- paste0("real beta_ILVm_", ILVm_vars_clean, ";", sep = "\n")
+        ILVm_prior <- paste0("beta_ILVm_", ILVm_vars_clean, " ~ normal(0, 1);", sep = "\n")
+        ILVm_variable_effects <- paste0("exp(", paste0(ILVm_vars, " * ", ILVm_vars_clean, "[id]", collapse = " + "),") *")
     }
+
+    transformed_params_declaration = paste0(transformed_params, collapse = "\n")
 
     data_block <- glue::glue("
 data {{
@@ -131,22 +219,20 @@ parameters {{
     {ILVi_param}
     {ILVs_param}
     {ILVm_param}
-    {if (N_veff == 2) 'matrix[N_veff,Z] z_ID; vector<lower=0>[N_veff] sigma_ID; cholesky_factor_corr[N_veff] Rho_ID;' else ''}
+   {if (N_veff > 0) 'matrix[N_veff,Z] z_ID;
+    vector<lower=0>[N_veff] sigma_ID;
+    cholesky_factor_corr[N_veff] Rho_ID;' else ''}
 }}
 ")
 
     # Transformed parameters block
     transformed_parameters_block <- glue::glue("
 transformed parameters {{
-    {if (N_veff == 2) '
+   {if (N_veff > 0) '
         matrix[Z,N_veff] v_ID;
         v_ID = (diag_pre_multiply(sigma_ID, Rho_ID) * z_ID)\\';
-        vector<lower=0>[Z] lambda_0 = 1 / exp(log_lambda_0_mean + v_ID[,1]);
-        vector<lower=0>[Z] s = exp(log_s_mean + v_ID[,2]);
-    ' else '
-        real<lower=0> lambda_0 = 1 / exp(log_lambda_0_mean);
-        real<lower=0> s = exp(log_s_mean);
-    '}
+   ' else ''}
+   {transformed_params_declaration}
 }}
 ")
 
@@ -168,11 +254,11 @@ model {{
             if (learn_time > 0) {{
                 for (time_step in 1:learn_time) {{
                     real ind_term = {ILVi_variable_effects};
-                    real soc_term = {if (N_veff == 2) 's[id]' else 's'} * ({network_term}) {ILVs_variable_effects};
-                    real lambda = {ILVm_variable_effects} {if (N_veff == 2) 'lambda_0[id]' else 'lambda_0'} * (ind_term + soc_term) * D[trial, time_step];
+                    real soc_term = {if (is.element('s', veff)) 's[id]' else 's'} * ({network_term}) {ILVs_variable_effects};
+                    real lambda = {ILVm_variable_effects} {if (is.element('lambda_0', veff)) 'lambda_0[id]' else 'lambda_0'} * (ind_term + soc_term) * D[trial, time_step];
                     target += -lambda;
                     if (time_step == learn_time) {{
-                        target += log({ILVm_variable_effects} {if (N_veff == 2) 'lambda_0[id]' else 'lambda_0'} * (ind_term + soc_term));
+                        target += log({ILVm_variable_effects} {if (is.element('lambda_0', veff)) 'lambda_0[id]' else 'lambda_0'} * (ind_term + soc_term));
                     }}
                 }}
             }}
@@ -184,8 +270,8 @@ model {{
 
                 for (time_step in 1:T[trial]) {{
                     real ind_term = {ILVi_variable_effects};
-                    real soc_term = {if (N_veff == 2) 's[id]' else 's'} * ({network_term}) {ILVs_variable_effects};
-                    real lambda = {ILVm_variable_effects} {if (N_veff == 2) 'lambda_0[id]' else 'lambda_0'} * (ind_term + soc_term) * D[trial, time_step];
+                    real soc_term = {if (is.element('s', veff)) 's[id]' else 's'} * ({network_term}) {ILVs_variable_effects};
+                    real lambda = {ILVm_variable_effects} {if (is.element('lambda_0', veff)) 'lambda_0[id]' else 'lambda_0'} * (ind_term + soc_term) * D[trial, time_step];
                     target += -lambda;
                 }}
             }}
@@ -209,8 +295,8 @@ est_acqTime_code <- if (est_acqTime==TRUE) glue::glue("
                 for (time_step in 1:T[trial]) {{
                     for (micro_time in 1:D_int[trial, time_step]){{
                         real ind_term = {ILVi_variable_effects};
-                        real soc_term = {if (N_veff == 2) 's[id]' else 's'} * ({network_term}) {ILVs_variable_effects};
-                        real lambda = {ILVm_variable_effects} {if (N_veff == 2) 'lambda_0[id]' else 'lambda_0'} * (ind_term + soc_term);
+                        real soc_term = {if (is.element('s', veff)) 's[id]' else 's'} * ({network_term}) {ILVs_variable_effects};
+                        real lambda = {ILVm_variable_effects} {if (is.element('lambda_0', veff)) 'lambda_0[id]' else 'lambda_0'} * (ind_term + soc_term);
                         real prob = 1-exp(-lambda);
                         if (bernoulli_rng(prob) && acquisition_time[trial, n]>=time_max[trial]) {{
                             acquisition_time[trial, n] = global_time;
@@ -236,12 +322,12 @@ generated quantities {{
                 real cum_hazard = 0; //set val before adding
                 for (time_step in 1:T[trial]) {{
                     real ind_term = {ILVi_variable_effects};
-                    real soc_term = {if (N_veff == 2) 's[id]' else 's'} * ({network_term}) {ILVs_variable_effects};
-                    real lambda = {ILVm_variable_effects} {if (N_veff == 2) 'lambda_0[id]' else 'lambda_0'} * (ind_term + soc_term) * D[trial, time_step];
+                    real soc_term = {if (is.element('s', veff)) 's[id]' else 's'} * ({network_term}) {ILVs_variable_effects};
+                    real lambda = {ILVm_variable_effects} {if (is.element('lambda_0', veff)) 'lambda_0[id]' else 'lambda_0'} * (ind_term + soc_term) * D[trial, time_step];
                     cum_hazard += lambda; // accumulate hazard
                     //if it learn_time, record the ll
                     if (time_step == learn_time){{
-                        log_lik_matrix[trial, n] = log({ILVm_variable_effects} {if (N_veff == 2) 'lambda_0[id]' else 'lambda_0'} * (ind_term + soc_term)) - cum_hazard;
+                        log_lik_matrix[trial, n] = log({ILVm_variable_effects} {if (is.element('lambda_0', veff)) 'lambda_0[id]' else 'lambda_0'} * (ind_term + soc_term)) - cum_hazard;
                     }}
                 }}
             }}
@@ -257,8 +343,8 @@ generated quantities {{
                 real cum_hazard = 0;
                 for (time_step in 1:censor_time) {{
                     real ind_term = {ILVi_variable_effects};
-                    real soc_term = {if (N_veff == 2) 's[id]' else 's'} * ({network_term}) {ILVs_variable_effects};
-                    real lambda = {ILVm_variable_effects} {if (N_veff == 2) 'lambda_0[id]' else 'lambda_0'} * (ind_term + soc_term) * D[trial, time_step];
+                    real soc_term = {if (is.element('s', veff)) 's[id]' else 's'} * ({network_term}) {ILVs_variable_effects};
+                    real lambda = {ILVm_variable_effects} {if (is.element('lambda_0', veff)) 'lambda_0[id]' else 'lambda_0'} * (ind_term + soc_term) * D[trial, time_step];
                     cum_hazard += lambda; // accumulate hazard
                 }}
                 // Compute per-individual log likelihood
@@ -287,8 +373,6 @@ generated quantities {{
                              {transformed_parameters_block}
                              {model_block}
                              {if (gq==T) {generated_quantities_block} else ''}")
-
-
 
     return(stan_model)
 }

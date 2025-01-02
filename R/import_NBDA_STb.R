@@ -88,25 +88,32 @@ import_NBDA_STb <- function(nbda_object, network_names= c("default"), ILVi = NUL
 
     #### Discrete Time Matrix ####
     # create a matrix where rows are trial_numeric, columns are id_numeric, and values are discrete_time
-    t_data <- with(diffusion_data, tapply(discrete_time, list(trial_numeric, id_numeric), FUN = max, default = NA))
+    t_data <- with(diffusion_data, tapply(discrete_time, list(trial_numeric, id_numeric), FUN = max, default = -1))
     # create a matrix where rows are trial_numeric, columns are id_numeric, and values are actual time measurements
-    time_data <- with(diffusion_data, tapply(time, list(trial_numeric, id_numeric), FUN = max, default = NA))
+    time_data <- with(diffusion_data, tapply(time, list(trial_numeric, id_numeric), FUN = max, default = -1))
     # gets the end of obs period of each trial
-    time_max <- with(diffusion_data, tapply(max_time, list(trial_numeric), FUN = max, default = NA))
+    time_max <- with(diffusion_data, tapply(max_time, list(trial_numeric), FUN = max, default = -1))
     #t_data[is.na(t_data)] <- -1
 
     #### Individual IDs Matrix ####
+    # create a matrix where rows are trial_numeric, columns are N + N_c, and values are id_numeric
+    # values are then left aligned such that individuals who were in each trial will appear in the first indices
+    # i know this is a really weird way of doing a ragged list, in case there are differing numbers of individuals in each trial... but should work fine
+    # actually not sure whether this will ever be an issue with nbda data objs..
     id_data <- with(diffusion_data, tapply(id_numeric, list(trial_numeric, index), FUN = max, default = NA))
+    id_data <- t(apply(id_data, 1, function(row) {
+        c(na.omit(row), rep(-1, sum(is.na(row))))
+    }))
 
     #### Populate Data List ####
     data_list$K <- length(unique(diffusion_data$trial_numeric))  # Number of trials
     data_list$Z <- length(unique(diffusion_data$id_numeric))  # Number of individuals
     data_list$N <- N_data$num_uncensored  # Uncensored counts per trial
-    dim(data_list$N) = 1
+    dim(data_list$N) = length(data_list$N)
     data_list$N_c <- N_data$num_censored  # Censored counts per trial
-    dim(data_list$N_c) = 1
+    dim(data_list$N_c) = length(data_list$N_c)
     data_list$T <- N_data$max_periods  # Max time periods (discrete)
-    dim(data_list$T) = 1
+    dim(data_list$T) = length(data_list$T)
     data_list$t <- t_data  # Discrete time matrix
     data_list$T_max <- max(N_data$max_periods)
     data_list$time <- time_data
@@ -177,8 +184,6 @@ import_NBDA_STb <- function(nbda_object, network_names= c("default"), ILVi = NUL
     }
 
     data_list$network_names <- network_names
-
-    data_list$N_veff = 2
 
     #### Output Messages ####
     dl_sanity_check(data_list=data_list)

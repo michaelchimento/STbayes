@@ -4,12 +4,12 @@
 \alias{generate_STb_model}
 \title{Dynamically generate STAN model based on input data}
 \usage{
-generate_STb_model(STb_data, N_veff = 0, gq = TRUE, est_acqTime = FALSE)
+generate_STb_model(STb_data, veff = c(), gq = TRUE, est_acqTime = FALSE)
 }
 \arguments{
 \item{STb_data}{a list of formatted data returned from the STbayes_data() function}
 
-\item{N_veff}{Number of varying effects. Defaults to 2 (one for strength of SL, one for asocial rate)}
+\item{veff}{Parameters for which to estimate varying effects by individuals. Default is no varying effects.}
 
 \item{gq}{Boolean to indicate whether the generated quantities block is added (incl. ll for WAIC)}
 
@@ -40,6 +40,7 @@ ILV_metadata <- data.frame(
   id = c("A", "B", "C", "D", "E", "F"),
   age = c(2, 3, 4, 2, 5, 6),
   sex = c(0, 1, 1, 0, 1, 0) # Factor ILVs must be input as numeric
+  weight = c(0.5, .25, .3, 0, -.2, -.4)
 )
 data_list <- import_user_STb(
   diffusion_data = diffusion_data,
@@ -47,9 +48,10 @@ data_list <- import_user_STb(
   ILV_metadata = ILV_metadata,
   ILVi = c("age"), # Use only 'age' for asocial learning
   ILVs = c("sex") # Use only 'sex' for social learning
+  ILVm = c("weight") # Use weight for multiplicative effect on asocial and social learning
 )
 
-model = generate_STb_model(data_list)
-model = generate_STb_model(data_list, N_veff=2) # estimate varying effects for s and lambda_0.
+model = generate_STb_model(data_list) # no varying effects
+model = generate_STb_model(data_list, veff = c("lambda_0", "s")) # estimate varying effects by ID for baseline learning rate and strength of social transmission.
 print(model)
 }

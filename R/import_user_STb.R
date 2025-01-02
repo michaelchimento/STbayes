@@ -93,25 +93,30 @@ import_user_STb <- function(diffusion_data, networks, ILV_metadata=NULL, ILVi = 
   D_data_int <- with(D_data, tapply(duration, list(trial_numeric, discrete_time), FUN = max, default = 0))
 
   # create a matrix where rows are trial_numeric, columns are id_numeric, and values are discrete_time
-  t_data <- with(diffusion_data, tapply(discrete_time, list(trial_numeric, id_numeric), FUN = max, default = NA))
+  t_data <- with(diffusion_data, tapply(discrete_time, list(trial_numeric, id_numeric), FUN = max, default = -1))
   # create a matrix where rows are trial_numeric, columns are id_numeric, and values are actual time measurements
-  time_data <- with(diffusion_data, tapply(time, list(trial_numeric, id_numeric), FUN = max, default = NA))
+  time_data <- with(diffusion_data, tapply(time, list(trial_numeric, id_numeric), FUN = max, default = -1))
   # gets the end of obs period of each trial
-  time_max <- with(diffusion_data, tapply(max_time, list(trial_numeric), FUN = max, default = NA))
+  time_max <- with(diffusion_data, tapply(max_time, list(trial_numeric), FUN = max, default = -1))
   # Replace NA values with -1 to denote individuals who did not participate in a trial
   #t_data[is.na(t_data)] <- -1
 
-  # create a matrix where rows are trial_numeric, columns are id_numeric, and values are id_numeric
+  # create a matrix where rows are trial_numeric, columns are N + N_c, and values are id_numeric
+  # values are then left aligned such that individuals who were in each trial will appear in the first indices
+  # i know this is a really weird way of doing a ragged list, in case there are differing numbers of individuals in each trial... but should work fine
   id_data <- with(diffusion_data, tapply(id_numeric, list(trial_numeric, index), FUN = max, default = NA))
+  id_data <- t(apply(id_data, 1, function(row) {
+      c(na.omit(row), rep(-1, sum(is.na(row))))
+  }))
 
   data_list$K <- length(unique(diffusion_data$trial_numeric))
   data_list$Z <- length(unique(diffusion_data$id_numeric)) # number of distinct individuals
   data_list$N <- N_data$num_uncensored  # Uncensored counts per trial
-  dim(data_list$N) = 1
+  dim(data_list$N) = length(data_list$N)
   data_list$N_c <- N_data$num_censored  # Censored counts per trial
-  dim(data_list$N_c) = 1
+  dim(data_list$N_c) = length(data_list$N_c)
   data_list$T <- N_data$max_periods  # Max time periods (discrete)
-  dim(data_list$T) = 1
+  dim(data_list$T) = length(data_list$T)
   data_list$t <- t_data # vector of times (discrete time periods here) for uncensored
   data_list$T_max <- max(N_data$max_periods)
   data_list$time <- time_data
@@ -122,7 +127,7 @@ import_user_STb <- function(diffusion_data, networks, ILV_metadata=NULL, ILVi = 
   dim(data_list$D_int) <- dim(data_list$D) #why is r so annoying
   data_list$ind_id <- id_data # individual id data
   data_list$C = create_knowledge_matrix(diffusion_data) # knowledge state matrix
-  dim(data_list$D)
+
   #### Metadata ####
   # identify ILVs from ILV_metadata
   if (!is.null(ILV_metadata)){
@@ -183,8 +188,13 @@ import_user_STb <- function(diffusion_data, networks, ILV_metadata=NULL, ILVi = 
   exclude_cols <- c("trial", "time", "from", "to")
   network_cols <- setdiff(names(networks), exclude_cols)
 
-  networks$from_numeric <- as.numeric(networks$from)
-  networks$to_numeric <- as.numeric(networks$to)
+  temp_names <- data.frame(
+      name = sort(unique(c(networks$from, networks$to))),
+      numeric = seq_along(sort(unique(c(networks$from, networks$to))))
+  )
+
+  networks$from_numeric <- temp_names$numeric[match(networks$from, temp_names$name)]
+  networks$to_numeric <- temp_names$numeric[match(networks$to, temp_names$name)]
   networks$trial_numeric <- as.numeric(as.factor(networks$trial))
   networks$discrete_time <- with(networks, ave(time, trial_numeric, FUN = function(x) as.numeric(as.factor(x))))
 
@@ -233,8 +243,6 @@ import_user_STb <- function(diffusion_data, networks, ILV_metadata=NULL, ILVi = 
   }
 
   data_list$network_names <- network_cols
-
-  data_list$N_veff = 2
 
   #sanity check
   dl_sanity_check(data_list=data_list)
