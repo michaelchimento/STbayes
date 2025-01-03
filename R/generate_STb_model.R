@@ -242,7 +242,7 @@ transformed parameters {{
     model_block <- glue::glue("
 model {{
     log_lambda_0_mean ~ normal(6, 2);
-    log_s_mean ~ normal(1, 2);
+    log_s_mean ~ uniform(-5, 5);
     {w_prior}
     {ILVi_prior}
     {ILVs_prior}
@@ -251,7 +251,7 @@ model {{
     {if (N_veff > 0) '
     to_vector(z_ID) ~ normal(0,1);
     sigma_ID ~ exponential(1);
-    Rho_ID ~ lkj_corr_cholesky(4);
+    Rho_ID ~ lkj_corr_cholesky(1);
     ' else ''}
 
     for (trial in 1:K) {{

@@ -10,11 +10,13 @@ create_knowledge_matrix <- function(df) {
     times <- unique(df$discrete_time) #0 = seed, max_time = censored
     C <- array(0, dim = c(length(trials), max(times), length(ids))) #create C matrix
     for (k in trials) {
+        temp_df = df[df$trial_numeric==k,]
+        trial_max_time = max(temp_df$discrete_time)
         # fill C based on acquisition times
         for (i in ids) {
-            temp_id <- df$id_numeric[i]
-            time <- df$discrete_time[i]
-            if (time != max(times)) {
+            temp_id <- temp_df$id_numeric[i]
+            time <- temp_df$discrete_time[i]
+            if (time != trial_max_time) {
                 C[k,(time+1):max(times), temp_id] <- 1 #add time +1 to account for demos/censored.
             }
         }

@@ -32,8 +32,7 @@ fit_STb <- function(data_list, model_obj, chains=1, cores=1, iter=1000, control=
             model_obj <- temp_file
         }
 
-
-
+        message("Compiling model...")
         # fit model
         model <- rstan::stan(
             file = model_obj,
