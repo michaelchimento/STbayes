@@ -4,12 +4,12 @@
 \alias{generate_STb_model}
 \title{Dynamically generate STAN model based on input data}
 \usage{
-generate_STb_model(STb_data, veff = c(), gq = TRUE, est_acqTime = FALSE)
+generate_STb_model(STb_data, veff_ID = c(), gq = TRUE, est_acqTime = FALSE)
 }
 \arguments{
 \item{STb_data}{a list of formatted data returned from the STbayes_data() function}
 
-\item{veff}{Parameters for which to estimate varying effects by individuals. Default is no varying effects.}
+\item{veff_ID}{Parameters for which to estimate varying effects by individuals. Default is no varying effects.}
 
 \item{gq}{Boolean to indicate whether the generated quantities block is added (incl. ll for WAIC)}
 
@@ -52,6 +52,6 @@ data_list <- import_user_STb(
 )
 
 model = generate_STb_model(data_list) # no varying effects
-model = generate_STb_model(data_list, veff = c("lambda_0", "s")) # estimate varying effects by ID for baseline learning rate and strength of social transmission.
+model = generate_STb_model(data_list, veff_ID = c("lambda_0", "s")) # estimate varying effects by ID for baseline learning rate and strength of social transmission.
 print(model)
 }

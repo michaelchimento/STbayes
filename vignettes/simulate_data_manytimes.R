@@ -23,7 +23,7 @@ max_time <- t_steps + 1
 
 # Run 100 simulations
 num_simulations <- 100
-for (sim in 21:100) {
+for (sim in 1:num_simulations) {
 
     # Create random regular graph
     g <- sample_k_regular(N, k, directed = FALSE, multiple = FALSE)

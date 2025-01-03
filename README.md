@@ -12,7 +12,7 @@ STbayes can currently accomodate:
  - static and dynamic networks
  - multiple diffusion trials
  - multi-network comparison (with static or dynamic networks)
- - varying effects for individuals for strength of social transmission and baseline hazard rates.
+ - varying effects by individual for strength of social transmission and baseline hazard rates.
 
 This package is under development and is not guaranteed to work.
 
@@ -110,11 +110,11 @@ edge_list = STbayes::edge_list
 data_list_user = import_user_STb(diffusion_data, edge_list)
 
 # reusable function to generate and fit a model
-generate_and_fit_model <- function(data, model_type, gq = TRUE, est_acqTime = TRUE, chains = 5, cores = 5, iter = 2000, control = list(adapt_delta = 0.99)) {
+generate_and_fit_model <- function(data, model_type, chains = 5, cores = 5, iter = 2000, control = list(adapt_delta = 0.99)) {
     if (model_type == "full") {
-        model = generate_STb_model(data, gq, est_acqTime)
+        model = generate_STb_model(data, est_acqTime = TRUE)
     } else if (model_type == "asocial") {
-        model = generate_STb_asocial_model(data, gq, est_acqTime)
+        model = generate_STb_asocial_model(data, est_acqTime = TRUE)
     } else {
         stop("Invalid model type")
     }
@@ -134,8 +134,8 @@ STb_summary(asocial_fit, digits = 4)
 Next we can extract the WAIC scores and add them to our plots of the estimated times:
 ``` r
 # extract WAIC and labels
-WAIC_full = extract_WAIC_label(full_fit)
-WAIC_full = extract_WAIC_label(asocial_fit)
+WAIC_full = extract_WAIC(full_fit)
+WAIC_null = extract_WAIC(asocial_fit)
 label_full = paste0("WAIC=", round(WAIC_full[[5]]), "+/-", round(WAIC_full[[6]]))
 label_null = paste0("WAIC=", round(WAIC_null[[5]]), "+/-", round(WAIC_null[[6]]))
 

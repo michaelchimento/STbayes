@@ -18,26 +18,10 @@ fit_social = fit_STb(data_list, model_obj, chains = 2, cores = 2, iter=2000, con
 #check summary ~ the same as NBDA estimates. the priors could be adjusted to be less skeptical of the large s value
 STb_summary(fit_social, depth=1)
 
-df_acq_times = extract_acqTime(fit_social, data_list)
-
-library(ggplot2)
-ggplot(df_acq_times, aes(x = observed_time, y = mean_time)) +
-    geom_point(size = 2) +
-    geom_errorbar(aes(ymin = lower_hpd, ymax = upper_hpd), width = 0.2) +
-    facet_wrap(~trial, scales = "free_x") +
-    labs(
-        title = "Estimated Acquisition Times with 95% HPD Intervals",
-        x = "Observed time",
-        y = "Estimated time"
-    ) +
-    theme_minimal()
-
 # Compare with asocial model (no s param)
 model_obj = generate_STb_asocial_model(data_list)
 fit_asocial = fit_STb(data_list, model_obj, chains = 2, cores = 2, iter=2000, control = list(adapt_delta=0.99) )
 STb_summary(fit_asocial, depth=1)
-
-AIC(fit_social)
 
 
 
