@@ -213,7 +213,8 @@ library(STbayes)
  ILV_metadata <- data.frame(
    id = c("A", "B", "C", "D", "E", "F"),
    age = c(2, 3, 4, 2, 5, 6),
-   sex = c(0, 1, 1, 0, 1, 0) # Factor ILVs must be input as numeric
+   sex = c(0, 1, 1, 0, 1, 0), # Factor ILVs must be input as numeric
+   weight = c(0.5, .25, .3, 0, -.2, -.4)
  )
  
  data_list <- import_user_STb(
@@ -221,7 +222,8 @@ library(STbayes)
    networks = networks,
    ILV_metadata = ILV_metadata,
    ILVi = c("age"), # Use only 'age' for asocial learning
-   ILVs = c("sex") # Use only 'sex' for social learning
+   ILVs = c("sex"), # Use only 'sex' for social learning
+   ILVm = c("weight") # Use weight for multiplicative effect on asocial and social learning
  )
  
  model_obj = generate_STb_model(data_list)
@@ -235,10 +237,26 @@ library(STbayes)
  ```
  
  If fitting a multinetwork model, network weights will be in the ```w``` parameter vector, and you must include depth=2 in the call to STb_summary to see them.
+ 
+### Varying effects by individual
+
+You may apply varying effects for each individual for the baseline rate (lambda_0), the strength of social learning (s) and any of the ILVs. You do this by specifying specific parameter names using the argument ```veff_ID``` in the call to ```generate_STb_model()``` or ```generate_STb_asocial_model```:
+
+```r
+model = generate_STb_model(data_list, veff_ID = c("lambda_0", "s"))
+```
+
+This can be used if you have multiple diffusion trials with the same individuals, and you expect there are consistent individual differences in effects. Varying effects are added onto a main effect. For example, if we apply a varying effect for lambda_0, the model will calculate a vector of lambda_0 values for each individual in the ```transformed parameters``` block:
+
+$$
+\boldsymbol{\lambda}_0 = \frac{1}{\exp(\mu_{\log \lambda_0} + \boldsymbol{v}_{\text{ID}, lambda_0})}
+$$
+
+and use those values when calculating the likelihood in the ```model``` block. If you specify varying effects and the models have convergence issues, you probably do not have enough data to meaningfully estimate these.
 
 ### Import data from NBDA object
 
-Create and fit model from NBDA object (taken from Tutorial 4.1 from Hasenjager et al. 2021)
+Create and fit model from NBDA object (taken from Tutorial 4.1 from [Hasenjager et al. 2021](https://doi.org/10.1111/1365-2656.13307))
 
 ``` r
 library(STbayes)
