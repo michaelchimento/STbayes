@@ -251,11 +251,11 @@ This can be used if you have multiple diffusion trials with the same individuals
 <img src="https://latex.codecogs.com/svg.latex?\boldsymbol{\lambda}_0%20=%20\frac{1}{\exp(\mu_{\log%20\lambda_0}%20+%20\boldsymbol{v}_{\text{ID},%20\lambda_0})}" alt="\boldsymbol{\lambda}_0 = \frac{1}{\exp(\mu_{\log \lambda_0} + \boldsymbol{v}_{\text{ID}, \lambda_0})}" />
 
 
-and use those values when calculating the likelihood in the ```model``` block. If you specify varying effects and the models have convergence issues, you probably do not have enough data to meaningfully estimate these.
+and use those values when calculating the likelihood in the ```model``` block. If you specify varying effects and the models have convergence issues, you probably do not have enough data to meaningfully estimate these. For a worked example please see the vignette "simulate_ID_veff.R".
 
 ### Import data from NBDA object
 
-Create and fit model from NBDA object (taken from Tutorial 4.1 from [Hasenjager et al. 2021](https://doi.org/10.1111/1365-2656.13307))
+Create and fit model from NBDA object (taken from Tutorial 4.1 from [Hasenjager et al. 2021](https://doi.org/10.1111/1365-2656.13307)). Also see vignette "import_from_nbda_obj.R".
 
 ``` r
 library(STbayes)
