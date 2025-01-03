@@ -39,7 +39,7 @@ networks <- data.frame(
 ILV_metadata <- data.frame(
   id = c("A", "B", "C", "D", "E", "F"),
   age = c(2, 3, 4, 2, 5, 6),
-  sex = c(0, 1, 1, 0, 1, 0) # Factor ILVs must be input as numeric
+  sex = c(0, 1, 1, 0, 1, 0), # Factor ILVs must be input as numeric
   weight = c(0.5, .25, .3, 0, -.2, -.4)
 )
 data_list <- import_user_STb(
@@ -47,7 +47,7 @@ data_list <- import_user_STb(
   networks = networks,
   ILV_metadata = ILV_metadata,
   ILVi = c("age"), # Use only 'age' for asocial learning
-  ILVs = c("sex") # Use only 'sex' for social learning
+  ILVs = c("sex"), # Use only 'sex' for social learning
   ILVm = c("weight") # Use weight for multiplicative effect on asocial and social learning
 )
 
