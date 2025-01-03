@@ -219,9 +219,11 @@ parameters {{
     {ILVi_param}
     {ILVs_param}
     {ILVm_param}
-   {if (N_veff > 0) 'matrix[N_veff,Z] z_ID;
+    {if (N_veff > 0) '
+    matrix[N_veff,Z] z_ID;
     vector<lower=0>[N_veff] sigma_ID;
-    cholesky_factor_corr[N_veff] Rho_ID;' else ''}
+    cholesky_factor_corr[N_veff] Rho_ID;
+    ' else ''}
 }}
 ")
 
@@ -229,8 +231,8 @@ parameters {{
     transformed_parameters_block <- glue::glue("
 transformed parameters {{
    {if (N_veff > 0) '
-        matrix[Z,N_veff] v_ID;
-        v_ID = (diag_pre_multiply(sigma_ID, Rho_ID) * z_ID)\\';
+    matrix[Z,N_veff] v_ID;
+    v_ID = (diag_pre_multiply(sigma_ID, Rho_ID) * z_ID)\\';
    ' else ''}
    {transformed_params_declaration}
 }}
@@ -245,6 +247,12 @@ model {{
     {ILVi_prior}
     {ILVs_prior}
     {ILVm_prior}
+
+    {if (N_veff > 0) '
+    to_vector(z_ID) ~ normal(0,1);
+    sigma_ID ~ exponential(1);
+    Rho_ID ~ lkj_corr_cholesky(4);
+    ' else ''}
 
     for (trial in 1:K) {{
         for (n in 1:N[trial]) {{

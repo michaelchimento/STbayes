@@ -126,9 +126,11 @@ data {{
 parameters {{
     real log_lambda_0_mean;  // Log baseline learning rate
     {ILVi_param}
-    {if (N_veff > 0) 'matrix[N_veff,Z] z_ID;
+    {if (N_veff > 0) '
+    matrix[N_veff,Z] z_ID;
     vector<lower=0>[N_veff] sigma_ID;
-    cholesky_factor_corr[N_veff] Rho_ID;' else ''}
+    cholesky_factor_corr[N_veff] Rho_ID;
+    ' else ''}
 }}
 ")
 
@@ -148,6 +150,11 @@ transformed parameters {{
 model {{
     log_lambda_0_mean ~ normal(6, 2);
     {ILVi_prior}
+    {if (N_veff > 0) '
+    to_vector(z_ID) ~ normal(0,1);
+    sigma_ID ~ exponential(1);
+    Rho_ID ~ lkj_corr_cholesky(4);
+    ' else ''}
 
     for (trial in 1:K) {{
         for (n in 1:N[trial]) {{
