@@ -39,6 +39,7 @@
 #'   ILVs = c("sex") # Use only 'sex' for social learning
 #'   ILVm = c("weight") # Use weight for multiplicative effect on asocial and social learning
 #' )
+#'
 import_user_STb <- function(diffusion_data, networks, ILV_metadata=NULL, ILVi = NULL, ILVs = NULL, ILVm = NULL) {
   # Initialize list
   data_list <- list()
@@ -53,7 +54,7 @@ import_user_STb <- function(diffusion_data, networks, ILV_metadata=NULL, ILVi = 
 
   # order in case user has not, assign indexes per trial
   diffusion_data <- diffusion_data[order(diffusion_data$trial_numeric, diffusion_data$time), ]
-  diffusion_data$index <- with(diffusion_data, ave(trial_numeric, FUN = seq_along))
+  diffusion_data$index <- with(diffusion_data, ave(trial_numeric, trial_numeric, FUN = seq_along))
 
   # create discrete time (this should be 0 if ID was a demo/seed)
   diffusion_data$discrete_time <- NA

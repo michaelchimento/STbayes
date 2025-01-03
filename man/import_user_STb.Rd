@@ -61,4 +61,5 @@ imported_data <- import_user_STb(
   ILVs = c("sex") # Use only 'sex' for social learning
   ILVm = c("weight") # Use weight for multiplicative effect on asocial and social learning
 )
+
 }

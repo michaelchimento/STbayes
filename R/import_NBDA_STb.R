@@ -52,7 +52,7 @@ import_NBDA_STb <- function(nbda_object, network_names= c("default"), ILVi = NUL
 
     # Sort data and assign index within trials
     diffusion_data <- diffusion_data[order(diffusion_data$trial_numeric, diffusion_data$time), ]
-    diffusion_data$index <- with(diffusion_data, ave(trial_numeric, FUN = seq_along))
+    diffusion_data$index <- with(diffusion_data, ave(trial_numeric, trial_numeric, FUN = seq_along))
 
     # create discrete time (this should be 0 if ID was a demo/seed)
     diffusion_data$discrete_time <- NA
