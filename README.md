@@ -66,7 +66,7 @@ STb_summary outputs a formatted table of key values for parameters (incl back-tr
 ```
 Estimates are not far off, but depend on network density and stochastic processes of each simulation. See vignette ```simulate_data_manytimes.R``` to quench your thirst for model validation.
 
-STbayes also provides easy access to estimated learning times with ```extract_acqTime``` if you have fit the model with generated quantities (gq=T) and acquisition time estimates (est_acqTime=T). Generated quantities also includes log-likelihood of observations for WAIC calulations etc.
+STbayes also provides easy access to estimated learning times with ```extract_acqTime``` if you have fit the model with generated quantities (gq=T) and acquisition time estimates (est_acqTime=T). Generated quantities also includes log-likelihood of observations for WAIC calulations etc. To plot comparison of estimates versus known values:
 
 ```r
 #get data for estimated times
@@ -89,9 +89,7 @@ ggplot(acqdata, aes(x = observed_time, y = mean_time)) +
     ) +
     theme_minimal()
  ```
- creates a residual plot:
- 
-![residual plot](data/estimates_residuals.png)
+ <img src="data/estimates_residuals.png" width="400">
 
 ### Compare full and asocial models
 
