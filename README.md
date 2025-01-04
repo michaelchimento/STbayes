@@ -1,4 +1,4 @@
-![banner](data/bayes_banner2.png)
+![banner](data/stbayes_banner2.png)
 <!-- badges: start -->
 <!-- badges: end -->
 
