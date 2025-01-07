@@ -1,8 +1,10 @@
 library(STbayes)
+
+#import some simulated example data
 diffusion_data = STbayes::diffusion_data
 edge_list = STbayes::edge_list
 
-#formate data
+#format data
 data_list_user = import_user_STb(diffusion_data, edge_list)
 
 #generate STAN model from input data
@@ -14,7 +16,7 @@ fit = fit_STb(data_list_user, model_obj, chains = 5, cores = 5, iter=2000, contr
 # check estimates
 STb_summary(fit, digits=4)
 
-#get data for estimated times
+#get estimated times
 acqdata = extract_acqTime(fit, data_list_user)
 
 #plot estimated times versus observed times w/ residuals
@@ -49,3 +51,5 @@ ggplot(acqdata, aes(x = observed_time, y = mean_time)) +
     theme_minimal()
 
 ggsave("../data/estimates_residuals.png", width=8, height=8, units="cm", scale=1.5)
+
+

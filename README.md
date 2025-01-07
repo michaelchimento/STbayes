@@ -257,7 +257,7 @@ Create and fit model from NBDA object (taken from Tutorial 4.1 from [Hasenjager 
 library(STbayes)
 
 #load example NBDAdata object 
-nbdaData_cTADA <- STbayes::nbdaData_cTADA
+nbdaData_cTADA <- STbayes::tutorial4_1
 
 #import into STbayes
 data_list = import_NBDA_STb(nbdaData_cTADA)

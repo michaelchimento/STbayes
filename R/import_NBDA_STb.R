@@ -30,7 +30,7 @@ import_NBDA_STb <- function(nbda_object, network_names= c("default"), ILVi = NUL
             id = nbda_object@orderAcq,
             trial = 1,  # NBDA assumes a single trial (adjust if multi-trial support is added)
             time = seq_along(1:max(nbda_object@orderAcq)),
-            max_time = max(nbda_object@orderAcq)  # Maximum acquisition time
+            max_time = max(nbda_object@orderAcq)+1  # Maximum acquisition time
         )
     } else {
         message("This NBDA object is likely in TADA format.")

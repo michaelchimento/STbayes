@@ -22,9 +22,11 @@ STb_summary <- function(fit, depth = 1, prob = 0.95, ignore_params = c("s", "lam
     param_depths <- sapply(samples, function(x) length(dim(x)))
     selected_params <- param_names[param_depths <= depth & !param_names %in% ignore_params]
 
-
+    transformed_params = list()
     # add transformed parameters
-    transformed_params <- list(transformed_baserate = 1 / exp(samples$log_lambda_0_mean))
+    if ("log_lambda_0_mean" %in% param_names){
+        transformed_params$transformed_baserate = 1 / exp(samples$log_lambda_0_mean)
+    }
 
     if ("log_s_mean" %in% param_names){
         transformed_params$transformed_s = exp(samples$log_s_mean)

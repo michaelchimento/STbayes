@@ -1,7 +1,7 @@
 library(STbayes)
 library(NBDA)
 #load example NBDAdata object from Tutorial 4.1 from Hasenjager et al. 2021
-nbdaData_cTADA <- STbayes::nbdaData_cTADA
+nbdaData_cTADA <- STbayes::tutorial4_1
 #Fit cTADA model using tadaFit:
 model_constant<-NBDA::tadaFit(nbdaData_cTADA)
 data.frame(Variable=model_constant@varNames,MLE=model_constant@outputPar,SE=model_constant@se)
