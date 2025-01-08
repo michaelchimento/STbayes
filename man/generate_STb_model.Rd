@@ -36,16 +36,16 @@ networks <- data.frame(
   kin = c(1, 0, 1, 0, 1, 1),
   inverse_distance = c(0, 1, .5, .25, .1, 0)
 )
-ILV_metadata <- data.frame(
-  id = c("A", "B", "C", "D", "E", "F"),
-  age = c(2, 3, 4, 2, 5, 6),
-  sex = c(0, 1, 1, 0, 1, 0), # Factor ILVs must be input as numeric
-  weight = c(0.5, .25, .3, 0, -.2, -.4)
-)
+ ILV_c<- data.frame(
+    id = LETTERS[1:6],
+    age = c(-1, -2, 0, 1, 2), # continuous variables should be normalized
+    sex = c(0, 1, 1, 0, 1, 0), # Factor ILVs must be input as numeric
+    weight = c(0.5, .25, .3, 0, -.2, -.4)
+ )
 data_list <- import_user_STb(
   diffusion_data = diffusion_data,
   networks = networks,
-  ILV_metadata = ILV_metadata,
+  ILV_c = ILV_c,
   ILVi = c("age"), # Use only 'age' for asocial learning
   ILVs = c("sex"), # Use only 'sex' for social learning
   ILVm = c("weight") # Use weight for multiplicative effect on asocial and social learning

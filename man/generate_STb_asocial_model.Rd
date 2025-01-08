@@ -41,7 +41,7 @@ networks <- data.frame(
   kin = c(1, 0, 1, 0, 1, 1),
   inverse_distance = c(0, 1, .5, .25, .1, 0)
 )
-ILV_metadata <- data.frame(
+ILV_c <- data.frame(
   id = c("A", "B", "C", "D", "E", "F"),
   age = c(2, 3, 4, 2, 5, 6),
   sex = c(0, 1, 1, 0, 1, 0), # Factor ILVs must be input as numeric
@@ -50,7 +50,7 @@ ILV_metadata <- data.frame(
 data_list <- import_user_STb(
   diffusion_data = diffusion_data,
   networks = networks,
-  ILV_metadata = ILV_metadata,
+  ILV_c = ILV_c,
   ILVi = c("age"), # Use only 'age' for asocial learning. You cannot specify ILVs or ILVm for asocial only models.
 )
 

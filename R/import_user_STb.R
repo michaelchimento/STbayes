@@ -2,7 +2,8 @@
 #'
 #' @param diffusion_data dataframe with columns id, trial, time, max_time
 #' @param networks dataframe with columns trial, from, to, and one or more columns of edge weights named descriptively. Optionally an integer time column can be provided for dynamic network analysis, although networks must be provided for each time period between transmission events.
-#' @param ILV_metadata optional dataframe with columns id, and any individual-level variables that might be of interest
+#' @param ILV_c optional dataframe with columns id, and any individual-level variables that might be of interest
+#' @param ILV_tv optional dataframe with columns trial, id, time and any time-varying variables. Variable values should summarize the variable for each inter-acquisition period.
 #' @param ILVi Optional character vector of column names from ILV metadata to be considered when estimating asocial learning rate. If not specified, all ILV are applied to both.
 #' @param ILVs Optional character vector of column names from ILV metadata to be considered when estimating social learning rate. If not specified, all ILV are applied to both.
 #' @param ILVm Optional character vector of column names from ILV metadata to be considered in a multiplicative model.
@@ -13,34 +14,54 @@
 #' @examples
 #' #very mock data
 #' diffusion_data <- data.frame(
-#'   id = c("A", "B", "C", "D", "E", "F"),
-#'   trial = c(1, 1, 1, 2, 2, 2),
+#'   trial = rep(1:2, each = 3),
+#'   id = LETTERS[1:6],
 #'   time = c(0, 1, 2, 0, 1, 4),
 #'   max_time = c(3, 3, 3, 4, 4, 4)
 #' )
 #' networks <- data.frame(
-#'   trial = c(1, 1, 1, 2, 2, 2),
+#'   trial = rep(1:2, each = 3),
 #'   from = c("A", "A", "B", "D", "D", "E"),
 #'   to = c("B", "C", "C", "E", "F", "F"),
 #'   kin = c(1, 0, 1, 0, 1, 1),
 #'   inverse_distance = c(0, 1, .5, .25, .1, 0)
 #' )
-#' ILV_metadata <- data.frame(
-#'   id = c("A", "B", "C", "D", "E", "F"),
-#'   age = c(2, 3, 4, 2, 5, 6),
-#'   sex = c(0, 1, 1, 0, 1, 0) # Factor ILVs must be input as numeric
-#'   weight = c(0.5, .25, .3, 0, -.2, -.4)
+#'  ILV_c<- data.frame(
+#'     id = LETTERS[1:6],
+#'     age = c(-1, -2, 0, 1, 2), # continuous variables should be normalized
+#'     sex = c(0, 1, 1, 0, 1, 0), # Factor ILVs must be input as numeric
+#'     weight = c(0.5, .25, .3, 0, -.2, -.4)
+#'  )
+#' ILV_tv <- data.frame(
+#'     trial = c(rep(1, each = 9),rep(2, each = 9)),
+#'     id = c(rep(LETTERS[1:3], each=3), rep(LETTERS[4:6], each=3)),
+#'     # these times correspond to the inter-acquisition periods
+#'     #e.g. 1 is from [t_0 to t_1), 2 is [t_1 to t_2), 3 = [t_2 to t_3 or t_end] if censored inds. present)
+#'     time = c(rep(1:3, times = 3), rep(1:3, times=3)),
+#'     #ensure the variable is summarizing these inter-acquisition time periods
+#'     dist_from_task = rnorm(18)
 #' )
 #' imported_data <- import_user_STb(
 #'   diffusion_data = diffusion_data,
 #'   networks = networks,
-#'   ILV_metadata = ILV_metadata,
-#'   ILVi = c("age"), # Use only 'age' for asocial learning
-#'   ILVs = c("sex") # Use only 'sex' for social learning
+#'   ILV_c = ILV_c,
+#'   ILV_tv = ILV_tv,
+#'   ILVi = c("age", "dist_from_task"), # Use 'age' and time-varying ILV 'dist_from_task' for asocial learning
+#'   ILVs = c("sex"), # Use only 'sex' for social learning
 #'   ILVm = c("weight") # Use weight for multiplicative effect on asocial and social learning
 #' )
 #'
-import_user_STb <- function(diffusion_data, networks, ILV_metadata=NULL, ILVi = NULL, ILVs = NULL, ILVm = NULL) {
+import_user_STb <- function(diffusion_data, networks, ILV_c=NULL, ILV_tv=NULL, ILVi = NULL, ILVs = NULL, ILVm = NULL) {
+
+  # warnings
+    if (is.null(ILVi) & is.null(ILVs) & is.null(ILVm) & (!is.null(ILV_c) | !is.null(ILV_tv))){
+        message("WARNING: You have provided ILV, yet did not specify whether they should be additive or multiplicative (missing arguments ILVi, ILVs, ILVm). STbayes defaults to unconstrained additive (i.e. each variable's effect on both asocial and social learning will be separately estimated). It is recommended to explicitly define this.")
+    }
+
+    if (is.null(ILVm)) {
+        ILVm <- "ILVabsent"
+    }
+
   # Initialize list
   data_list <- list()
 
@@ -131,35 +152,68 @@ import_user_STb <- function(diffusion_data, networks, ILV_metadata=NULL, ILVi = 
   data_list$ind_id <- id_data # individual id data
   data_list$C = create_knowledge_matrix(diffusion_data) # knowledge state matrix
 
-  #### Metadata ####
-  # identify ILVs from ILV_metadata
-  if (!is.null(ILV_metadata)){
-      message("ILV supplied.")
-      ILV_metadata$id_numeric <- as.numeric(as.factor(ILV_metadata$id))
-      # order in case user has not, assign indexes per trial
-      diffusion_data <- diffusion_data[order(ILV_metadata$id_numeric), ]
-      exclude_cols <- c("id", "id_numeric")
-      ILV_metadata <- ILV_metadata[, !(names(ILV_metadata) %in% c("id", "id_numeric"))]
-      ILV_cols <- names(ILV_metadata)
+  #### Constant ILV ####
+  ILV_names = c()
+  # identify ILVs from ILV_c
+  if (!is.null(ILV_c)){
+      message("Constant ILV supplied.")
+      ILV_c$id_numeric <- as.numeric(as.factor(ILV_c$id))
+      # order in case user has not
+      ILV_c <- ILV_c[order(ILV_c$id_numeric), ]
+      rownames(ILV_c) <- NULL
 
-      for (column in names(ILV_metadata)) {
-          data_list[[paste0("ILV_", column)]] <- ILV_metadata[[column]]
+      #get column names
+      exclude_cols <- c("id", "id_numeric")
+      ILV_cols <- setdiff(names(ILV_c), exclude_cols)
+      ILV_names = append(ILV_names, ILV_cols)
+      # loop through each ILV_c column and add to datalist
+      for (col in ILV_cols) {
+          data_list[[paste0("ILV_", col)]] <- ILV_c[[col]]
       }
+  }
+
+  #### Time-varying ILV ####
+  # identify ILVs from ILV_tv
+  if (!is.null(ILV_tv)){
+      message("Time-varying ILV supplied.")
+      # convert to numeric if not
+      ILV_tv$id_numeric <- as.numeric(as.factor(ILV_tv$id))
+      ILV_tv$trial_numeric <- as.numeric(as.factor(ILV_tv$trial))
+      ILV_tv$discrete_time <- with(
+          ILV_tv, ave(time, trial_numeric, FUN = function(x) as.numeric(as.factor(x)))
+      )
+      # order in case user has not
+      ILV_tv <- ILV_tv[order(ILV_tv$trial_numeric, ILV_tv$id_numeric, ILV_tv$discrete_time), ]
+      rownames(ILV_tv) <- NULL
+      # Get the ILV column names
+      exclude_cols <- c("id", "id_numeric", "time", "discrete_time", "trial", "trial_numeric")
+      ILV_cols <- setdiff(names(ILV_tv), exclude_cols)
+      ILV_names = append(ILV_names, ILV_cols)
+      # loop through each ILV column and add to datalist
+      for (col in ILV_cols) {
+          # reshape data into matrix
+          mat <- with(ILV_tv, tapply(ILV_tv[[col]], list(trial, discrete_time, id), FUN = mean, simplify = TRUE))
+          mat[is.na(mat)] <- 0
+          data_list[[paste0("ILV_", col)]] <- mat
+      }
+  }
+
+  if (!is.null(ILV_c) | !is.null(ILV_tv)){
       # write names
       if (is.null(ILVi)) {
-          ILVi <- ILV_cols
+          data_list$ILVi_names <- ILV_names
+      } else{
+          data_list$ILVi_names <- ILVi
       }
       if (is.null(ILVs)) {
-          ILVs <- ILV_cols
+          data_list$ILVs_names <- ILV_names
+      } else{
+          data_list$ILVs_names <- ILVs
       }
-      if (is.null(ILVm)) {
-          ILVm <- ILV_cols
-      }
-      data_list$ILVi_names <- ILVi
-      data_list$ILVs_names <- ILVs
       data_list$ILVm_names <- ILVm
-  } else {
-      message("ILV not supplied.")
+  }
+  else {
+      message("No ILV supplied.")
       data_list$ILVi_names <- "ILVabsent"
       data_list$ILVs_names <- "ILVabsent"
       data_list$ILVm_names <- "ILVabsent"

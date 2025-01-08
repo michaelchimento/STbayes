@@ -91,8 +91,8 @@ names(edge_list) = c("from","to")
 edge_list$trial = 1
 edge_list$assoc = 1 #assign named edgeweight since this is just an edge list
 
-save(diffusion_data, file="../data/example_diffusion_data.rda")
-save(edge_list, file="../data/example_edge_list.rda")
+#save(diffusion_data, file="../data/example_diffusion_data.rda")
+#save(edge_list, file="../data/example_edge_list.rda")
 
 #generate STAN model from input data
 data_list_user = import_user_STb(diffusion_data, edge_list)
@@ -101,7 +101,7 @@ data_list_user = import_user_STb(diffusion_data, edge_list)
 model_obj = generate_STb_model(data_list_user, gq=T, est_acqTime = T)
 
 # Write to file for debugging? uncomment below why not
-write(model_obj, file = "../data/model_from_simulate_data.stan")
+#write(model_obj, file = "../data/model_from_simulate_data.stan")
 
 # fit model
 fit = fit_STb(data_list_user, model_obj, chains = 5, cores = 5, iter=2000, control = list(adapt_delta=0.99))
@@ -115,7 +115,7 @@ acqdata = extract_acqTime(fit, data_list_user)
 #plot estimated times versus observed times w/ HPD
 ggplot(acqdata, aes(x = observed_time, y = mean_time)) +
     geom_abline(slope = 1, intercept = 0,             # Line y = x
-                color = "red", linetype = "dotted", size = 1) +
+                color = "red", linetype = "dotted", linewidth = 1) +
     geom_pointrange(aes(ymin = lower_hpd, ymax = upper_hpd), size=.8) +
     facet_wrap(~trial, scales = "free_x") +
     labs(

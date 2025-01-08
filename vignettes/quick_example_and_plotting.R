@@ -50,6 +50,6 @@ ggplot(acqdata, aes(x = observed_time, y = mean_time)) +
     ) +
     theme_minimal()
 
-ggsave("../data/estimates_residuals.png", width=8, height=8, units="cm", scale=1.5)
+ggsave("../docs/estimates_residuals.png", width=8, height=8, units="cm", scale=1.5)
 
 

@@ -100,6 +100,7 @@ for (trial in 1:num_trials) {
 # import data to STbayes and fit model
 data_list_user <- import_user_STb(all_diffusion_data, all_edge_list)
 model_obj <- generate_STb_model(data_list_user, veff=c("lambda_0", "s"))
+#write(model_obj, file = "../data/STAN_example_veff.stan")
 fit <- fit_STb(data_list_user, model_obj, chains = 5, cores = 5, iter = 5000, control = list(adapt_delta = 0.99))
 
 #check to see if output matches simulation inputs
@@ -143,4 +144,4 @@ ggplot(df_comparison, aes(x=real, y=estimated))+
     geom_abline(slope = 1, intercept=0, lty="dashed") +
     labs(title="Real versus estimated parameter values for individuals", x="Real value", y="Estimated value")
 
-ggsave("../data/ID_veff_real_vs_estimated.png", width=12, height=6, units="cm", scale=2)
+ggsave("../docs/ID_veff_real_vs_estimated.png", width=12, height=6, units="cm", scale=2)

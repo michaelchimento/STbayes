@@ -1,16 +1,17 @@
-![banner](data/stbayes_banner2.png)
+![banner](docs/stbayes_banner2.png)
 <!-- badges: start -->
 <!-- badges: end -->
 
 **STbayes** (SocialTransmissionbayes[ian]) is a package for building and running Bayesian inferential models of social transmission across static or dynamic networks. Users may supply their own data in formats given below, or import nbdaData objects directly from the [NBDA package](https://github.com/whoppitt/NBDA).
 
 STbayes can currently accomodate:
- - static and dynamic networks
- - multiple diffusion trials
- - multi-network comparison (with static or dynamic networks)
- - varying effects by individual for strength of social transmission and baseline hazard rates.
- - WAIC comparison between asocial only (null) models and social + asocial models
- - ILVs for additive and multiplicative transmission models
+ - cTADA (acquisition time known) and OADA (only acquisition order known) model types.
+ - static and dynamic networks.
+ - multi-network comparison (with static or dynamic networks).
+ - multiple diffusion trials with the same set, subsets, or different sets of individuals.
+ - constant and time-varying ILVs for additive and multiplicative transmission models.
+ - varying effects by individual for strength of social transmission, baseline hazard rates, and other user defined ILVs.
+ - WAIC comparison between asocial only (null) models and social + asocial models.
    
 This package is under development and is not guaranteed to work.
 
@@ -89,7 +90,7 @@ ggplot(acqdata, aes(x = observed_time, y = mean_time)) +
     ) +
     theme_minimal()
  ```
- <img src="data/estimates_residuals.png" width="400">
+ <img src="docs/estimates_residuals.png" width="400">
 
 ### Compare full and asocial models
 
@@ -163,9 +164,9 @@ p1 = plot_acq_time(asocial_fit, data_list_user, "Asocial (null) model estimates"
 p2 = plot_acq_time(full_fit, data_list_user, "Full model estimates", label_full)
 
 ```
-![comparison plot](data/compare_social_asocial.png)
+![comparison plot](docs/compare_social_asocial.png)
 
-We can see that the full model describes the data much better and obtains a better (lower) WAIC score. Estimated learning times are the point estimate (mean in this case) from posterior distribution of learning times, and since individuals learn in random orders in the asocial model according to a static rate, the average time of each learner cluster around a similar time. Meanwhile, including time-varying social information allows for a better prediction of when individuals have acquired the behavior.
+The full model describes the data much better and obtains a better (lower) WAIC score. Estimated learning times are the point estimate (mean in this case) from posterior distribution of learning times, and since individuals learn in random orders in the asocial model according to a static rate, the average time of each learner cluster around a similar time. Meanwhile, including time-varying social information allows for a better prediction of when individuals have acquired the behavior.
 
 ### Import your own data
 
@@ -206,22 +207,36 @@ library(STbayes)
    inverse_distance = c(0, 1, .5, .25, .1, 0) #second network
  )
  
- ILV_metadata <- data.frame(
+ # optional dataframe of constant individual-level variables
+ ILV_c <- data.frame(
    id = c("A", "B", "C", "D", "E", "F"),
    age = c(2, 3, 4, 2, 5, 6),
    sex = c(0, 1, 1, 0, 1, 0), # Factor ILVs must be input as numeric
    weight = c(0.5, .25, .3, 0, -.2, -.4)
  )
  
+ # optional dataframe of time-varying individual level variables
+ ILV_tv <- data.frame(
+    trial = c(rep(1, each = 9),rep(2, each = 9)),
+    id = c(rep(LETTERS[1:3], each=3), rep(LETTERS[4:6], each=3)),
+    # these times correspond to the inter-acquisition periods
+    #e.g. 1 is from [t_0 to t_1), 2 is [t_1 to t_2), 3 = [t_2 to t_3 or t_end] if censored inds. present)
+    time = c(rep(1:3, times = 3), rep(1:3, times=3)),
+    #ensure the variable is summarizing these inter-acquisition time periods
+    dist_from_resource = rnorm(18)
+)
+ 
  data_list <- import_user_STb(
    diffusion_data = diffusion_data,
    networks = networks,
-   ILV_metadata = ILV_metadata,
-   ILVi = c("age"), # Use only 'age' for asocial learning
+   ILV_c = ILV_c,
+   ILV_tv = ILV_tv,
+   ILVi = c("age", "dist_from_resource"), # estimate effects of constant ILV 'age' and time-varying ILV 'dist_from_resource' on asocial learning rates
    ILVs = c("sex"), # Use only 'sex' for social learning
    ILVm = c("weight") # Use weight for multiplicative effect on asocial and social learning
  )
  
+ #create the STAN code for the model
  model_obj = generate_STb_model(data_list)
  
  #Obviously this model will not fit, feed it real data in the format above, or simulate data from the vignette

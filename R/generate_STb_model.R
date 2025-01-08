@@ -23,16 +23,16 @@
 #'   kin = c(1, 0, 1, 0, 1, 1),
 #'   inverse_distance = c(0, 1, .5, .25, .1, 0)
 #' )
-#' ILV_metadata <- data.frame(
-#'   id = c("A", "B", "C", "D", "E", "F"),
-#'   age = c(2, 3, 4, 2, 5, 6),
-#'   sex = c(0, 1, 1, 0, 1, 0), # Factor ILVs must be input as numeric
-#'   weight = c(0.5, .25, .3, 0, -.2, -.4)
-#' )
+#'  ILV_c<- data.frame(
+#'     id = LETTERS[1:6],
+#'     age = c(-1, -2, 0, 1, 2), # continuous variables should be normalized
+#'     sex = c(0, 1, 1, 0, 1, 0), # Factor ILVs must be input as numeric
+#'     weight = c(0.5, .25, .3, 0, -.2, -.4)
+#'  )
 #' data_list <- import_user_STb(
 #'   diffusion_data = diffusion_data,
 #'   networks = networks,
-#'   ILV_metadata = ILV_metadata,
+#'   ILV_c = ILV_c,
 #'   ILVi = c("age"), # Use only 'age' for asocial learning
 #'   ILVs = c("sex"), # Use only 'sex' for social learning
 #'   ILVm = c("weight") # Use weight for multiplicative effect on asocial and social learning
@@ -74,13 +74,21 @@ generate_STb_model <- function(STb_data, veff_ID = c(), gq = TRUE, est_acqTime =
 
     combined_ILV_vars = unique(c(ILVi_vars, ILVs_vars, ILVm_vars))
 
+    #create declaration for data block, check dimensions of ILVs for timevarying or constant
     ILV_declaration = ""
-    if (length(combined_ILV_vars)>0){
-        ILV_declaration = paste0('array[Z] real ', combined_ILV_vars, ';', collapse = '\n')
+    if (length(combined_ILV_vars) > 0) {
+        ILV_declaration = paste0(
+            sapply(combined_ILV_vars, function(var) {
+                if (!is.null(dim(STb_data[[paste0("ILV_", var)]]))) {
+                    paste0('array[K,Q,Z] real ILV_', var, ';')
+                } else {
+                    paste0('array[Z] real ILV_', var, ';')
+                }
+            }),
+            collapse = '\n'
+        )
     }
-
     # deal with varying effects in transformed parameters
-
     N_veff = length(veff_ID)
     #start w empty list
     transformed_params = c()
@@ -120,19 +128,33 @@ generate_STb_model <- function(STb_data, veff_ID = c(), gq = TRUE, est_acqTime =
             #if user specified this should be include a varying effect for id
             if (is.element(ilv, veff_ID)){
                 #add declaration in transformed parameters
-                transformed_params = append(transformed_params, paste0("vector<lower=0>[Z] ", ilv, " = beta_ILVi_", parameter," + v_ID[,",count,"]);"))
+                transformed_params = append(transformed_params, paste0("vector<lower=0>[Z] ", ilv, "_i = beta_ILVi_", parameter," + v_ID[,",count,"];"))
                 count = count + 1
                 #rename with [id] so it can be indexed in the main model loop
-                ILVi_vars[ILVi_vars == ilv] <- paste0(ilv, "[id]")
+                ILVi_vars[ILVi_vars == ilv] <- paste0(ilv, "_i[id]")
             } else {
                 #otherwise append prefix of beta_ILVx_ so it can be accessed directly
                 ILVi_vars[ILVi_vars == ilv] <- paste0("beta_ILVi_", ilv)
             }
         }
         #creates the line to insert into likelihood calculation
-        ILVi_param <- paste0("real beta_ILVi_", ILVi_vars_clean, ";", sep = "\n")
-        ILVi_prior <- paste0("beta_ILVi_", ILVi_vars_clean, " ~ normal(0, 1);", sep = "\n")
-        ILVi_variable_effects <- paste0("exp(", paste0(ILVi_vars, " * ", ILVi_vars_clean, "[id]", collapse = " + "),")")
+        ILVi_param <- paste0("real beta_ILVi_", ILVi_vars_clean, ";")
+        ILVi_prior <- paste0("beta_ILVi_", ILVi_vars_clean, " ~ normal(0, 1);")
+        #ILVi_variable_effects <- paste0("exp(", paste0(ILVi_vars, " * ", ILVi_vars_clean, "[id]", collapse = " + "),")")
+        ILVi_variable_effects <- paste0(
+            "exp(",
+            paste0(
+                ILVi_vars,
+                " * ",
+                sapply(ILVi_vars_clean, function(var_clean) {
+                    if (!is.null(dim(STb_data[[paste0("ILV_", var_clean)]]))) {
+                        paste0("ILV_", var_clean,"[trial,time_step,id]") #if has dimensions, assume its time-varying
+                    } else {
+                        paste0("ILV_", var_clean,"[id]") #else time constant
+                    }
+                }),
+                collapse = " + "
+            ),")")
     }
 
     # Handle social-level information (ILVs)
@@ -147,21 +169,36 @@ generate_STb_model <- function(STb_data, veff_ID = c(), gq = TRUE, est_acqTime =
             #if user specified this should be include a varying effect for id
             if (is.element(ilv, veff_ID)){
                 #add declaration in transformed parameters
-                transformed_params = append(transformed_params, paste0("vector<lower=0>[Z] ", ilv, " = beta_ILVs_", parameter," + v_ID[,",count,"]);"))
+                transformed_params = append(transformed_params, paste0("vector<lower=0>[Z] ", ilv, "_s = beta_ILVs_", parameter," + v_ID[,",count,"];"))
                 count = count + 1
                 #rename with [id] so it can be indexed in the main model loop
-                ILVs_vars[ILVs_vars == ilv] <- paste0(ilv, "[id]")
+                ILVs_vars[ILVs_vars == ilv] <- paste0(ilv, "_s[id]")
             } else {
                 #otherwise append prefix of beta_ILVx_ so it can be accessed directly
                 ILVs_vars[ILVs_vars == ilv] <- paste0("beta_ILVs_", ilv)
             }
         }
         #creates the line to insert into likelihood calculation
-        ILVs_param <- paste0("real beta_ILVs_", ILVs_vars_clean, ";", sep = "\n")
-        ILVs_prior <- paste0("beta_ILVs_", ILVs_vars_clean, " ~ normal(0, 1);", sep = "\n")
-        ILVs_variable_effects <- paste0("* exp(", paste0(ILVs_vars, " * ", ILVs_vars_clean, "[id]", collapse = " + "),")")
+        ILVs_param <- paste0("real beta_ILVs_", ILVs_vars_clean, ";")
+        ILVs_prior <- paste0("beta_ILVs_", ILVs_vars_clean, " ~ normal(0, 1);")
+        #ILVs_variable_effects <- paste0("* exp(", paste0(ILVs_vars, " * ", ILVs_vars_clean, "[id]", collapse = " + "),")")
+        ILVs_variable_effects <- paste0(
+            "* exp(",
+            paste0(
+                ILVs_vars,
+                " * ",
+                sapply(ILVs_vars_clean, function(var_clean) {
+                    if (!is.null(dim(STb_data[[paste0("ILV_", var_clean)]]))) {
+                        paste0("ILV_", var_clean,"[trial,time_step,id]")
+                    } else {
+                        paste0("ILV_", var_clean,"[id]")
+                    }
+                }),
+                collapse = " + "
+            ),")")
     }
-
+    ILVs_param
+    ILVs_prior
     # Handle social-level information (ILVs)
     if (num_ILVm < 1) {
         ILVm_param <- ""
@@ -173,20 +210,42 @@ generate_STb_model <- function(STb_data, veff_ID = c(), gq = TRUE, est_acqTime =
             #if user specified this should be include a varying effect for id
             if (is.element(ilv, veff_ID)){
                 #add declaration in transformed parameters
-                transformed_params = append(transformed_params, paste0("vector<lower=0>[Z] ", ilv, " = beta_ILVm_", parameter," + v_ID[,",count,"]);"))
+                transformed_params = append(transformed_params, paste0("vector<lower=0>[Z] ", ilv, "_m = beta_ILVm_", parameter," + v_ID[,",count,"];"))
                 count = count + 1
                 #rename with [id] so it can be indexed in the main model loop
-                ILVm_vars[ILVm_vars == ilv] <- paste0(ilv, "[id]")
+                ILVm_vars[ILVm_vars == ilv] <- paste0(ilv, "_m[id]")
             } else {
                 #otherwise append prefix of beta_ILVx_ so it can be accessed directly
                 ILVm_vars[ILVm_vars == ilv] <- paste0("beta_ILVm_", ilv)
             }
         }
-        ILVm_param <- paste0("real beta_ILVm_", ILVm_vars_clean, ";", sep = "\n")
-        ILVm_prior <- paste0("beta_ILVm_", ILVm_vars_clean, " ~ normal(0, 1);", sep = "\n")
-        ILVm_variable_effects <- paste0("exp(", paste0(ILVm_vars, " * ", ILVm_vars_clean, "[id]", collapse = " + "),") *")
+        ILVm_param <- paste0("real beta_ILVm_", ILVm_vars_clean, ";")
+        ILVm_prior <- paste0("beta_ILVm_", ILVm_vars_clean, " ~ normal(0, 1);")
+        #ILVm_variable_effects <- paste0("exp(", paste0(ILVm_vars, " * ", ILVm_vars_clean, "[id]", collapse = " + "),") *")
+        ILVm_variable_effects <- paste0(
+            "exp(",
+            paste0(
+                ILVm_vars,
+                " * ",
+                sapply(ILVm_vars_clean, function(var_clean) {
+                    # Check if dim() is NULL for the variable
+                    if (!is.null(dim(STb_data[[paste0("ILV_", var_clean)]]))) {
+                        paste0("ILV_", var_clean,"[trial,time_step,id]")
+                    } else {
+                        paste0("ILV_", var_clean,"[id]")
+                    }
+                }),
+                collapse = " + "
+            ),") *")
     }
 
+    #collapse lists into multiline statements
+    ILVi_param = paste0(ILVi_param, collapse = "\n")
+    ILVi_prior = paste0(ILVi_prior, collapse = "\n")
+    ILVs_param = paste0(ILVs_param, collapse = "\n")
+    ILVs_prior = paste0(ILVs_prior, collapse = "\n")
+    ILVm_param = paste0(ILVm_param, collapse = "\n")
+    ILVm_prior = paste0(ILVm_prior, collapse = "\n")
     transformed_params_declaration = paste0(transformed_params, collapse = "\n")
 
     data_block <- glue::glue("

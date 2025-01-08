@@ -144,4 +144,4 @@ p2 = ggplot(final_results, aes(y=est_baseline, x=model))+
 
 library(ggpubr)
 ggarrange(p1,p2)
-ggsave("../data/NBDA_STbayes_model_comparison", width=6, height=8, units="cm", scale=2)
+ggsave("../docs/NBDA_STbayes_model_comparison", width=6, height=8, units="cm", scale=2)

@@ -4,7 +4,7 @@
 \alias{create_knowledge_matrix}
 \title{create_knowledge_matrix: private function to create the knowledge state matrix C\link{t,n}}
 \usage{
-create_knowledge_matrix(df)
+create_knowledge_matrix(diffusion_data)
 }
 \arguments{
 \item{df}{dataframe (diffusion_data) in import_NBDA_data.R / create_STb_data.R}
