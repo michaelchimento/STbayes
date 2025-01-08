@@ -7,23 +7,16 @@ data {
     array[K, Q] int<lower=-1> ind_id; // IDs of individuals
     array[K] int<lower=1> T;       // Maximum time periods
     int<lower=1> T_max;            // Max timesteps reached
-    
     array[K,Z] int<lower=-1> t;     // Time of acquisition for each individual
     array[K, T_max] real<lower=0> D; // Scaled durations
     array[K, T_max] matrix[Z, Z] A_assoc; // Network matrices
     array[K] matrix[T_max, Z] C;   // Knowledge state slash cue matrix
-    
     int<lower=0> N_veff;
     array[K, T_max] int<lower=0> D_int; // integer durations
 }
 parameters {
     real log_lambda_0_mean;  // Log baseline learning rate
     real log_s_mean;         // Overall social transmission rate
-    
-    
-    
-    
-    
     matrix[N_veff,Z] z_ID;
     vector<lower=0>[N_veff] sigma_ID;
     cholesky_factor_corr[N_veff] Rho_ID;
@@ -33,23 +26,15 @@ transformed parameters {
    
     matrix[Z,N_veff] v_ID;
     v_ID = (diag_pre_multiply(sigma_ID, Rho_ID) * z_ID)';
-   
    vector<lower=0>[Z] lambda_0 = 1 / exp(log_lambda_0_mean + v_ID[,1]);
-vector<lower=0>[Z] s = exp(log_s_mean + v_ID[,2]);
+    vector<lower=0>[Z] s = exp(log_s_mean + v_ID[,2]);
 }
 model {
     log_lambda_0_mean ~ normal(6, 2);
     log_s_mean ~ uniform(-5, 5);
-    
-    
-    
-    
-
-    
     to_vector(z_ID) ~ normal(0,1);
     sigma_ID ~ exponential(1);
     Rho_ID ~ lkj_corr_cholesky(1);
-    
 
     for (trial in 1:K) {
         for (n in 1:N[trial]) {
@@ -125,8 +110,6 @@ generated quantities {
             }
         }
     }
-
-    
 
     // Flatten log_lik_matrix into log_lik
     array[K * Q] real log_lik;

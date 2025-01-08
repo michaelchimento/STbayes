@@ -13,9 +13,9 @@ data {
     array[K, T_max] matrix[Z, Z] A_kin, A_inverse_distance; // Network matrices
     array[K] matrix[T_max, Z] C;   // Knowledge state slash cue matrix
     array[Z] real ILV_age;
-array[Z] real ILV_dist_from_resource;
-array[Z] real ILV_sex;
-array[Z] real ILV_weight;
+    array[Z] real ILV_dist_from_resource;
+    array[Z] real ILV_sex;
+    array[Z] real ILV_weight;
     int<lower=0> N_veff;
     array[K, T_max] int<lower=0> D_int; // integer durations
 }
@@ -24,32 +24,28 @@ parameters {
     real log_s_mean;         // Overall social transmission rate
     simplex[2] w; // Weights for networks
     real beta_ILVi_age;
-real beta_ILVi_dist_from_resource;
+    real beta_ILVi_dist_from_resource;
     real beta_ILVs_sex;
     real beta_ILVm_weight;
     
 }
 transformed parameters {
-   
-   real<lower=0> lambda_0 = 1 / exp(log_lambda_0_mean);
-real<lower=0> s = exp(log_s_mean);
+    real<lower=0> lambda_0 = 1 / exp(log_lambda_0_mean);
+    real<lower=0> s = exp(log_s_mean);
 }
 model {
     log_lambda_0_mean ~ normal(6, 2);
     log_s_mean ~ uniform(-5, 5);
     w ~ dirichlet(rep_vector(0.5, 2));
     beta_ILVi_age ~ normal(0, 1);
-beta_ILVi_dist_from_resource ~ normal(0, 1);
+    beta_ILVi_dist_from_resource ~ normal(0, 1);
     beta_ILVs_sex ~ normal(0, 1);
     beta_ILVm_weight ~ normal(0, 1);
-
-    
 
     for (trial in 1:K) {
         for (n in 1:N[trial]) {
             int id = ind_id[trial, n];
             int learn_time = t[trial, id];
-
             if (learn_time > 0) {
                 for (time_step in 1:learn_time) {
                     real ind_term = exp(beta_ILVi_age * ILV_age[id] + beta_ILVi_dist_from_resource * ILV_dist_from_resource[id]);
@@ -62,7 +58,6 @@ beta_ILVi_dist_from_resource ~ normal(0, 1);
                 }
             }
         }
-
         if (N_c[trial] > 0) {
             for (c in 1:N_c[trial]) {
                 int id = ind_id[trial, N[trial] + c];
@@ -119,9 +114,6 @@ generated quantities {
             }
         }
     }
-
-    
-
     // Flatten log_lik_matrix into log_lik
     array[K * Q] real log_lik;
     int idx = 1;
