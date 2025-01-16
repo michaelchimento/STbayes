@@ -19,11 +19,11 @@ This package is under development and is not guaranteed to work.
 
 1. [Installation](#Installation)
 2. [Examples](#Examples)
-    i. [Recover parameter values from simulated data](#Recover)
-    ii. [Compare full and asocial models](#Compare-full-asocial)
-    iii. [Import your own data](#Import-own)
-    iv. [Varying effects by individual](#Varying-effects)
-    v. [Import data from NBDA object](#Import-NBDA)
+3. [Recover parameter values from simulated data](#Recover)
+4. [Compare full and asocial models](#Compare-full-asocial)
+5. [Import your own data](#Import-own)
+6. [Varying effects by individual](#Varying-effects)
+7. [Import data from NBDA object](#Import-NBDA)
 
 ## Installation<a name="Installation"></a>
 
