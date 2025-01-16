@@ -18,12 +18,13 @@ This package is under development and is not guaranteed to work.
 **Table of contents:**
 1. [Installation](#Installation)
 2. [Examples](#Examples)
-    a. [Recover parameter values from simulated data](#Recover parameter values from simulated data)
-    b. [Compare full and asocial models](#Compare full and asocial models)
-    c. [Import your own data](#Import your own data)
-    d. [Import data from NBDA object](#Import data from NBDA object)
+    i. [Recover parameter values from simulated data](#Recover)
+    ii. [Compare full and asocial models](#Compare-full-asocial)
+    iii. [Import your own data](#Import-own)
+    iv. [Varying effects by individual](#Varying-effects)
+    v. [Import data from NBDA object](#Import-NBDA)
 
-## Installation
+## Installation<a name="Installation"></a>
 
 The functions of this package depend on ```rstan```, ```coda``` and ```loo```. You can install ```rstan``` by following the instructions on the [rstan repository](https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started). Don't forget to take advantage of multiple CPU cores by running after installation:
 
@@ -41,9 +42,9 @@ devtools::install_github("michaelchimento/STbayes")
 
 Vignettes use packages NBDA, igraph, dplyr, ggplot2, and ggpubr.
 
-## Examples
+## Examples<a name="Examples"></a>
 
-### Recover parameter values from simulated data
+### Recover parameter values from simulated data<a name="Recover"></a>
 
 An example dataset is provided where data was simulated on a random-regular network where k=4, s=5 and the base rate was set to 0.001. You can run your own simulation in the ```simulate_data.R``` vignette.
 
@@ -100,7 +101,7 @@ ggplot(acqdata, aes(x = observed_time, y = mean_time)) +
  ```
  <img src="docs/estimates_residuals.png" width="400">
 
-### Compare full and asocial models
+### Compare full and asocial models<a name="Compare-full-asocial"></a>
 
 Like NBDA, we can compare a full model with both a social and asocial component, to a model restricted to estimating only an asocial rate. We can extract WAIC scores with ```extract_WAIC``` (really a convenient wrapper for waic from package ```loo```) and compare the estimated learning times from both models. First let's load and fit both models with a convenience function.
 
@@ -176,7 +177,7 @@ p2 = plot_acq_time(full_fit, data_list_user, "Full model estimates", label_full)
 
 The full model describes the data much better and obtains a better (lower) WAIC score. Estimated learning times are the point estimate (mean in this case) from posterior distribution of learning times, and since individuals learn in random orders in the asocial model according to a static rate, the average time of each learner cluster around a similar time. Meanwhile, including time-varying social information allows for a better prediction of when individuals have acquired the behavior.
 
-### Import your own data
+### Import your own data<a name="Import-own"></a>
 
 If you'd prefer to import your own data, STbayes requires two dataframes, and accept an optional third dataframe of individual-level variables. The first dataframe gives information  about the spreading of the behavior or information and must contain columns:
 - ```id```: Character or numeric (all converted to numeric, anyway) column of individual identites.
@@ -257,7 +258,7 @@ library(STbayes)
  
  If fitting a multinetwork model, network weights will be in the ```w``` parameter vector, and you must include depth=2 in the call to STb_summary to see them.
  
-### Varying effects by individual
+### Varying effects by individual<a name="Varying-effects"></a>
 
 You may apply varying effects for each individual for the baseline rate (lambda_0), the strength of social learning (s) and any of the ILVs. You do this by specifying specific parameter names using the argument ```veff_ID``` in the call to ```generate_STb_model()``` or ```generate_STb_asocial_model```:
 
@@ -272,7 +273,7 @@ This can be used if you have multiple diffusion trials with the same individuals
 
 and use those values when calculating the likelihood in the ```model``` block. If you specify varying effects and the models have convergence issues, you probably do not have enough data to meaningfully estimate these. For a worked example please see the vignette "simulate_ID_veff.R".
 
-### Import data from NBDA object
+### Import data from NBDA object<a name="Import-NBDA"></a>
 
 Create and fit model from NBDA object (taken from Tutorial 4.1 from [Hasenjager et al. 2021](https://doi.org/10.1111/1365-2656.13307)). Also see vignette "import_from_nbda_obj.R".
 
