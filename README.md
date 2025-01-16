@@ -16,6 +16,7 @@ STbayes can currently accomodate:
 This package is under development and is not guaranteed to work.
 
 **Table of contents:**
+
 1. [Installation](#Installation)
 2. [Examples](#Examples)
     i. [Recover parameter values from simulated data](#Recover)
