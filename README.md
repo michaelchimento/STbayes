@@ -15,6 +15,14 @@ STbayes can currently accomodate:
    
 This package is under development and is not guaranteed to work.
 
+**Table of contents:**
+1. [Installation](#Installation)
+2. [Examples](#Examples)
+    a. [Recover parameter values from simulated data](#Recover parameter values from simulated data)
+    b. [Compare full and asocial models](#Compare full and asocial models)
+    c. [Import your own data](#Import your own data)
+    d. [Import data from NBDA object](#Import data from NBDA object)
+
 ## Installation
 
 The functions of this package depend on ```rstan```, ```coda``` and ```loo```. You can install ```rstan``` by following the instructions on the [rstan repository](https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started). Don't forget to take advantage of multiple CPU cores by running after installation:
@@ -35,7 +43,7 @@ Vignettes use packages NBDA, igraph, dplyr, ggplot2, and ggpubr.
 
 ## Examples
 
-### Worked example with simulated data
+### Recover parameter values from simulated data
 
 An example dataset is provided where data was simulated on a random-regular network where k=4, s=5 and the base rate was set to 0.001. You can run your own simulation in the ```simulate_data.R``` vignette.
 
@@ -65,7 +73,7 @@ STb_summary outputs a formatted table of key values for parameters (incl back-tr
 3 transformed_baserate 0.0011 0.0010     0.0004     0.0019 5000.000 1.0008
 4        transformed_s 5.5959 4.9939     1.6104    11.2023 4339.186 1.0011
 ```
-Estimates are not far off, but depend on network density and stochastic processes of each simulation. See vignette ```simulate_data_manytimes.R``` to quench your thirst for model validation.
+Estimates are not far off from the parameter values used for simulation, but depend on network density and stochastic processes of each simulation. See vignette ```simulate_data_manytimes.R``` to quench your thirst for model validation.
 
 STbayes also provides easy access to estimated learning times with ```extract_acqTime``` if you have fit the model with generated quantities (gq=T) and acquisition time estimates (est_acqTime=T). Generated quantities also includes log-likelihood of observations for WAIC calulations etc. To plot comparison of estimates versus known values:
 
