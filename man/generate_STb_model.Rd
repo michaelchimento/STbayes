@@ -4,7 +4,14 @@
 \alias{generate_STb_model}
 \title{Dynamically generate STAN model based on input data}
 \usage{
-generate_STb_model(STb_data, veff_ID = c(), gq = TRUE, est_acqTime = FALSE)
+generate_STb_model(
+  STb_data,
+  veff_ID = c(),
+  gq = TRUE,
+  est_acqTime = FALSE,
+  prior_baserate = "normal(7, 3)",
+  prior_s = "uniform(-5,5)"
+)
 }
 \arguments{
 \item{STb_data}{a list of formatted data returned from the STbayes_data() function}
@@ -14,6 +21,10 @@ generate_STb_model(STb_data, veff_ID = c(), gq = TRUE, est_acqTime = FALSE)
 \item{gq}{Boolean to indicate whether the generated quantities block is added (incl. ll for WAIC)}
 
 \item{est_acqTime}{Boolean to indicate whether gq block includes estimates for acquisition time. At the moment this uses 'one weird trick' to accomplish this and does not support estimates for non-integer learning times.}
+
+\item{prior_baserate}{string containing the prior for the log baserate. Defaults to "normal(7, 3)". Note that rates are transformed in the model to (1/exp(log baserate)).}
+
+\item{prior_s}{string containing the prior for log s. Defaults to "uniform(-5,5)". Note that rates are transformed in the model to (exp(log s)).}
 }
 \value{
 A STAN model (character) that is customized to the input data.

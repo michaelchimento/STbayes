@@ -10,10 +10,17 @@ data.frame(Variable=model_constant@varNames,MLE=model_constant@outputPar,SE=mode
 data_list = import_NBDA_STb(nbdaData_cTADA)
 
 #generate STAN model from input data
-model_obj = generate_STb_model(data_list, gq=T, est_acqTime = T)
+model_obj = generate_STb_model(data_list,
+                               gq=T, #create a generated quantities block (for model comparison)
+                               est_acqTime = F) #prior for s
 
 #fit model
-fit_social = fit_STb(data_list, model_obj, chains = 2, cores = 2, iter=2000, control = list(adapt_delta=0.99) )
+fit_social = fit_STb(data_list,
+                     model_obj,
+                     chains = 5,
+                     cores = 5,
+                     iter=5000,
+                     control = list(adapt_delta=0.99))
 
 #check summary ~ the same as NBDA estimates. the priors could be adjusted to be less skeptical of the large s value
 STb_summary(fit_social, depth=1)

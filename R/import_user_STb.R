@@ -114,7 +114,7 @@ import_user_STb <- function(diffusion_data, networks, ILV_c=NULL, ILV_tv=NULL, I
   D_data <- D_data[, !(names(D_data) %in% "time")]
   # pivot wider
   D_data_real <- with(D_data, tapply(duration, list(trial_numeric, discrete_time), FUN = max, default = 0))
-  D_data_int <- with(D_data, tapply(duration, list(trial_numeric, discrete_time), FUN = max, default = 0))
+  D_data_int <- with(D_data, tapply(duration, list(trial_numeric, as.integer(discrete_time)), FUN = max, default = 0))
 
   # create a matrix where rows are trial_numeric, columns are id_numeric, and values are discrete_time
   t_data <- with(diffusion_data, tapply(discrete_time, list(trial_numeric, id_numeric), FUN = max, default = -1))

@@ -42,6 +42,25 @@ import_NBDA_STb <- function(nbda_object, network_names= c("default"), ILVi = NUL
         )
     }
 
+    # Identify missing IDs
+    all_ids <- c(1:dim(nbda_object@assMatrix)[1])
+    learned_ids <- nbda_object@orderAcq
+    censored_ids <- setdiff(all_ids, learned_ids)
+
+    if (length(censored_ids>0)){
+        # Create dataframe for censored individuals
+        censored_data <- data.frame(
+            id = censored_ids,
+            trial = 1,
+            time = nbda_object@endTime,
+            max_time = nbda_object@endTime
+        )
+        # Combine both dataframes
+        diffusion_data <- rbind(diffusion_data, censored_data)
+    }
+
+
+
     #### Diffusion_data ####
     # Extract event times, IDs, and trial information
 
@@ -84,7 +103,7 @@ import_NBDA_STb <- function(nbda_object, network_names= c("default"), ILVi = NUL
     D_data <- D_data[, !(names(D_data) %in% "time")]
     # pivot wider
     D_data_real <- with(D_data, tapply(duration, list(trial_numeric, discrete_time), FUN = max, default = 0))
-    D_data_int <- as.integer(with(D_data, tapply(duration, list(trial_numeric, discrete_time), FUN = max, default = 0)))
+    D_data_int <- with(D_data, tapply(as.integer(duration), list(trial_numeric, discrete_time), FUN = max, default = 0))
 
     #### Discrete Time Matrix ####
     # create a matrix where rows are trial_numeric, columns are id_numeric, and values are discrete_time
@@ -134,8 +153,9 @@ import_NBDA_STb <- function(nbda_object, network_names= c("default"), ILVi = NUL
     ILV_metadata = remove_duplicate_columns(ILV_metadata)
     ILV_cols <- names(ILV_metadata)
 
-    for (column in ILV_cols) {
-        data_list[[column]] <- ILV_metadata[[column]]
+    # TO DO: add support for TV ILVs
+    for (col in ILV_cols) {
+        data_list[[paste0("ILV_", col)]] <- ILV_metadata[[col]]
     }
 
     if (is.null(ILVi)) {ILVi <- nbda_object@asoc_ilv}
@@ -171,10 +191,14 @@ import_NBDA_STb <- function(nbda_object, network_names= c("default"), ILVi = NUL
             for (t in 2:max_timesteps) {  # Explicitly copy for safety
                 network[ , , t] <- network[ , , 1]
             }
-            network <- aperm(network, perm = c(3, 1, 2))
-        } else {
-            # reorder dimensions to [time, row, col]
-            network <- aperm(network, perm = c(3, 1, 2))  # [t, n, n]
+        }
+
+        # reorder dimensions to [time, row, col]
+        network <- aperm(network, perm = c(3, 1, 2))
+
+        #zero out self loops
+        for (t in 1:max(data_list$T)) {
+            diag(network[t, , ]) <- 0
         }
 
         # add the first dimension for trials (k = 1)

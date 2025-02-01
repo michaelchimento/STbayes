@@ -4,7 +4,8 @@
 #' @param veff_ID Parameters for which to estimate varying effects by individuals. Default is no varying effects.
 #' @param gq Boolean to indicate whether the generated quantities block is added (incl. ll for WAIC)
 #' @param est_acqTime Boolean to indicate whether gq block includes estimates for acquisition time. At the moment this uses 'one weird trick' to accomplish this and does not support estimates for non-integer learning times.
-#'
+#' @param prior_baserate string containing the prior for the log baserate. Defaults to "normal(7, 3)". Note that rates are transformed in the model to (1/exp(log baserate)).
+#'@param prior_s string containing the prior for log s. Defaults to "uniform(-5,5)". Note that rates are transformed in the model to (exp(log s)).
 #' @return A STAN model (character) that is customized to the input data.
 #' @export
 #'
@@ -41,7 +42,12 @@
 #' model = generate_STb_model(data_list) # no varying effects
 #' model = generate_STb_model(data_list, veff_ID = c("lambda_0", "s")) # estimate varying effects by ID for baseline learning rate and strength of social transmission.
 #' print(model)
-generate_STb_model <- function(STb_data, veff_ID = c(), gq = TRUE, est_acqTime = FALSE) {
+generate_STb_model <- function(STb_data, veff_ID = c(), gq = TRUE, est_acqTime = FALSE, prior_baserate="normal(7, 3)", prior_s="uniform(-5,5)") {
+
+    if (est_acqTime==T & min(check_integer(STb_data$time))==0){
+        message("WARNING: You have input float times, and unfortunately estimating acquisition times in the GQ block is only possible with integer times at the moment.\nThe model will be created with est_acqTime=F.")
+        est_acqTime = FALSE
+    }
 
     # declare network variables and weight parameter if multi-network
     network_names = STb_data$network_names
@@ -258,14 +264,15 @@ data {{
     array[K, Q] int<lower=-1> ind_id; // IDs of individuals
     array[K] int<lower=1> T;       // Maximum time periods
     int<lower=1> T_max;            // Max timesteps reached
-    {if (est_acqTime) 'array[K] int<lower=0> time_max; //Duration of obs period for each trial' else ''}
     array[K,Z] int<lower=-1> t;     // Time of acquisition for each individual
     array[K, T_max] real<lower=0> D; // Scaled durations
     array[K, T_max] matrix[Z, Z] {paste0('A_', network_names, collapse = ', ')}; // Network matrices
     array[K] matrix[T_max, Z] C;   // Knowledge state slash cue matrix
     {ILV_declaration}
     int<lower=0> N_veff;
-    array[K, T_max] int<lower=0> D_int; // integer durations
+    {if (est_acqTime) 'array[K] int<lower=0> time_max; //Duration of obs period for each trial' else ''}
+    {if (est_acqTime) 'array[K, T_max] int<lower=0> D_int; // integer durations' else ''}
+
 }}
 ")
 
@@ -300,8 +307,8 @@ transformed parameters {{
     # Model block
     model_block <- glue::glue("
 model {{
-    log_lambda_0_mean ~ normal(6, 2);
-    log_s_mean ~ uniform(-5, 5);
+    log_lambda_0_mean ~ {prior_baserate};
+    log_s_mean ~ {prior_s};
     {w_prior}
     {ILVi_prior}
     {ILVs_prior}

@@ -8,7 +8,8 @@ generate_STb_asocial_model(
   STb_data,
   veff_ID = c(),
   gq = TRUE,
-  est_acqTime = FALSE
+  est_acqTime = FALSE,
+  prior_baserate = "normal(7, 3)"
 )
 }
 \arguments{
@@ -19,6 +20,8 @@ generate_STb_asocial_model(
 \item{gq}{Boolean to indicate whether the generated quantities block is added (incl. ll for WAIC)}
 
 \item{est_acqTime}{Boolean to indicate whether gq block includes estimates for acquisition time. At the moment this uses 'one weird trick' to accomplish this and does not support estimates for non-integer learning times.}
+
+\item{prior_baserate}{string containing the prior for the log baserate. Defaults to "normal(7, 3)". Note that rates are transformed in the model to (1/exp(log baserate)).}
 }
 \value{
 A STAN model (character) that is customized to the input data.

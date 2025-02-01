@@ -45,7 +45,7 @@ STb_summary <- function(fit, depth = 1, prob = 0.95, ignore_params = c("s", "lam
     # process each parameter
     for (param in selected_params) {
         if (is.matrix(samples[[param]])) {
-            for (d in 1:param_depths[[param]]) {
+            for (d in 1:dim(samples[[param]])[2]) {
                 param_samples <- samples[[param]][, d]
                 param_samples <- coda::as.mcmc(as.matrix(param_samples))
 

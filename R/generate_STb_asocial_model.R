@@ -3,6 +3,7 @@
 #' @param veff_ID Parameters for which to estimate varying effects by individuals. Default is no varying effects.
 #' @param gq Boolean to indicate whether the generated quantities block is added (incl. ll for WAIC)
 #' @param est_acqTime Boolean to indicate whether gq block includes estimates for acquisition time. At the moment this uses 'one weird trick' to accomplish this and does not support estimates for non-integer learning times.
+#'@param prior_baserate string containing the prior for the log baserate. Defaults to "normal(7, 3)". Note that rates are transformed in the model to (1/exp(log baserate)).
 #'
 #' @return A STAN model (character) that is customized to the input data.
 #' @export
@@ -38,7 +39,13 @@
 #' model = generate_STb_asocial_model(data_list) # no varying effects
 #' model = generate_STb_asocial_model(data_list, veff_ID = c("lambda_0", "s")) # estimate varying effects by ID for baseline learning rate and strength of social transmission.
 #' print(model)
-generate_STb_asocial_model <- function(STb_data, veff_ID = c(), gq = TRUE, est_acqTime = FALSE) {
+generate_STb_asocial_model <- function(STb_data, veff_ID = c(), gq = TRUE, est_acqTime = FALSE, prior_baserate="normal(7, 3)") {
+
+    if (est_acqTime==T & min(check_integer(STb_data$time))==0){
+        message("WARNING: You have input float times, and unfortunately estimating acquisition times in the GQ block is only possible with integer times at the moment.\nThe model will be created with est_acqTime=F.")
+        est_acqTime = FALSE
+    }
+
     ILVi_vars = STb_data$ILVi_names[!STb_data$ILVi_names %in% "ILVabsent"]
     ILVi_vars_clean = ILVi_vars
     num_ILVi = length(ILVi_vars)
@@ -172,7 +179,7 @@ transformed parameters {{
     # Model block
     model_block <- glue::glue("
 model {{
-    log_lambda_0_mean ~ normal(6, 2);
+    log_lambda_0_mean ~ {prior_baserate};
     {ILVi_prior}
     {if (N_veff > 0) '
     to_vector(z_ID) ~ normal(0,1);
