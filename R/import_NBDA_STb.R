@@ -145,17 +145,48 @@ import_NBDA_STb <- function(nbda_object, network_names= c("default"), ILVi = NUL
     data_list$C = create_knowledge_matrix(diffusion_data) # knowledge state matrix
 
     #### ILV Metadata ####
-    ILV_metadata <- data.frame(id = nbda_object@idname)
-    if (nbda_object@asoc_ilv != "ILVabsent"){ILV_metadata <- cbind(ILV_metadata, extract_ILV(nbda_object, "asocILVdata"))}
-    if (nbda_object@int_ilv != "ILVabsent"){ILV_metadata <- cbind(ILV_metadata, extract_ILV(nbda_object, "intILVdata"))}
-    if (nbda_object@multi_ilv != "ILVabsent"){ILV_metadata <- cbind(ILV_metadata, extract_ILV(nbda_object, "multiILVdata"))}
-    ILV_metadata <- ILV_metadata[, !(names(ILV_metadata) %in% "id")]
-    ILV_metadata = remove_duplicate_columns(ILV_metadata)
-    ILV_cols <- names(ILV_metadata)
 
-    # TO DO: add support for TV ILVs
-    for (col in ILV_cols) {
-        data_list[[paste0("ILV_", col)]] <- ILV_metadata[[col]]
+    if (nbda_object@asocialTreatment == "constant"){
+        ILV_metadata <- data.frame(id = nbda_object@idname)
+        if (nbda_object@asoc_ilv != "ILVabsent"){ILV_metadata <- cbind(ILV_metadata, extract_ILV(nbda_object, "asocILVdata"))}
+        if (nbda_object@int_ilv != "ILVabsent"){ILV_metadata <- cbind(ILV_metadata, extract_ILV(nbda_object, "intILVdata"))}
+        if (nbda_object@multi_ilv != "ILVabsent"){ILV_metadata <- cbind(ILV_metadata, extract_ILV(nbda_object, "multiILVdata"))}
+
+        ILV_metadata <- ILV_metadata[, !(names(ILV_metadata) %in% "id")]
+        ILV_metadata = remove_duplicate_columns(ILV_metadata)
+        ILV_cols <- names(ILV_metadata)
+        for (col in ILV_cols) {
+            data_list[[paste0("ILV_", col)]] <- ILV_metadata[[col]]
+        }
+    } else{
+        #### Time-varying ILV ####
+        message("Time-varying ILV supplied.")
+        ILV_tv <- data.frame(id = rep(nbda_object@idname, times = max(nbda_object@orderAcq)), time = rep(1:max(nbda_object@orderAcq), each = data_list$Z))
+        ILV_tv$trial=1
+        if (!"ILVabsent" %in% nbda_object@asoc_ilv){ILV_tv <- cbind(ILV_tv, extract_tv_ILV(nbda_object, "asocILVdata"))}
+        if (!"ILVabsent" %in% nbda_object@int_ilv){ILV_tv <- cbind(ILV_tv, extract_tv_ILV(nbda_object, "intILVdata"))}
+        if (!"ILVabsent" %in% nbda_object@multi_ilv){ILV_tv <- cbind(ILV_tv, extract_tv_ILV(nbda_object, "multiILVdata"))}
+
+        ILV_tv = remove_duplicate_columns(ILV_tv)
+        # convert to numeric if not
+        ILV_tv$id_numeric <- as.numeric(as.factor(ILV_tv$id))
+        ILV_tv$trial_numeric <- as.numeric(as.factor(ILV_tv$trial))
+        ILV_tv$discrete_time <- with(
+            ILV_tv, ave(time, trial_numeric, FUN = function(x) as.numeric(as.factor(x)))
+        )
+        # order in case user has not
+        ILV_tv <- ILV_tv[order(ILV_tv$trial_numeric, ILV_tv$id_numeric, ILV_tv$discrete_time), ]
+        rownames(ILV_tv) <- NULL
+        # Get the ILV column names
+        exclude_cols <- c("id", "id_numeric", "time", "discrete_time", "trial", "trial_numeric")
+        ILV_cols <- setdiff(names(ILV_tv), exclude_cols)
+        # loop through each ILV column and add to datalist
+        for (col in ILV_cols) {
+            # reshape data into matrix
+            mat <- with(ILV_tv, tapply(ILV_tv[[col]], list(trial, discrete_time, id), FUN = mean, simplify = TRUE))
+            mat[is.na(mat)] <- 0
+            data_list[[paste0("ILV_", col)]] <- mat
+        }
     }
 
     if (is.null(ILVi)) {ILVi <- nbda_object@asoc_ilv}

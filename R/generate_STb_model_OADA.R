@@ -76,8 +76,17 @@ generate_STb_model_OADA <- function(STb_data, veff_ID = c(), gq = TRUE, est_acqT
     combined_ILV_vars = unique(c(ILVi_vars, ILVs_vars, ILVm_vars))
 
     ILV_declaration = ""
-    if (length(combined_ILV_vars)>0){
-        ILV_declaration = paste0('array[Z] real ', combined_ILV_vars, ';', collapse = '\n')
+    if (length(combined_ILV_vars) > 0) {
+        ILV_declaration = paste0(
+            sapply(combined_ILV_vars, function(var) {
+                if (!is.null(dim(STb_data[[paste0("ILV_", var)]]))) {
+                    paste0('array[K,Q,Z] real ILV_', var, ';')
+                } else {
+                    paste0('array[Z] real ILV_', var, ';')
+                }
+            }),
+            collapse = '\n'
+        )
     }
 
     # deal with varying effects in transformed parameters
@@ -125,7 +134,20 @@ generate_STb_model_OADA <- function(STb_data, veff_ID = c(), gq = TRUE, est_acqT
         #creates the line to insert into likelihood calculation
         ILVi_param <- paste0("real beta_ILVi_", ILVi_vars_clean, ";", sep = "\n")
         ILVi_prior <- paste0("beta_ILVi_", ILVi_vars_clean, " ~ normal(0, 1);", sep = "\n")
-        ILVi_variable_effects <- paste0("exp(", paste0(ILVi_vars, " * ", ILVi_vars_clean, "[id]", collapse = " + "),")")
+        ILVi_variable_effects <- paste0(
+            "exp(",
+            paste0(
+                ILVi_vars,
+                " * ",
+                sapply(ILVi_vars_clean, function(var_clean) {
+                    if (!is.null(dim(STb_data[[paste0("ILV_", var_clean)]]))) {
+                        paste0("ILV_", var_clean,"[trial,time_step,id]") #if has dimensions, assume its time-varying
+                    } else {
+                        paste0("ILV_", var_clean,"[id]") #else time constant
+                    }
+                }),
+                collapse = " + "
+            ),")")
     }
 
     # Handle social-level information (ILVs)
@@ -152,7 +174,20 @@ generate_STb_model_OADA <- function(STb_data, veff_ID = c(), gq = TRUE, est_acqT
         #creates the line to insert into likelihood calculation
         ILVs_param <- paste0("real beta_ILVs_", ILVs_vars_clean, ";", sep = "\n")
         ILVs_prior <- paste0("beta_ILVs_", ILVs_vars_clean, " ~ normal(0, 1);", sep = "\n")
-        ILVs_variable_effects <- paste0("* exp(", paste0(ILVs_vars, " * ", ILVs_vars_clean, "[id]", collapse = " + "),")")
+        ILVs_variable_effects <- paste0(
+            "* exp(",
+            paste0(
+                ILVs_vars,
+                " * ",
+                sapply(ILVs_vars_clean, function(var_clean) {
+                    if (!is.null(dim(STb_data[[paste0("ILV_", var_clean)]]))) {
+                        paste0("ILV_", var_clean,"[trial,time_step,id]")
+                    } else {
+                        paste0("ILV_", var_clean,"[id]")
+                    }
+                }),
+                collapse = " + "
+            ),")")
     }
 
     # Handle social-level information (ILVs)
@@ -177,9 +212,30 @@ generate_STb_model_OADA <- function(STb_data, veff_ID = c(), gq = TRUE, est_acqT
         }
         ILVm_param <- paste0("real beta_ILVm_", ILVm_vars_clean, ";", sep = "\n")
         ILVm_prior <- paste0("beta_ILVm_", ILVm_vars_clean, " ~ normal(0, 1);", sep = "\n")
-        ILVm_variable_effects <- paste0("exp(", paste0(ILVm_vars, " * ", ILVm_vars_clean, "[id]", collapse = " + "),") *")
+        ILVm_variable_effects <- paste0(
+            "exp(",
+            paste0(
+                ILVm_vars,
+                " * ",
+                sapply(ILVm_vars_clean, function(var_clean) {
+                    # Check if dim() is NULL for the variable
+                    if (!is.null(dim(STb_data[[paste0("ILV_", var_clean)]]))) {
+                        paste0("ILV_", var_clean,"[trial,time_step,id]")
+                    } else {
+                        paste0("ILV_", var_clean,"[id]")
+                    }
+                }),
+                collapse = " + "
+            ),") *")
     }
 
+    #collapse lists into multiline statements
+    ILVi_param = paste0(ILVi_param, collapse = "\n")
+    ILVi_prior = paste0(ILVi_prior, collapse = "\n")
+    ILVs_param = paste0(ILVs_param, collapse = "\n")
+    ILVs_prior = paste0(ILVs_prior, collapse = "\n")
+    ILVm_param = paste0(ILVm_param, collapse = "\n")
+    ILVm_prior = paste0(ILVm_prior, collapse = "\n")
     transformed_params_declaration = paste0(transformed_params, collapse = "\n")
 
     data_block <- glue::glue("
