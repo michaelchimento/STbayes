@@ -10,7 +10,7 @@ nbda_object <- STbayes::tutorial4_2
 data_list <- import_NBDA_STb(nbda_object = nbda_object)
 
 model_tada <- generate_STb_model(STb_data = data_list)
-
+model_tada
 STb_fit_tada <- fit_STb(data_list,
   model_tada,
   chains = 5,

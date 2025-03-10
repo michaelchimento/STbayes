@@ -9,17 +9,10 @@ data_list_user = import_user_STb(diffusion_data, edge_list)
 
 # reusable function to generate and fit a model
 generate_and_fit_model <- function(data, model_type, chains = 5, cores = 5, iter = 2000, control = list(adapt_delta = 0.99)) {
-    if (model_type == "full") {
-        model = generate_STb_model(data, est_acqTime = TRUE)
-    } else if (model_type == "asocial") {
-        model = generate_STb_asocial_model(data, est_acqTime = TRUE)
-    } else {
-        stop("Invalid model type")
-    }
+    model = generate_STb_model(data, est_acqTime = TRUE, model_type=model_type)
     fit = fit_STb(data, model, chains, cores, iter, control)
     return(fit)
 }
-
 
 # generate, fit, and summarize models
 full_fit = generate_and_fit_model(data_list_user, "full")
