@@ -128,7 +128,7 @@ generate_STb_model <- function(STb_data, model_type = "full", veff_ID = c(), gq 
         }
     }
 
-    # Handle individual-level information (ILVi)
+    # Handle asocial ILV (ILVi)
     ILVi_variable_effects = c()
     if (num_ILVi < 1) {
         ILVi_param <- ""
@@ -169,7 +169,7 @@ generate_STb_model <- function(STb_data, model_type = "full", veff_ID = c(), gq 
             ),")")
     }
 
-    # Handle social ILV
+    # Handle social ILV (ILVs)
     if (num_ILVs < 1) {
         ILVs_param <- ""
         ILVs_prior <- ""

@@ -6,17 +6,23 @@
 \usage{
 generate_STb_model_OADA(
   STb_data,
+  model_type = "full",
   veff_ID = c(),
   gq = TRUE,
-  est_acqTime = FALSE
+  est_acqTime = FALSE,
+  prior_s = "uniform(-5,5)"
 )
 }
 \arguments{
 \item{STb_data}{a list of formatted data returned from the STbayes_data() function}
 
+\item{model_type}{string specifying the model type: "asocial" or "full"}
+
 \item{veff_ID}{Parameters for which to estimate varying effects by individuals. Default is no varying effects.}
 
 \item{gq}{Boolean to indicate whether the generated quantities block is added (incl. ll for WAIC)}
+
+\item{prior_s}{string containing the prior for log s (only for social model). Defaults to "uniform(-5,5)".}
 }
 \value{
 A STAN model (character) that is customized to the input data.

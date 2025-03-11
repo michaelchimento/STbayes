@@ -12,7 +12,7 @@ data.frame(Variable=model_social@varNames,MLE=model_social@outputPar,SE=model_so
 # import into Stbayes
 data_list_user = import_NBDA_STb(nbda_object)
 # generate the STAN model
-model_social = generate_STb_model_OADA(data_list_user, gq=T)
+model_social = generate_STb_model_OADA(data_list_user, gq=T, model_type="full")
 #write(model_social, file = "../data/STAN_example_OADA.stan")
 
 # fit the model
@@ -22,11 +22,11 @@ STb_summary(fit_social)
 
 #compare with asocial model (s=0)
 # generate the STAN model
-model_asocial = generate_STb_model_OADA_asocial(data_list_user, gq=T)
+model_asocial = generate_STb_model_OADA(data_list_user, gq=T, model_type="asocial")
 #write(model_asocial, file = "../data/STAN_example_OADA_asocial.stan")
 
 # fit the model
-fit_asocial = fit_STb(data_list_user, model_asocial, chains = 5, cores = 5, iter=2000, control = list(adapt_delta=0.99))
+fit_asocial = fit_STb(data_list_user, model_asocial, chains = 5, cores = 5, iter=2000, control = list(adapt_delta=0.99), algorithm = "Fixed_param")
 
 #there are no parameters but we can compare WAIC
 extract_WAIC(fit_social) #143

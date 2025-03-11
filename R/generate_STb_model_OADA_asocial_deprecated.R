@@ -1,11 +1,9 @@
 #' Dynamically generate STAN model based on input data
 #'
 #' @param STb_data a list of formatted data returned from the STbayes_data() function
-#' @param model_type string specifying the model type: "asocial" or "full"
 #' @param veff_ID Parameters for which to estimate varying effects by individuals. Default is no varying effects.
 #' @param gq Boolean to indicate whether the generated quantities block is added (incl. ll for WAIC)
-#' @param prior_s string containing the prior for log s (only for social model). Defaults to "uniform(-5,5)".
-
+#'
 #' @return A STAN model (character) that is customized to the input data.
 #' @export
 #'
@@ -39,37 +37,31 @@
 #'   ILVm = c("weight") # Use weight for multiplicative effect on asocial and social learning
 #' )
 #'
-#' model = generate_STb_model_OADA(data_list) # no varying effects
-#' model = generate_STb_model_OADA(data_list, veff_ID = c("s")) # estimate varying effects by ID for strength of social transmission. Baseline is not estimated for OADA type models.
+#' model = generate_STb_model_OADA_asocial(data_list) # no varying effects
 #' print(model)
-generate_STb_model_OADA <- function(STb_data, model_type="full", veff_ID = c(), gq = TRUE, est_acqTime = FALSE, prior_s="uniform(-5,5)") {
+generate_STb_model_OADA_asocial_deprecated <- function(STb_data, veff_ID = c(), gq = TRUE, est_acqTime = FALSE) {
 
-    if (!model_type %in% c("asocial", "full")) {
-        stop("Invalid model_type. Choose 'asocial' or 'full'.")
+    # declare network variables and weight parameter if multi-network
+    network_names = STb_data$network_names
+    num_networks <- length(STb_data$network_names)
+    if (num_networks == 1) {
+        network_term <- paste0("sum(A_", network_names[1], "[trial, time_step][id, ] .* C[trial][time_step, ])")
+        network_term_j <- paste0("sum(A_", network_names[1], "[trial, time_step][j, ] .* C[trial][time_step, ])")
+        w_param <- ""
+        w_prior <- ""
+    } else {
+        network_term <- paste0("w[", 1:num_networks, "] * sum(A_", network_names, "[trial, time_step][id, ] .* C[trial][time_step, ])", collapse = " + ")
+        network_term_j <- paste0("w[", 1:num_networks, "] * sum(A_", network_names, "[trial, time_step][J, ] .* C[trial][time_step, ])", collapse = " + ")
+        w_param <- paste0("simplex[", num_networks, "] w; // Weights for networks")
+        w_prior <- paste0("w ~ dirichlet(rep_vector(0.5, ", num_networks, "));")
     }
 
-    if (model_type == "full") {
-        # declare network variables and weight parameter if multi-network
-        network_names = STb_data$network_names
-        network_declaration = glue::glue("array[K, T_max] matrix[Z, Z] {paste0('A_', network_names, collapse = ', ')}; // Network matrices")
-        num_networks <- length(STb_data$network_names)
-        if (num_networks == 1) {
-            network_term <- paste0("sum(A_", network_names[1], "[trial, time_step][id, ] .* C[trial][time_step, ])")
-            network_term_j <- paste0("sum(A_", network_names[1], "[trial, time_step][j, ] .* C[trial][time_step, ])")
-            w_param <- ""
-            w_prior <- ""
-        } else {
-            network_term <- paste0("w[", 1:num_networks, "] * sum(A_", network_names, "[trial, time_step][id, ] .* C[trial][time_step, ])", collapse = " + ")
-            network_term_j <- paste0("w[", 1:num_networks, "] * sum(A_", network_names, "[trial, time_step][J, ] .* C[trial][time_step, ])", collapse = " + ")
-            w_param <- paste0("simplex[", num_networks, "] w; // Weights for networks")
-            w_prior <- paste0("w ~ dirichlet(rep_vector(0.5, ", num_networks, "));")
-        }
-    }
+
 
     # Declare variables that will be used for ILVs
     ILVi_vars = STb_data$ILVi_names[!STb_data$ILVi_names %in% "ILVabsent"]
-    ILVs_vars = if (model_type == "full") STb_data$ILVs_names[!STb_data$ILVs_names %in% "ILVabsent"] else character(0)
-    ILVm_vars = if (model_type == "full") STb_data$ILVm_names[!STb_data$ILVm_names %in% "ILVabsent"] else character(0)
+    ILVs_vars = STb_data$ILVs_names[!STb_data$ILVs_names %in% "ILVabsent"]
+    ILVm_vars = STb_data$ILVm_names[!STb_data$ILVm_names %in% "ILVabsent"]
 
     ILVi_vars_clean = ILVi_vars
     ILVs_vars_clean = ILVs_vars
@@ -103,21 +95,21 @@ generate_STb_model_OADA <- function(STb_data, model_type="full", veff_ID = c(), 
     transformed_params = c()
 
     #if user didn't specify veff_ID for s
-    if (!is.element('s', veff_ID)  & model_type=="full"){
-        transformed_params = append(transformed_params,"real<lower=0> s = exp(log_s_mean);")
+    if (!is.element('s', veff_ID)){
+        transformed_params = append(transformed_params,"real<lower=0> s = 0.0;")
     }
     count = 1
 
     if (N_veff > 0){
         for (parameter in veff_ID) {
-            if (parameter=="s"  & model_type=="full"){
-                transformed_params = append(transformed_params, paste0("vector<lower=0>[Z] s = exp(log_s_mean + v_ID[,",count,"]);"))
+            if (parameter=="s"){
+                transformed_params = append(transformed_params, paste0("vector<lower=0>[Z] s = rep_vector(0.0,Z);"))
                 count = count + 1
             }
         }
     }
 
-    # Handle asocial ILV (ILVi)
+    # Handle individual-level information (ILVi)
     ILVi_variable_effects = c()
     if (num_ILVi < 1) {
         ILVi_param <- ""
@@ -157,7 +149,7 @@ generate_STb_model_OADA <- function(STb_data, model_type="full", veff_ID = c(), 
             ),")")
     }
 
-    # Handle social ILV (ILVs)
+    # Handle social-level information (ILVs)
     if (num_ILVs < 1) {
         ILVs_param <- ""
         ILVs_prior <- ""
@@ -197,7 +189,7 @@ generate_STb_model_OADA <- function(STb_data, model_type="full", veff_ID = c(), 
             ),")")
     }
 
-    # Handle multiplicative ILV (ILVm)
+    # Handle social-level information (ILVs)
     if (num_ILVm < 1) {
         ILVm_param <- ""
         ILVm_prior <- ""
@@ -236,17 +228,6 @@ generate_STb_model_OADA <- function(STb_data, model_type="full", veff_ID = c(), 
             ),") *")
     }
 
-    #for oada we'll have to index j for part of the likelihood
-    #don't gsub "id" in case id is part of a variable name
-    ILVi_variable_effects_j = gsub("[id]", "[j]", ILVi_variable_effects)
-    ILVi_variable_effects_j = gsub("[trial,time_step,id]", "[trial,time_step,j]", ILVi_variable_effects_j)
-
-    ILVs_variable_effects_j = gsub("[id]", "[j]", ILVs_variable_effects)
-    ILVs_variable_effects_j = gsub("[trial,time_step,id]", "[trial,time_step,j]", ILVs_variable_effects_j)
-
-    ILVm_variable_effects_j = gsub("[id]", "[j]", ILVm_variable_effects)
-    ILVm_variable_effects_j = gsub("[trial,time_step,id]", "[trial,time_step,j]", ILVm_variable_effects_j)
-
     #collapse lists into multiline statements
     ILVi_param = paste0(ILVi_param, collapse = "\n")
     ILVi_prior = paste0(ILVi_prior, collapse = "\n")
@@ -268,7 +249,7 @@ data {{
     int<lower=1> T_max;            // Max timesteps reached
     {if (est_acqTime) 'array[K] int<lower=0> time_max; //Duration of obs period for each trial' else ''}
     array[K,Z] int<lower=-1> t;     // Time of acquisition for each individual
-    {if (model_type=='full') {network_declaration} else ''}
+    array[K, T_max] matrix[Z, Z] {paste0('A_', network_names, collapse = ', ')}; // Network matrices
     array[K] matrix[T_max, Z] C;   // Knowledge state slash cue matrix
     int<lower=0> N_veff;
     {ILV_declaration}
@@ -278,11 +259,11 @@ data {{
     # Parameters block
     parameters_block <- glue::glue("
 parameters {{
-    {if (model_type=='full') 'real log_s_mean; // Overall social transmission rate' else ''}
-    {if (model_type=='full') {w_param} else ''}
+    real log_s_mean;         // Overall social transmission rate
+    {w_param}
     {ILVi_param}
-    {if (model_type=='full') {ILVs_param} else ''}
-    {if (model_type=='full') {ILVm_param} else ''}
+    {ILVs_param}
+    {ILVm_param}
     {if (N_veff > 0) '
     matrix[N_veff,Z] z_ID;
     vector<lower=0>[N_veff] sigma_ID;
@@ -302,27 +283,14 @@ transformed parameters {{
 }}
 ")
 
-    #create string inputs cuz recursion don't work 2 levels down in glue
-    if (model_type=='full'){
-        i_social_info_statement = glue::glue("real i_soc = {if (is.element('s', veff_ID)) 's[id]' else 's'} * ({network_term}) {ILVs_variable_effects};")
-        i_lambda_statement = glue::glue("real i_lambda = {ILVm_variable_effects} * (i_ind + i_soc);")
-        j_social_info_statement = glue::glue("real j_soc = {if (is.element('s', veff_ID)) 's[j]' else 's'} * ({network_term_j}) {ILVs_variable_effects_j};")
-        j_lambda_statement = glue::glue("real j_lambda = {ILVm_variable_effects_j} * (j_ind + j_soc);")
-    } else if (model_type=='asocial'){
-        i_social_info_statement = ""
-        i_lambda_statement = glue::glue("real i_lambda = {ILVm_variable_effects} * i_ind;")
-        j_social_info_statement = ""
-        j_lambda_statement = glue::glue("real j_lambda = {ILVm_variable_effects_j} * j_ind;")
-    }
-
     # Model block
     model_block <- glue::glue("
 model {{
-    {if (model_type=='full') paste0('log_s_mean ~ ',prior_s,';') else ''}
-                              {if (model_type=='full') {w_prior} else ''}
+    log_s_mean ~ normal(0,2);
+    {w_prior}
     {ILVi_prior}
-    {if (model_type=='full') {ILVs_prior} else ''}
-    {if (model_type=='full') {ILVm_prior} else ''}
+    {ILVs_prior}
+    {ILVm_prior}
 
     {if (N_veff > 0) '
     to_vector(z_ID) ~ normal(0,1);
@@ -337,15 +305,15 @@ model {{
             int time_step = learn_time;
             if (learn_time > 0) {{
                 real i_ind = {ILVi_variable_effects};
-                {i_social_info_statement}
-                {i_lambda_statement}
+                real i_soc = {if (is.element('s', veff_ID)) 's[id]' else 's'} * ({network_term}) {ILVs_variable_effects};
+                real i_lambda = {ILVm_variable_effects} * (i_ind + i_soc);
 
                 vector[Q] j_rates = rep_vector(0.0, Q);
 
                 for (j in 1:Q) {{
-                    real j_ind = {ILVi_variable_effects_j};
-                    {j_social_info_statement}
-                    {j_lambda_statement}
+                    real j_ind = {ILVi_variable_effects};
+                    real j_soc = {if (is.element('s', veff_ID)) 's[j]' else 's'} * ({network_term_j}) {ILVs_variable_effects};
+                    real j_lambda = {ILVm_variable_effects} * (j_ind + j_soc);
                     j_rates[j] += j_lambda * (1-C[trial][learn_time, j]); //only include those who haven't learned in denom
                 }}
                 target += log(i_lambda) - log(sum(j_rates));
@@ -368,9 +336,9 @@ model {{
 #         for (time_step in 1:T[trial]) {{
 #             vector[Q] j_rates = rep_vector(0.0, Q);
 #             for (j in 1:Q) {{
-#                 real j_ind = {ILVi_variable_effects_j};
-#                 {j_social_info_statement}
-#                 {j_lambda_statement}
+#                 real j_ind = {ILVi_variable_effects};
+#                 real j_soc = {if (is.element('s', veff_ID)) 's[j]' else 's'} * ({network_term_j}) {ILVs_variable_effects};
+#                 real j_lambda = {ILVm_variable_effects} * (j_ind + j_soc);
 #                 j_rates[j] += j_lambda * (1-C[trial][time_step, j]);
 #             }}
 #
@@ -393,15 +361,15 @@ generated quantities {{
                 int time_step = learn_time;
                 if (learn_time > 0) {{
                     real i_ind = {ILVi_variable_effects};
-                    {i_social_info_statement}
-                    {i_lambda_statement}
+                    real i_soc = {if (is.element('s', veff_ID)) 's[id]' else 's'} * ({network_term}) {ILVs_variable_effects};
+                    real i_lambda = {ILVm_variable_effects} * (i_ind + i_soc);
 
                     vector[Q] j_rates = rep_vector(0.0, Q);
 
                     for (j in 1:Q) {{
-                        real j_ind = {ILVi_variable_effects_j};
-                        {j_social_info_statement}
-                        {j_lambda_statement}
+                        real j_ind = {ILVi_variable_effects};
+                        real j_soc = {if (is.element('s', veff_ID)) 's[j]' else 's'} * ({network_term_j}) {ILVs_variable_effects};
+                        real j_lambda = {ILVm_variable_effects} * (j_ind + j_soc);
                         j_rates[j] += j_lambda * (1-C[trial][learn_time, j]);
                     }}
                     log_lik_matrix[trial, n] = log(i_lambda) - log(sum(j_rates));
@@ -427,6 +395,6 @@ generated quantities {{
                              {transformed_parameters_block}
                              {model_block}
                              {if (gq==T) {generated_quantities_block} else ''}")
-    stan_model = gsub("(?m)^[ \\t]*\\n", "", stan_model, perl = TRUE)
+
     return(stan_model)
 }

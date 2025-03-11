@@ -6,6 +6,7 @@
 #' @param cores Integer Number of cores to use (default=1)
 #' @param iter Integer Number of iterations to run for
 #' @param control List of arguments to pass to control.
+#' @param algorithm Defaults to "NUTS". If running asocial OADA, specify "Fixed_param".
 #'
 #' @return rstan fit
 #' @importFrom rstan stan
@@ -17,7 +18,7 @@
 #' fit = fit_STb(data_list_user, model_obj, chains = 5, cores = 5, iter=2000, control = list(adapt_delta=0.99))
 #' #or alternatively
 #' fit = fit_STb(data_list_user, "path/to/your/model.stan", chains = 5, cores = 5, iter=2000, control = list(adapt_delta=0.99))
-fit_STb <- function(data_list, model_obj, chains=1, cores=1, iter=1000, control=list()){
+fit_STb <- function(data_list, model_obj, chains=1, cores=1, iter=1000, control=list(), algorithm="NUTS"){
 
         #calculate nveff numberz
         N_veff = return_N_veff(model_obj)
@@ -40,7 +41,8 @@ fit_STb <- function(data_list, model_obj, chains=1, cores=1, iter=1000, control=
             chains = chains,
             cores = cores,
             iter = iter,
-            control = control
+            control = control,
+            algorithm = algorithm
         )
 
         return(model)

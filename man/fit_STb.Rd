@@ -10,7 +10,8 @@ fit_STb(
   chains = 1,
   cores = 1,
   iter = 1000,
-  control = list()
+  control = list(),
+  algorithm = "NUTS"
 )
 }
 \arguments{
@@ -25,6 +26,8 @@ fit_STb(
 \item{iter}{Integer Number of iterations to run for}
 
 \item{control}{List of arguments to pass to control.}
+
+\item{algorithm}{Defaults to "NUTS". If running asocial OADA, specify "Fixed_param".}
 }
 \value{
 rstan fit

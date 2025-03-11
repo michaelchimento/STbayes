@@ -37,9 +37,10 @@
 #'   ILVm = c("weight") # Use weight for multiplicative effect on asocial and social learning
 #' )
 #'
-#' model = generate_STb_model_OADA_asocial(data_list) # no varying effects
+#' model = generate_STb_model_OADA(data_list) # no varying effects
+#' model = generate_STb_model_OADA(data_list, veff_ID = c("s")) # estimate varying effects by ID for strength of social transmission. Baseline is not estimated for OADA type models.
 #' print(model)
-generate_STb_model_OADA_asocial <- function(STb_data, veff_ID = c(), gq = TRUE, est_acqTime = FALSE) {
+generate_STb_model_OADA_deprecated <- function(STb_data, veff_ID = c(), gq = TRUE, est_acqTime = FALSE) {
 
     # declare network variables and weight parameter if multi-network
     network_names = STb_data$network_names
@@ -96,14 +97,14 @@ generate_STb_model_OADA_asocial <- function(STb_data, veff_ID = c(), gq = TRUE, 
 
     #if user didn't specify veff_ID for s
     if (!is.element('s', veff_ID)){
-        transformed_params = append(transformed_params,"real<lower=0> s = 0.0;")
+        transformed_params = append(transformed_params,"real<lower=0> s = exp(log_s_mean);")
     }
     count = 1
 
     if (N_veff > 0){
         for (parameter in veff_ID) {
             if (parameter=="s"){
-                transformed_params = append(transformed_params, paste0("vector<lower=0>[Z] s = rep_vector(0.0,Z);"))
+                transformed_params = append(transformed_params, paste0("vector<lower=0>[Z] s = exp(log_s_mean + v_ID[,",count,"]);"))
                 count = count + 1
             }
         }

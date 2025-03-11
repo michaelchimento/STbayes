@@ -39,7 +39,7 @@
 #' model = generate_STb_asocial_model(data_list) # no varying effects
 #' model = generate_STb_asocial_model(data_list, veff_ID = c("lambda_0", "s")) # estimate varying effects by ID for baseline learning rate and strength of social transmission.
 #' print(model)
-generate_STb_asocial_model <- function(STb_data, veff_ID = c(), gq = TRUE, est_acqTime = FALSE, prior_baserate="normal(7, 3)") {
+generate_STb_asocial_model_deprecated <- function(STb_data, veff_ID = c(), gq = TRUE, est_acqTime = FALSE, prior_baserate="normal(7, 3)") {
 
     if (est_acqTime==T & min(check_integer(STb_data$time))==0){
         message("WARNING: You have input float times, and unfortunately estimating acquisition times in the GQ block is only possible with integer times at the moment.\nThe model will be created with est_acqTime=F.")
