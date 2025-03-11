@@ -42,6 +42,7 @@
 #' model = generate_STb_model_OADA(data_list) # no varying effects
 #' model = generate_STb_model_OADA(data_list, veff_ID = c("s")) # estimate varying effects by ID for strength of social transmission. Baseline is not estimated for OADA type models.
 #' print(model)
+#'
 generate_STb_model_OADA <- function(STb_data, model_type="full", veff_ID = c(), gq = TRUE, est_acqTime = FALSE, prior_s="uniform(-5,5)") {
 
     if (!model_type %in% c("asocial", "full")) {
@@ -238,14 +239,14 @@ generate_STb_model_OADA <- function(STb_data, model_type="full", veff_ID = c(), 
 
     #for oada we'll have to index j for part of the likelihood
     #don't gsub "id" in case id is part of a variable name
-    ILVi_variable_effects_j = gsub("[id]", "[j]", ILVi_variable_effects)
-    ILVi_variable_effects_j = gsub("[trial,time_step,id]", "[trial,time_step,j]", ILVi_variable_effects_j)
+    ILVi_variable_effects_j = gsub("[id]", "[j]", ILVi_variable_effects, fixed = TRUE)
+    ILVi_variable_effects_j = gsub("[trial,time_step,id]", "[trial,time_step,j]", ILVi_variable_effects_j, fixed = TRUE)
 
-    ILVs_variable_effects_j = gsub("[id]", "[j]", ILVs_variable_effects)
-    ILVs_variable_effects_j = gsub("[trial,time_step,id]", "[trial,time_step,j]", ILVs_variable_effects_j)
+    ILVs_variable_effects_j = gsub("[id]", "[j]", ILVs_variable_effects, fixed = TRUE)
+    ILVs_variable_effects_j = gsub("[trial,time_step,id]", "[trial,time_step,j]", ILVs_variable_effects_j, fixed = TRUE)
 
-    ILVm_variable_effects_j = gsub("[id]", "[j]", ILVm_variable_effects)
-    ILVm_variable_effects_j = gsub("[trial,time_step,id]", "[trial,time_step,j]", ILVm_variable_effects_j)
+    ILVm_variable_effects_j = gsub("[id]", "[j]", ILVm_variable_effects, fixed = TRUE)
+    ILVm_variable_effects_j = gsub("[trial,time_step,id]", "[trial,time_step,j]", ILVm_variable_effects_j, fixed = TRUE)
 
     #collapse lists into multiline statements
     ILVi_param = paste0(ILVi_param, collapse = "\n")

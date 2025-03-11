@@ -63,4 +63,5 @@ data_list <- import_user_STb(
 model = generate_STb_model_OADA(data_list) # no varying effects
 model = generate_STb_model_OADA(data_list, veff_ID = c("s")) # estimate varying effects by ID for strength of social transmission. Baseline is not estimated for OADA type models.
 print(model)
+
 }

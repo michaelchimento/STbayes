@@ -37,7 +37,7 @@ nbda_object <- STbayes::tutorial2_2
 data_list <- import_NBDA_STb(nbda_object = nbda_object)
 
 model_oada <- generate_STb_model_OADA(STb_data = data_list)
-
+model_oada
 STb_fit_oada <- fit_STb(data_list,
   model_oada,
   chains = 5,
