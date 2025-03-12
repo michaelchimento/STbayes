@@ -104,7 +104,7 @@ ggplot(acqdata, aes(x = observed_time, y = mean_time)) +
 
 ### Compare full and asocial models<a name="Compare-full-asocial"></a>
 
-Like NBDA, we can compare a full model with both a social and asocial component, to a model restricted to estimating only an asocial rate. We can extract WAIC scores with ```extract_WAIC``` (really a convenient wrapper for waic from package ```loo```) and compare the estimated learning times from both models. First let's load and fit both models with a convenience function.
+Like NBDA, we can compare a full model with both a social and asocial component, to a model restricted to estimating only an asocial rate. We can compare models using either LOO-PSIS or WAIC with ```STb_compare``` (really a convenient wrapper that automates a workflow using package ```loo```) and compare the estimated learning times from both models. First let's load and fit both models with a convenience function.
 
 ```r
 library(STbayes)
@@ -132,13 +132,14 @@ asocial_fit = generate_and_fit_model(data_list_user, "asocial")
 STb_summary(full_fit, digits = 4)
 STb_summary(asocial_fit, digits = 4)
 ```
-Next we can extract the WAIC scores and add them to our plots of the estimated times:
+Next we can extract the LOO-PSIS scores and add them to our plots of the estimated times:
 ``` r
 # extract WAIC and labels
-WAIC_full = extract_WAIC(full_fit)
-WAIC_null = extract_WAIC(asocial_fit)
-label_full = paste0("WAIC=", round(WAIC_full[[5]]), "+/-", round(WAIC_full[[6]]))
-label_null = paste0("WAIC=", round(WAIC_null[[5]]), "+/-", round(WAIC_null[[6]]))
+loo_output = STb_compare(full_fit, asocial_fit, method="loo-psis")
+looic_full <- loo_output$loo_objects$full_fit$estimates["looic",]
+looic_asocial <- loo_output$loo_objects$asocial_fit$estimates["looic",]
+label_full = paste0("LOO-PSIS=", round(looic_full["Estimate"]), "+/-", round(looic_full["SE"]))
+label_null = paste0("LOO-PSIS=", round(looic_asocial["Estimate"]), "+/-", round(looic_asocial["SE"]))
 
 # reusable function for plotting
 plot_acq_time <- function(fit, data, title, label) {
@@ -152,7 +153,6 @@ plot_acq_time <- function(fit, data, title, label) {
         ) +
         geom_point(alpha = 0.6, size = 2) +
         geom_abline(intercept = 0, slope = 1, color = "black", linetype = "dashed") +
-        facet_wrap(~trial, scales = "free_x") +
         labs(
             title = title,
             x = "Observed time",
@@ -162,15 +162,13 @@ plot_acq_time <- function(fit, data, title, label) {
     return(p)
 }
 
-
 # plot estimated times
 p1 = plot_acq_time(asocial_fit, data_list_user, "Asocial (null) model estimates", label_null)
 p2 = plot_acq_time(full_fit, data_list_user, "Full model estimates", label_full)
-
 ```
 ![comparison plot](docs/compare_social_asocial.png)
 
-The full model describes the data much better and obtains a better (lower) WAIC score. Estimated learning times are the point estimate (mean in this case) from posterior distribution of learning times, and since individuals learn in random orders in the asocial model according to a static rate, the average time of each learner cluster around a similar time. Meanwhile, including time-varying social information allows for a better prediction of when individuals have acquired the behavior.
+The full model describes the data much better and obtains a better (lower) LOO-PSIS score. Estimated learning times are the point estimate (mean in this case) from posterior distribution of learning times, and since individuals learn in random orders in the asocial model according to a static rate, the average time of each learner cluster around a similar time. Meanwhile, including time-varying social information allows for a better prediction of when individuals have acquired the behavior.
 
 ### Import your own data<a name="Import-own"></a>
 
