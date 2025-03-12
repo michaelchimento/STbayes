@@ -11,7 +11,7 @@ STbayes can currently accomodate:
  - multiple diffusion trials with the same set, subsets, or different sets of individuals.
  - constant and time-varying ILVs for additive and multiplicative transmission models.
  - varying effects by individual for strength of social transmission, baseline hazard rates, and other user defined ILVs.
- - WAIC comparison between asocial only (null) models and social + asocial models.
+ - Easy workflow for ELPD (loo-psis, waic) model comparison.
    
 This package is under development and is not guaranteed to work.
 
