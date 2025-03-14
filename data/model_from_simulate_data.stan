@@ -12,33 +12,22 @@ data {
     array[K, T_max] real<lower=0> D; // Scaled durations
     array[K, T_max] matrix[Z, Z] A_assoc; // Network matrices
     array[K] matrix[T_max, Z] C;   // Knowledge state slash cue matrix
-    
+
     int<lower=0> N_veff;
     array[K, T_max] int<lower=0> D_int; // integer durations
 }
 parameters {
     real log_lambda_0_mean;  // Log baseline learning rate
     real log_s_mean;         // Overall social transmission rate
-    
-    
-    
-    
-    
 }
 transformed parameters {
-   
+
    real<lower=0> lambda_0 = 1 / exp(log_lambda_0_mean);
-real<lower=0> s = exp(log_s_mean);
+   real<lower=0> s = exp(log_s_mean);
 }
 model {
     log_lambda_0_mean ~ normal(6, 2);
     log_s_mean ~ uniform(-5, 5);
-    
-    
-    
-    
-
-    
 
     for (trial in 1:K) {
         for (n in 1:N[trial]) {
@@ -61,7 +50,6 @@ model {
         if (N_c[trial] > 0) {
             for (c in 1:N_c[trial]) {
                 int id = ind_id[trial, N[trial] + c];
-
                 for (time_step in 1:T[trial]) {
                     real ind_term = 1;
                     real soc_term = s * (sum(A_assoc[trial, time_step][id, ] .* C[trial][time_step, ])) ;

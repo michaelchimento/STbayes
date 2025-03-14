@@ -53,17 +53,23 @@ generate_STb_model <- function(STb_data, model_type = "full", veff_ID = c(), gq 
         est_acqTime = FALSE
     }
 
+    if ("S" %in% names(STb_data)) is_distribution=TRUE else is_distribution=FALSE
+    if ("S" %in% names(STb_data)) est_acqTime=FALSE # don't want to deal with that rn
+
     # Declare network variables and weight parameter if multi-network (only for social model)
     if (model_type == "full") {
         network_names = STb_data$network_names
         network_declaration = glue::glue("array[K, T_max] matrix[Z, Z] {paste0('A_', network_names, collapse = ', ')}; // Network matrices")
+        if (is_distribution) network_declaration = glue::glue("array[K, T_max, S] matrix[Z, Z] {paste0('A_', network_names, collapse = ', ')}; // Network matrices")
         num_networks <- length(network_names)
         if (num_networks == 1) {
             network_term <- paste0("sum(A_", network_names[1], "[trial, time_step][id, ] .* C[trial][time_step, ])")
+            if (is_distribution) network_term <- paste0("sum(A_", network_names[1], "[trial, time_step , d][id, ] .* C[trial][time_step, ])")
             w_param <- ""
             w_prior <- ""
         } else {
             network_term <- paste0("w[", 1:num_networks, "] * sum(A_", network_names, "[trial, time_step][id, ] .* C[trial][time_step, ])", collapse = " + ")
+            if (is_distribution) network_term <- paste0("w[", 1:num_networks, "] * sum(A_", network_names, "[trial, time_step, d][id, ] .* C[trial][time_step, ])", collapse = " + ")
             w_param <- paste0("simplex[", num_networks, "] w; // Weights for networks")
             w_prior <- paste0("w ~ dirichlet(rep_vector(0.5, ", num_networks, "));")
         }
@@ -265,6 +271,7 @@ data {{
     int<lower=0> K;                // Number of trials
     int<lower=0> Q;                // Number of individuals in each trial
     int<lower=1> Z;                // Number of unique individuals
+    {if (is_distribution) 'int<lower=1> S;              // number of posterior samples for A edge weights' else ''}
     array[K] int<lower=0> N;       // Number of individuals that learned during observation period
     array[K] int<lower=0> N_c;     // Number of right-censored individuals
     array[K, Q] int<lower=-1> ind_id; // IDs of individuals
@@ -314,7 +321,10 @@ transformed parameters {{
         lambda_statement = glue::glue("real lambda = {ILVm_variable_effects} {if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * (ind_term + soc_term) * D[trial, time_step];")
         lambda_statement_estAcq = glue::glue("real lambda = {ILVm_variable_effects} {if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * (ind_term + soc_term);")
         target_increment_statement = glue::glue("target += log({ILVm_variable_effects} {if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * (ind_term + soc_term));")
+        if (is_distribution) target_increment_statement = glue::glue("log_likelihoods[d] += log({ILVm_variable_effects} {if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * (ind_term + soc_term));")
+
         log_lik_statement = glue::glue("log_lik_matrix[trial, n] = log({ILVm_variable_effects} {if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * (ind_term + soc_term)) - cum_hazard;")
+        if (is_distribution) log_lik_statement = glue::glue("log_likelihoods[d] += log({ILVm_variable_effects} {if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * (ind_term + soc_term)) - cum_hazard;")
     } else if (model_type=='asocial'){
         social_info_statement = ""
         lambda_statement = glue::glue("real lambda =  {if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * ind_term * D[trial, time_step];")
@@ -340,6 +350,10 @@ model {{
     ' else ''}
 
     for (trial in 1:K) {{
+       {if (is_distribution) 'vector[S] log_likelihoods;  // store likelihoods over samples
+        for (d in 1:S) {  // loop over posterior draws
+        log_likelihoods[d] = 0;  // initialize log-likelihood for this draw' else ''}
+
         for (n in 1:N[trial]) {{
             int id = ind_id[trial, n];
             int learn_time = t[trial, id];
@@ -349,7 +363,7 @@ model {{
                     real ind_term = {ILVi_variable_effects};
                     {social_info_statement}
                     {lambda_statement}
-                    target += -lambda;
+                    {if (is_distribution) 'log_likelihoods[d] += -lambda;' else 'target += -lambda;'}
                     if (time_step == learn_time) {{
                         {target_increment_statement}
                     }}
@@ -365,10 +379,11 @@ model {{
                     real ind_term = {ILVi_variable_effects};
                     {social_info_statement}
                     {lambda_statement}
-                    target += -lambda;
+                    {if (is_distribution) 'log_likelihoods[d] += -lambda;' else 'target += -lambda;'}
                 }}
             }}
         }}
+       {if (is_distribution) '} target += log_sum_exp(log_likelihoods) - log(S);' else ''}
     }}
 }}
 ")
@@ -407,6 +422,9 @@ generated quantities {{
     matrix[K, Q] log_lik_matrix = rep_matrix(0.0, K, Q);           // LL for each observation
 
     for (trial in 1:K) {{
+        {if (is_distribution) 'vector[S] log_likelihoods;  // store likelihoods over samples
+        for (d in 1:S) {  // loop over posterior draws
+        log_likelihoods[d] = 0;  // initialize log-likelihood for this draw' else ''}
         for (n in 1:N[trial]) {{
             int id = ind_id[trial, n];
             int learn_time = t[trial, id];
@@ -441,9 +459,13 @@ generated quantities {{
                     cum_hazard += lambda; // accumulate hazard
                 }}
                 // Compute per-individual log likelihood
-                log_lik_matrix[trial, N[trial] + c] = -cum_hazard;
+                {if (is_distribution) 'log_likelihoods[d] += -cum_hazard;' else 'log_lik_matrix[trial, N[trial] + c] = -cum_hazard;'}
             }}
         }}
+        {if (is_distribution) '}
+        for (n in 1:Q) {
+                log_lik_matrix[trial, n] = log_sum_exp(log_likelihoods) - log(S);
+            }' else ''}
     }}
 
     {est_acqTime_code}
