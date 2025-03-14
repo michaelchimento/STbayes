@@ -298,7 +298,7 @@ data.frame(Variable=model_constant@varNames,MLE=model_constant@outputPar,SE=mode
 
 ### Use posterior distribution of edge weights from bayesian network model<a name="Import-bisonr"></a>
 
-Rather than using point estimates for edge weights, it is possible to import posterior distributions of edge weights from bayesian network models, such as those fit by bisonr(https://github.com/JHart96/bisonR/tree/main). STbayes uses Monte-Carlo marginalization to model the joint posterior which captures uncertainty in network measures in its own parameter estimates. A convenience function is provided specifically to munge a bisonr fit into an appropriate format for feeding into STbayes:
+Rather than using point estimates for edge weights, it is possible to import posterior distributions of edge weights from bayesian network models, such as those fit by the [bisonr package](https://github.com/JHart96/bisonR/tree/main). STbayes uses Monte-Carlo marginalization to model the joint posterior which captures uncertainty in network measures in its own parameter estimates. A convenience function is provided specifically to munge a bisonr fit into an appropriate format for feeding into STbayes:
 
 ```r
 library(STbayes)
