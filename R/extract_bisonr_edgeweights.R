@@ -15,7 +15,7 @@ extract_bisonr_edgeweights <- function(bisonr_fit, draws=100){
 
     #yoinked code from bisonr so as not to depend
     samples <- matrix(as.numeric(bisonr_fit$edge_samples), ncol=ncol(bisonr_fit$edge_samples))
-    draw_ids <- sample(1:dim(samples)[1], draws)
+    draw_ids <- sample(1:dim(samples)[1], draws, replace = FALSE)
     edge_samples <- samples[draw_ids, ]
 
     dyads <- strsplit(bisonr_fit$dyad_names, " <-> ") # split "from-to"
@@ -24,18 +24,14 @@ extract_bisonr_edgeweights <- function(bisonr_fit, draws=100){
     # Extract 'from' and 'to' columns
     from <- dyad_matrix[, 1]
     to <- dyad_matrix[, 2]
-
-    num_dyads <- ncol(edge_samples)
-
-    # Create a 'draw' index for each row in edgelist
-    draw_index <- rep(1:draws, each=bisonr_fit$num_dyads)
-
-    # Flatten edgelist into long format
-    values <- as.vector(t(edge_samples))  # Transpose to preserve order, then unlist
-
-    # Replicate 'from' and 'to' for each draw
     from_long <- rep(from, times=draws)
     to_long <- rep(to, times=draws)
+
+    # create draw index for each row in edgelist
+    draw_index <- rep(1:draws, each=bisonr_fit$num_dyads)
+
+    # Flatten edgelist into long format, transpose to preserve order, then unlist
+    values <- as.vector(t(edge_samples))
 
     # Create final dataframe
     long_df <- data.frame(

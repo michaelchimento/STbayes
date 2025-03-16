@@ -298,7 +298,7 @@ data.frame(Variable=model_constant@varNames,MLE=model_constant@outputPar,SE=mode
 
 ### Use posterior distribution of edge weights from bayesian network model<a name="Import-bisonr"></a>
 
-Rather than using point estimates for edge weights, it is possible to import posterior distributions of edge weights from bayesian network models, such as those fit by the [bisonr package](https://github.com/JHart96/bisonR/tree/main). STbayes uses Monte-Carlo marginalization to model the joint posterior which captures uncertainty in network measures in its own parameter estimates. A convenience function is provided specifically to munge a bisonr fit into an appropriate format for feeding into STbayes:
+Rather than using point estimates for edge weights, it is possible to import posterior distributions of edge weights from bayesian network models, such as those fit by the [bisonr package](https://github.com/JHart96/bisonR/tree/main) or the [STRAND package](https://github.com/ctross/STRAND/tree/main). This is done using ```extract_bisonr_edgeweights()``` or ```extract_strand_edgeweights```. STbayes uses Monte-Carlo marginalization to model the joint posterior which captures uncertainty in network measures in its own parameter estimates. A convenience function is provided specifically to munge a bisonr fit into an appropriate format for feeding into STbayes:
 
 ```r
 library(STbayes)
@@ -311,8 +311,8 @@ bisonr_fit = STbayes::bisonr_fit
 networks = extract_bisonr_edgeweights(bisonr_fit, draws=100)
 
 # this particular fit was modeling edgeweights centered at 0, but 
-# edgeweights must be positive for STbayes.
-networks$value = networks$value - min(networks$value) #networks can now be used in import_user_STb following normal workflow
+# edgeweights must be positive for STbayes, so rescale between 0 and 1 here
+networks$value = scales::rescale(networks$value) #networks can now be used in import_user_STb following normal workflow
 
 #network has 10 individuals, create mock diffusion data
 diffusion_data <- data.frame(
@@ -328,9 +328,13 @@ data_list = import_user_STb(diffusion_data, networks)
 # STb detects that you've entered posterior distributions as edgeweights automatically
 # it will generate a model wherein each iteration, model will marginalize LL over S=100 draws
 model = generate_STb_model(data_list)
-#write(model, file="../data/STAN_example_edge_uncertainty.stan")
 
 #the fit will be garbage because it's made up, but works
 fit = fit_STb(data_list, model)
 STb_summary(fit)
 ```
+If the network has been modeled using another method, users may also simply supply their own networks dataframe to ```import_user_STb()``` that contains columns:
+
+| draw | trial | from | to | value |
+
+where draw is just the index from 1:S of samples. Each row should contain one sampled value for one dyad.
