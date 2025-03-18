@@ -359,6 +359,6 @@ The package defaults to the model of frequency-dependent bias as:
 
 But also includes an alternative parameterization based on a scaled version of Dino Dini's normalized tunable sigmoid function. In the first case, f<1 would be evidence of an anti-conformist transmission bias, f=1 would be proportional, and f>1 would be conformist. In the second case, the shape parameter k < 0 is conformist, k=0 proportional, and k>0 anti-conformist. Both parameterizations create a relationship betwen the proportion of neighbors that are knowledgable and the weight of that information on the rate of an event happening for a given individual:
 
-    ![dini plot](docs/diniplot.png)
+![dini plot](docs/diniplot.png)
 
 You might find that one or the other has convergence issues, so we provide both. Complex transmission can be implemented with varying effects, ilvs, oada and ctada type models, etc.
