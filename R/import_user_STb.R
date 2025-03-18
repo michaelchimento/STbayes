@@ -2,7 +2,7 @@
 #'
 #' @param diffusion_data dataframe with columns id, trial, time, max_time
 #' @param networks dataframe with columns trial, from, to, and one or more columns of edge weights named descriptively. Optionally an integer time column can be provided for dynamic network analysis, although networks must be provided for each time period between transmission events.
-#' @param ILV_c optional dataframe with columns id, and any individual-level variables that might be of interest
+#' @param ILV_c optional dataframe with columns id, and any constant individual-level variables that might be of interest
 #' @param ILV_tv optional dataframe with columns trial, id, time and any time-varying variables. Variable values should summarize the variable for each inter-acquisition period.
 #' @param ILVi Optional character vector of column names from ILV metadata to be considered when estimating asocial learning rate. If not specified, all ILV are applied to both.
 #' @param ILVs Optional character vector of column names from ILV metadata to be considered when estimating social learning rate. If not specified, all ILV are applied to both.
@@ -272,51 +272,46 @@ import_user_STb <- function(diffusion_data, networks, ILV_c = NULL, ILV_tv = NUL
   } else {
     is_symmetric <- nrow(networks[networks$trial_numeric == 1 & networks$discrete_time == 1, ]) == data_list$Z * (data_list$Z - 1)
   }
+  # precompute constants
   max_timesteps <- max(data_list$T)
+  max_draw <- if (is_distribution) max(networks$draw) else NULL
 
   # for each network
   for (column in network_cols) {
     # initialize + populate matrix
-    if (is_distribution){
-      A_matrix <- array(0, dim = c(data_list$K, max(data_list$T), max(networks$draw), data_list$Z, data_list$Z))
-    }else{
-      A_matrix <- array(0, dim = c(data_list$K, max(data_list$T), data_list$Z, data_list$Z))
+    dims <- if (is_distribution) {
+      c(data_list$K, max_timesteps, max_draw, data_list$Z, data_list$Z)
+    } else {
+      c(data_list$K, max_timesteps, data_list$Z, data_list$Z)
     }
+    A_matrix <- array(0, dim = dims)
+
     for (k in 1:data_list$K) {
       temp_df <- networks[networks$trial_numeric == k, ]
+
       for (i in 1:nrow(temp_df)) {
         from <- as.integer(temp_df[i, "from_numeric"])
         to <- as.integer(temp_df[i, "to_numeric"])
         time <- as.integer(temp_df[i, "discrete_time"])
-        if (is_distribution) draw <- as.integer(temp_df[i, "draw"])
+        draw <- if (is_distribution) as.integer(temp_df[i, "draw"]) else NULL
+        value <- as.numeric(temp_df[i, column])
 
         # fill in matrix
         if (is_distribution){
-          A_matrix[k, time, draw, from, to] <- as.numeric(temp_df[i, column])
+          A_matrix[k, time, draw, from, to] <- value
+          if (!is_symmetric) A_matrix[k, time, draw, to, from] <- value
         } else{
-          A_matrix[k, time, from, to] <- as.numeric(temp_df[i, column])
+          A_matrix[k, time, from, to] <- value
+          if (!is_symmetric) A_matrix[k, time, to, from] <- value
         }
+      }
 
-        # if user has supplied non-symmetric data, mirror
-        if (!is_symmetric) {
+      if (!is_dynamic) {
           if (is_distribution){
-            A_matrix[k, time, draw, to, from] <- as.numeric(temp_df[i, column])
+            A_matrix[k, , , , ] <- rep(A_matrix[k, 1, , , ], each = dim(A_matrix)[2])
+          } else {
+            A_matrix[k,,,] <- rep(A_matrix[k, 1, , ], each = dim(A_matrix)[2])
           }
-          else {
-            A_matrix[k, time, to, from] <- as.numeric(temp_df[i, column])
-          }
-        }
-
-        if (!is_dynamic) {
-          # Repeat the same network for each timestep
-          for (t in 2:max_timesteps) {
-            if (is_distribution){
-              A_matrix[k, t, draw, , ] <- A_matrix[k, 1, draw, , ]
-            } else {
-              A_matrix[k, t, , ] <- A_matrix[k, 1, , ]
-            }
-          }
-        }
       }
 
       # Zero the diagonal for each time step and draw
@@ -328,11 +323,10 @@ import_user_STb <- function(diffusion_data, networks, ILV_c = NULL, ILV_tv = NUL
         }
       } else {
         for (t in 1:max(data_list$T)) {
-            diag(A_matrix[k, t, , ]) <- 0
+          diag(A_matrix[k, t, , ]) <- 0
         }
       }
     }
-
     if (min(A_matrix) < 0) stop("Edgeweights below zero detected, not allowed. Rescale such that 0 is no connection.")
     data_list[[paste0("A_", column)]] <- A_matrix
   }

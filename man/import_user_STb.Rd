@@ -19,7 +19,7 @@ import_user_STb(
 
 \item{networks}{dataframe with columns trial, from, to, and one or more columns of edge weights named descriptively. Optionally an integer time column can be provided for dynamic network analysis, although networks must be provided for each time period between transmission events.}
 
-\item{ILV_c}{optional dataframe with columns id, and any individual-level variables that might be of interest}
+\item{ILV_c}{optional dataframe with columns id, and any constant individual-level variables that might be of interest}
 
 \item{ILV_tv}{optional dataframe with columns trial, id, time and any time-varying variables. Variable values should summarize the variable for each inter-acquisition period.}
 

@@ -94,4 +94,4 @@ p2 = plot_acq_time(full_fit, data_list_user, "Full model estimates", label_full)
 
 library(ggpubr)
 ggarrange(p1, p2)
-ggsave("../data/compare_social_asocial.png", width=10, height=5, units="cm", scale=1.5)
+ggsave("../docs/compare_social_asocial.png", width=10, height=5, units="cm", scale=2)

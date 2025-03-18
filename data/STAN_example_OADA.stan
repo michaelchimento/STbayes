@@ -19,7 +19,7 @@ transformed parameters {
    real<lower=0> s = exp(log_s_mean);
 }
 model {
-    log_s_mean ~ uniform(-5,5);
+    log_s_mean ~ normal(1,3);
     for (trial in 1:K) {
         for (n in 1:N[trial]) {
             int id = ind_id[trial, n];
@@ -36,7 +36,7 @@ model {
                     real j_lambda = 1.0 * (j_ind + j_soc);
                     j_rates[j] += j_lambda * (1-C[trial][learn_time, j]); //only include those who haven't learned in denom
                 }
-                target += log(i_lambda) - log(sum(j_rates));
+                target += log(i_lambda) - log(sum(j_rates));;
             }
         }
     }
@@ -61,7 +61,7 @@ generated quantities {
                     }
                     log_lik_matrix[trial, n] = log(i_lambda) - log(sum(j_rates));
                 }
-            }
+        }
     }
     // Flatten log_lik_matrix into log_lik
     array[K * Q] real log_lik;

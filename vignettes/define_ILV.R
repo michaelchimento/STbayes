@@ -26,7 +26,7 @@ ILV_tv <- data.frame(
     #e.g. 1 is from [t_0 to t_1), 2 is [t_1 to t_2), 3 = [t_2 to t_3 or t_end] if censored inds. present)
     time = c(rep(1:3, times = 3), rep(1:3, times=3)),
     #ensure the variable is summarizing these inter-acquisition time periods
-    dist_from_task = rnorm(18)
+    dist_from_resource = rnorm(18)
 )
 
 #### explicitly setting which variables are additive and multiplicative ####
@@ -41,7 +41,7 @@ STb_data <- import_user_STb(
 )
 
 model_obj = generate_STb_model(STb_data)
-#write(model_obj, file = "../data/STAN_example_ILV.stan")
+write(model_obj, file = "../data/STAN_example_ILV.stan")
 
 fit = fit_STb(STb_data, model_obj)
 

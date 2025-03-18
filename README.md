@@ -13,6 +13,7 @@ STbayes can currently accomodate:
  - varying effects by individual for strength of social transmission, baseline hazard rates, and other user defined ILVs.
  - Easy workflow for ELPD (loo-psis, waic) model comparison.
  - propagation of uncertainty from network measures to transmission model
+ - modeling of complex transmission and contagion
    
 This package is under development and is not guaranteed to work.
 
@@ -26,6 +27,7 @@ This package is under development and is not guaranteed to work.
 6. [Varying effects by individual](#Varying-effects)
 7. [Import data from NBDA object](#Import-NBDA)
 8. [Use posterior distribution of edge weights from bayesian network model](#Import-bisonr)
+9. [Modeling complex contagion/transmission - frequency dependent rules](#Complex-transmission)
 
 ## Installation<a name="Installation"></a>
 
@@ -35,6 +37,9 @@ The functions of this package depend on ```rstan```, ```coda``` and ```loo```. Y
 options(mc.cores = parallel::detectCores())
 ```
 
+Vignettes use packages NBDA (install with ```devtools::install_github("whoppitt/NBDA"```), igraph, dplyr, ggplot2, and ggpubr.
+
+
 To install the development version of STbayes:
 
 ``` r
@@ -43,7 +48,6 @@ if (!require("devtools")) install.packages("devtools")
 devtools::install_github("michaelchimento/STbayes")
 ```
 
-Vignettes use packages NBDA, igraph, dplyr, ggplot2, and ggpubr.
 
 ## Examples<a name="Examples"></a>
 
@@ -338,3 +342,23 @@ If the network has been modeled using another method, users may also simply supp
 | draw | trial | from | to | value |
 
 where draw is just the index from 1:S of samples. Each row should contain one sampled value for one dyad.
+
+### Modeling complex contagion/transmission - frequency dependent rules<a name="Complex-transmission"></a>
+
+STbayes can be used to fit and create models of complex transmission. As an example, you can create a log-likelihood that includes a frequency-dependent transmission rule by using the ```transmission_func``` argument of ```generate_STb_model```:
+
+```
+data_list = import_user_STb(STbayes::diffusion_data, STbayes::networks)
+generate_STb_model(data_list, transmission_func="freq-dep")
+```
+
+The package defaults to the model of frequency-dependent bias as:
+
+<img src="https://latex.codecogs.com/svg.image?\frac{(\text{n&space;knowledgable&space;associates})^f}{(\text{n&space;knowledgable&space;associates})^f&plus;(\text{n&space;naive&space;associates})^f)}" alt="\frac{(\text{n knowledgable associates})^f}{(\text{n knowledgable associates})^f&plus;(\text{n naive associates})^f)}" />
+
+
+But also includes an alternative parameterization based on a scaled version of Dino Dini's normalized tunable sigmoid function. In the first case, f<1 would be evidence of an anti-conformist transmission bias, f=1 would be proportional, and f>1 would be conformist. In the second case, the shape parameter k < 0 is conformist, k=0 proportional, and k>0 anti-conformist. Both parameterizations create a relationship betwen the proportion of neighbors that are knowledgable and the weight of that information on the rate of an event happening for a given individual:
+
+    ![dini plot](docs/diniplot.png)
+
+You might find that one or the other has convergence issues, so we provide both. Complex transmission can be implemented with varying effects, ilvs, oada and ctada type models, etc.

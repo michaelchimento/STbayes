@@ -20,11 +20,12 @@ parameters {
 }
 transformed parameters {
    real<lower=0> lambda_0 = 1 / exp(log_lambda_0_mean);
-real<lower=0> s = exp(log_s_mean);
+real<lower=0> s_prime = 1 / exp(log_s_mean);
+real<lower=0> s = s_prime/lambda_0;
 }
 model {
-    log_lambda_0_mean ~ normal(7, 3);
-    log_s_mean ~ uniform(-5,5);
+    log_lambda_0_mean ~ uniform(-10, 10);
+    log_s_mean ~ uniform(-10, 10);
     for (trial in 1:K) {
        vector[S] log_likelihoods;  // store likelihoods over samples
         for (d in 1:S) {  // loop over posterior draws
@@ -34,12 +35,12 @@ model {
             int learn_time = t[trial, id];
             if (learn_time > 0) {
                 for (time_step in 1:learn_time) {
-                    real ind_term = 1;
-                    real soc_term = s * (sum(A_value[trial, time_step , d][id, ] .* C[trial][time_step, ])) ;
-                    real lambda =  lambda_0 * (ind_term + soc_term) * D[trial, time_step];
+                    real ind_term = 1.0;
+                    real soc_term = s_prime * (sum(A_value[trial, time_step , d][id, ] .* C[trial][time_step, ])) ;
+                    real lambda =  (lambda_0 * ind_term + soc_term) * D[trial, time_step];
                     log_likelihoods[d] += -lambda;
                     if (time_step == learn_time) {
-                        log_likelihoods[d] += log( lambda_0 * (ind_term + soc_term));
+                        log_likelihoods[d] += log( (lambda_0 * ind_term + soc_term));
                     }
                 }
             }
@@ -48,9 +49,9 @@ model {
             for (c in 1:N_c[trial]) {
                 int id = ind_id[trial, N[trial] + c];
                 for (time_step in 1:T[trial]) {
-                    real ind_term = 1;
-                    real soc_term = s * (sum(A_value[trial, time_step , d][id, ] .* C[trial][time_step, ])) ;
-                    real lambda =  lambda_0 * (ind_term + soc_term) * D[trial, time_step];
+                    real ind_term = 1.0;
+                    real soc_term = s_prime * (sum(A_value[trial, time_step , d][id, ] .* C[trial][time_step, ])) ;
+                    real lambda =  (lambda_0 * ind_term + soc_term) * D[trial, time_step];
                     log_likelihoods[d] += -lambda;
                 }
             }
@@ -70,13 +71,13 @@ generated quantities {
             if (learn_time > 0){
                 real cum_hazard = 0; //set val before adding
                 for (time_step in 1:T[trial]) {
-                    real ind_term = 1;
-                    real soc_term = s * (sum(A_value[trial, time_step , d][id, ] .* C[trial][time_step, ])) ;
-                    real lambda =  lambda_0 * (ind_term + soc_term) * D[trial, time_step];
+                    real ind_term = 1.0;
+                    real soc_term = s_prime * (sum(A_value[trial, time_step , d][id, ] .* C[trial][time_step, ])) ;
+                    real lambda =  (lambda_0 * ind_term + soc_term) * D[trial, time_step];
                     cum_hazard += lambda; // accumulate hazard
                     //if it learn_time, record the ll
                     if (time_step == learn_time){
-                        log_likelihoods[d] += log( lambda_0 * (ind_term + soc_term)) - cum_hazard;
+                        log_likelihoods[d] += log( (lambda_0 * ind_term + soc_term));
                     }
                 }
             }
@@ -89,9 +90,9 @@ generated quantities {
                 // compute cumulative hazard up to the censoring time
                 real cum_hazard = 0;
                 for (time_step in 1:censor_time) {
-                    real ind_term = 1;
-                    real soc_term = s * (sum(A_value[trial, time_step , d][id, ] .* C[trial][time_step, ])) ;
-                    real lambda =  lambda_0 * (ind_term + soc_term) * D[trial, time_step];
+                    real ind_term = 1.0;
+                    real soc_term = s_prime * (sum(A_value[trial, time_step , d][id, ] .* C[trial][time_step, ])) ;
+                    real lambda =  (lambda_0 * ind_term + soc_term) * D[trial, time_step];
                     cum_hazard += lambda; // accumulate hazard
                 }
                 // Compute per-individual log likelihood

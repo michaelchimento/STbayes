@@ -22,13 +22,17 @@ fit_social = fit_STb(data_list,
                      iter=5000,
                      control = list(adapt_delta=0.99))
 
-#check summary ~ the same as NBDA estimates. the priors could be adjusted to be less skeptical of the large s value
+#check summary ~ almost the same as NBDA estimates
 STb_summary(fit_social, depth=1)
 
 # Compare with asocial model (no s param)
-model_obj = generate_STb_asocial_model(data_list)
-fit_asocial = fit_STb(data_list, model_obj, chains = 2, cores = 2, iter=2000, control = list(adapt_delta=0.99) )
-STb_summary(fit_asocial, depth=1)
+model_obj = generate_STb_model(data_list,
+                               model_type="asocial",
+                               gq=T, #create a generated quantities block (for model comparison)
+                               est_acqTime = F) #prior for s
+fit_asocial = fit_STb(data_list, model_obj, chains = 2, cores = 2, iter=5000, control = list(adapt_delta=0.99) )
 
+loo_output = STb_compare(fit_asocial, fit_social)
+loo_output$comparison
 
 

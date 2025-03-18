@@ -5,9 +5,9 @@ library(ggplot2)
 
 # Parameters
 N <- 20  # Population size
-k <- 2   # Degree of each node in the random regular graph
+k <- 4   # Degree of each node in the random regular graph
 lambda_0_mean <- 8
-lambda_0_sd <- 1
+lambda_0_sd <- .5
 s_mean <- 2
 s_sd <- .5
 t_steps <- 1000
@@ -17,10 +17,11 @@ num_trials <- 25
 # Assign individual parameters
 individual_params <- data.frame(
     id = 1:N,
-    lambda_0 = 1/exp(rnorm(N, mean = lambda_0_mean, sd = lambda_0_sd)),
-    s = exp(rnorm(N, mean = s_mean, sd = s_sd))
+    lambda_0 = 1/exp(lambda_0_mean - rnorm(N, mean = 0, sd = lambda_0_sd)),
+    s = exp(s_mean - rnorm(N, mean = 0, sd = s_sd))
 )
-
+individual_params %>% summarize(mean(lambda_0), mean(s))
+plot(density(individual_params$lambda_0))
 # storage for all trials
 all_diffusion_data <- data.frame(
     id = integer(),
@@ -99,21 +100,17 @@ for (trial in 1:num_trials) {
 
 # import data to STbayes and fit model
 data_list_user <- import_user_STb(all_diffusion_data, all_edge_list)
-model_obj <- generate_STb_model(data_list_user, veff=c("lambda_0", "s"))
-#write(model_obj, file = "../data/STAN_example_veff.stan")
+model_obj <- generate_STb_model(data_list_user, veff=c("lambda_0", "s"), priors = list(log_s="normal(2,3)"))
+write(model_obj, file = "../data/STAN_example_veff.stan")
 fit <- fit_STb(data_list_user, model_obj, chains = 5, cores = 5, iter = 5000, control = list(adapt_delta = 0.99))
 
 #check to see if output matches simulation inputs
-STb_summary(fit, depth=2, digits=5)
+STb_summary(fit, digits=5, depth=1)
 
 # extract posterior samples from the fit and calculate individual estimates
 posterior_samples <- rstan::extract(fit)
-lambda_0_estimates <- apply(posterior_samples$v_ID[, , 1], 2, function(v_id) {
-    1 / exp(posterior_samples$log_lambda_0_mean + v_id)
-})
-s_estimates <- apply(posterior_samples$v_ID[, , 2], 2, function(v_id) {
-    exp(posterior_samples$log_s_mean + v_id)
-})
+lambda_0_estimates <- posterior_samples$lambda_0
+s_estimates <- posterior_samples$s
 
 #each col is for 1 ind
 lambda_0_mean_estimates <- colMeans(lambda_0_estimates)

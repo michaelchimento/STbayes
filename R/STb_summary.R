@@ -13,7 +13,7 @@
 #'
 #' @examples
 #' summary_table <- STb_summary(fit)
-STb_summary <- function(fit, depth = 1, prob = 0.95, ignore_params = c("s", "lambda_0", "lp__", "idx", "log_lik", "log_lik_matrix", "acquisition_time", "z_ID", "Rho_ID","v_ID"), digits = 3) {
+STb_summary <- function(fit, depth = 1, prob = 0.95, ignore_params = c("lp__", "idx", "log_lik", "log_lik_matrix", "acquisition_time", "z_ID", "Rho_ID","v_ID"), digits = 3) {
     # extract posterior samples
     samples <- rstan::extract(fit, permuted = TRUE)
 
@@ -23,14 +23,6 @@ STb_summary <- function(fit, depth = 1, prob = 0.95, ignore_params = c("s", "lam
     selected_params <- param_names[param_depths <= depth & !param_names %in% ignore_params]
 
     transformed_params = list()
-    # add transformed parameters
-    if ("log_lambda_0_mean" %in% param_names){
-        transformed_params$transformed_baserate = 1 / exp(samples$log_lambda_0_mean)
-    }
-
-    if ("log_s_mean" %in% param_names){
-        transformed_params$transformed_s = exp(samples$log_s_mean)
-    }
 
     summary_table <- data.frame(
         Parameter = character(),
