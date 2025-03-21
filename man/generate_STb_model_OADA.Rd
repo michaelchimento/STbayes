@@ -10,7 +10,6 @@ generate_STb_model_OADA(
   transmission_func = "standard",
   veff_ID = c(),
   gq = TRUE,
-  est_acqTime = FALSE,
   priors = list(log_s = "uniform(-10,10)", log_f = "normal(0,1)")
 )
 }

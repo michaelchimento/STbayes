@@ -1,6 +1,6 @@
 #' create_knowledge_matrix: private function to create the knowledge state matrix C[t,n]
 #'
-#' @param df dataframe (diffusion_data) in import_NBDA_data.R / create_STb_data.R
+#' @param diffusion_data dataframe (diffusion_data) in import_NBDA_data.R / create_STb_data.R
 #'
 #' @return matrix [t,n] where value=0 if naive at t, otherwise 1
 create_knowledge_matrix <- function(diffusion_data) {

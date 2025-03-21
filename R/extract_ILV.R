@@ -5,7 +5,7 @@
 #'
 #' @return List of vectors for each ILV
 extract_ILV <- function(nbda_object, ILV_type) {
-    ILV_matrix <- slot(nbda_object, ILV_type)  # Access the slot via its name
+    ILV_matrix <- methods::slot(nbda_object, ILV_type)  # Access the slot via its name
     # transform each col of the ILV matrix into a vector length N
     ILV_vectors <- lapply(1:ncol(ILV_matrix), function(row_idx) {
         # match ILVs to IDs using the order of acquisition

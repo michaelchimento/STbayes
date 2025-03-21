@@ -1,5 +1,5 @@
 Package: STbayes
-Title: What the Package Does (One Line, Title Case)
+Title: Organize, Generate, Fit, and Analyze Bayesian Models of Social Transmission
 Version: 0.0.0.9000
 Authors@R: 
     person("Michael", "Chimento", , "mchimento@ab.mpg.de", role = c("aut", "cre"),
@@ -8,13 +8,18 @@ Description: STbayes is a flexible tool for building and running Bayesian models
 Imports: 
     rstan,
     coda,
-    loo
+    loo,
+    glue,
+    methods
 License: AGPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 LazyData: True
+LazyDataCompression: xz
 Suggests: 
-    ggplot2
+    dplyr,
+    ggplot2,
+    NBDA
 Depends: 
     R (>= 2.10)

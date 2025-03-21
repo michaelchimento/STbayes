@@ -11,11 +11,12 @@ import_user_STb(
   ILV_tv = NULL,
   ILVi = NULL,
   ILVs = NULL,
-  ILVm = NULL
+  ILVm = NULL,
+  t_weights = NULL
 )
 }
 \arguments{
-\item{diffusion_data}{dataframe with columns id, trial, time, max_time}
+\item{diffusion_data}{dataframe with columns id, trial, time, t_end}
 
 \item{networks}{dataframe with columns trial, from, to, and one or more columns of edge weights named descriptively. Optionally an integer time column can be provided for dynamic network analysis, although networks must be provided for each time period between transmission events.}
 
@@ -23,11 +24,13 @@ import_user_STb(
 
 \item{ILV_tv}{optional dataframe with columns trial, id, time and any time-varying variables. Variable values should summarize the variable for each inter-acquisition period.}
 
-\item{ILVi}{Optional character vector of column names from ILV metadata to be considered when estimating asocial learning rate. If not specified, all ILV are applied to both.}
+\item{ILVi}{Optional character vector of column names from ILV metadata to be considered when estimating intrinsic rate. If not specified, all ILV are applied to both.}
 
-\item{ILVs}{Optional character vector of column names from ILV metadata to be considered when estimating social learning rate. If not specified, all ILV are applied to both.}
+\item{ILVs}{Optional character vector of column names from ILV metadata to be considered when estimating social transmission rate. If not specified, all ILV are applied to both.}
 
 \item{ILVm}{Optional character vector of column names from ILV metadata to be considered in a multiplicative model.}
+
+\item{t_weights}{Optional dataframe with columns trial, id, time and t_weight. Transmission rates represent rates of production/relevant cues per inter-event period.}
 }
 \value{
 A list object containing properly formatted data to run social transmission models.
@@ -41,7 +44,7 @@ diffusion_data <- data.frame(
   trial = rep(1:2, each = 3),
   id = LETTERS[1:6],
   time = c(0, 1, 2, 0, 1, 4),
-  max_time = c(3, 3, 3, 4, 4, 4)
+  t_end = c(3, 3, 3, 4, 4, 4)
 )
 networks <- data.frame(
   trial = rep(1:2, each = 3),
@@ -64,6 +67,12 @@ ILV_tv <- data.frame(
   time = c(rep(1:3, times = 3), rep(1:3, times = 3)),
   # ensure the variable is summarizing these inter-acquisition time periods
   dist_from_task = rnorm(18)
+)
+t_weights <- data.frame(
+  trial = c(rep(1, each = 9), rep(2, each = 9)),
+  id = c(rep(LETTERS[1:3], each = 3), rep(LETTERS[4:6], each = 3)),
+  time = c(rep(1:3, times = 3), rep(1:3, times = 3)),
+  t_weight = exp(rnorm(18))
 )
 imported_data <- import_user_STb(
   diffusion_data = diffusion_data,

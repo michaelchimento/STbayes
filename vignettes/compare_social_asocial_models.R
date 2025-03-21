@@ -7,18 +7,13 @@ edge_list = STbayes::edge_list
 # format data
 data_list_user = import_user_STb(diffusion_data, edge_list)
 
-# reusable function to generate and fit a model
-generate_and_fit_model <- function(data, model_type, chains = 5, cores = 5, iter = 2000, control = list(adapt_delta = 0.99)) {
-    model = generate_STb_model(data, est_acqTime = TRUE, model_type=model_type)
-    fit = fit_STb(data, model, chains, cores, iter, control)
-    return(fit)
-}
-
 # generate, fit, and summarize models
-full_fit = generate_and_fit_model(data_list_user, "full")
-asocial_fit = generate_and_fit_model(data_list_user, "asocial")
+model = generate_STb_model(data, est_acqTime = TRUE, model_type="full")
+full_fit = fit_STb(data, chains = 5, cores = 5, iter = 2000, control = list(adapt_delta = 0.99))
 
-#check estimates
+model = generate_STb_model(data, est_acqTime = TRUE, model_type="asocial")
+asocial_fit = fit_STb(data, chains = 5, cores = 5, iter = 2000, control = list(adapt_delta = 0.99))
+
 STb_summary(full_fit, digits = 4)
 STb_summary(asocial_fit, digits = 4)
 

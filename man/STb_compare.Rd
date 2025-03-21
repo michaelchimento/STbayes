@@ -7,11 +7,11 @@
 STb_compare(..., model_names = NULL, method = "loo-psis")
 }
 \arguments{
+\item{...}{model fits for comparison}
+
 \item{model_names}{an optional list of model names, otherwise taken from object names}
 
 \item{method}{a string either "loo-psis" or "waic" to indicate the method used for elpd. Defaults to "loo-psis". Pareto diagnostics are not calculated for WAIC.}
-
-\item{models}{a list containing model fits for comparison}
 }
 \value{
 list containing loo_objects, comparison, and pareto_diagnostics if using loo-psis.

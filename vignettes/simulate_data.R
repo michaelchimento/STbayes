@@ -10,14 +10,13 @@ lambda_0=0.001 #baseline
 A <- 1  # Individual learning rate
 s <- 5  # Social learning rate per unit connection
 t_steps <- 1000
-max_time = t_steps+1
 
 # create random regular graph
 g <- sample_k_regular(N, k, directed = FALSE, multiple = FALSE)
 V(g)$name <- 1:N
 
 # initialize a dataframe to store the time of acquisition data
-df <- data.frame(id=1:N, time=max_time, max_time = max_time)
+df <- data.frame(id=1:N, time=t_steps+1, t_end = t_steps)
 
 # If you want to set a demonstrator, uncomment below
 # seed <- sample(1:N, 1)
@@ -26,7 +25,7 @@ df <- data.frame(id=1:N, time=max_time, max_time = max_time)
 # simulate the diffusion
 for (t in 1:t_steps) {
     # identify knowledgeable individuals
-    informed <- df[df$time < max_time, "id"]
+    informed <- df[df$time <= t_steps, "id"]
 
     # identify naive
     potential_learners <- c(1:N)
@@ -74,7 +73,7 @@ d = nbdaData(label="sim_data",
              assMatrix = adj_matrix,
              orderAcq = diffusion_data$id,
              timeAcq = diffusion_data$time,
-             endTime = max_time,
+             endTime = t_steps+1,
              ties = tie_vec$tie,
              demons = seed_vec$seed)
 result = tadaFit(d)

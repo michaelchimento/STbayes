@@ -13,19 +13,15 @@ import_NBDA_STb(
 )
 }
 \arguments{
+\item{nbda_object}{object of NBDAdata class}
+
 \item{network_names}{character vector of descriptive names of networks you're importing.}
 
-\item{ILVi}{Optional character vector of ILVS to be considered when estimating asocial learning rate. If not specified, taken from NBDA object.}
+\item{ILVi}{Optional character vector of ILVS to be considered when estimating intrinsic rate. If not specified, taken from NBDA object.}
 
-\item{ILVs}{Optional character vector of ILVS to be considered when estimating social learning rate. If not specified, taken from NBDA object.}
+\item{ILVs}{Optional character vector of ILVS to be considered when estimating social transmission rate. If not specified, taken from NBDA object.}
 
 \item{ILVm}{Optional character vector of ILVS to be considered in a multiplicative model. If not specified, taken from NBDA object.}
-
-\item{diffusion_data}{dataframe with columns id, trial, time, max_time}
-
-\item{networks}{dataframe with columns trial, from, to, and one or more columns of edge weights named descriptively. Optionally an integer time column can be provided for dynamic network analysis, although networks must be provided for each time period between transmission events.}
-
-\item{ILV_metadata}{dataframe with columns id, and any individual-level variables that might be of interest}
 }
 \value{
 A list containing properly formatted data to run social transmission models.

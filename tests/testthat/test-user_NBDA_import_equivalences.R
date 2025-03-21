@@ -17,7 +17,7 @@ test_that("import_user and import_nbda result in element-wise equivalent data li
                  assMatrix = adj_matrix,
                  orderAcq = STbayes::diffusion_data$id,
                  timeAcq = STbayes::diffusion_data$time,
-                 endTime = 1001,
+                 endTime = 1000,
                  ties = tie_vec,
                  demons = seed_vec)
     data_list_nbda = import_NBDA_STb(nbdaData_object, network_names = c("assoc"))

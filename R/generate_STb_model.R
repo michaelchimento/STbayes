@@ -67,7 +67,7 @@ generate_STb_model <- function(STb_data,
                            log_s = "uniform(-10, 10)",
                            log_f = "normal(0,1)")
 
-    priors <- modifyList(default_priors, priors)
+    priors <- utils::modifyList(default_priors, priors)
 
     if (data_type == "time") {
         return(generate_STb_model_cTADA(STb_data = STb_data,
@@ -83,7 +83,6 @@ generate_STb_model <- function(STb_data,
                                        transmission_func = transmission_func,
                                        veff_ID = veff_ID,
                                        gq = gq,
-                                       est_acqTime = est_acqTime,
                                        priors = priors))
     }
 }

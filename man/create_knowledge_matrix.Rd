@@ -7,7 +7,7 @@
 create_knowledge_matrix(diffusion_data)
 }
 \arguments{
-\item{df}{dataframe (diffusion_data) in import_NBDA_data.R / create_STb_data.R}
+\item{diffusion_data}{dataframe (diffusion_data) in import_NBDA_data.R / create_STb_data.R}
 }
 \value{
 matrix \link{t,n} where value=0 if naive at t, otherwise 1

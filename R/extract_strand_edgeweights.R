@@ -11,10 +11,10 @@
 #' @examples
 extract_strand_edgeweights <- function(strand_obj, draws=100){
 
-    if (class(strand_obj) != "STRAND Results Object") stop("Please supply a STRAND results object, created using STRAND::summarize_strand_results().")
+    if (!inherits(strand_obj,"STRAND Results Object")) stop("Please supply a STRAND results object, created using STRAND::summarize_strand_results().")
 
     #association matrix [draws, from, to]
-    ass_matrix <- strand_results_obj$samples$predicted_network_sample
+    ass_matrix <- strand_obj$samples$predicted_network_sample
 
     total_draws <- dim(ass_matrix)[1]
     num_nodes <- dim(ass_matrix)[2]

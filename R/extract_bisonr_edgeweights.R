@@ -11,7 +11,7 @@
 #' @examples
 extract_bisonr_edgeweights <- function(bisonr_fit, draws=100){
 
-    if (class(bisonr_fit) != "bison_model") stop("Please supply a bisonr fit object.")
+    if (!inherits(bisonr_fit, "bison_model")) stop("Please supply a bisonr fit object.")
 
     #yoinked code from bisonr so as not to depend
     samples <- matrix(as.numeric(bisonr_fit$edge_samples), ncol=ncol(bisonr_fit$edge_samples))

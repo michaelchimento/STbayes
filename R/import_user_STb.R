@@ -1,12 +1,13 @@
 #' import_user_STb: Create STbayes_data object from user supplied data
 #'
-#' @param diffusion_data dataframe with columns id, trial, time, max_time
+#' @param diffusion_data dataframe with columns id, trial, time, t_end
 #' @param networks dataframe with columns trial, from, to, and one or more columns of edge weights named descriptively. Optionally an integer time column can be provided for dynamic network analysis, although networks must be provided for each time period between transmission events.
 #' @param ILV_c optional dataframe with columns id, and any constant individual-level variables that might be of interest
 #' @param ILV_tv optional dataframe with columns trial, id, time and any time-varying variables. Variable values should summarize the variable for each inter-acquisition period.
-#' @param ILVi Optional character vector of column names from ILV metadata to be considered when estimating asocial learning rate. If not specified, all ILV are applied to both.
-#' @param ILVs Optional character vector of column names from ILV metadata to be considered when estimating social learning rate. If not specified, all ILV are applied to both.
+#' @param ILVi Optional character vector of column names from ILV metadata to be considered when estimating intrinsic rate. If not specified, all ILV are applied to both.
+#' @param ILVs Optional character vector of column names from ILV metadata to be considered when estimating social transmission rate. If not specified, all ILV are applied to both.
 #' @param ILVm Optional character vector of column names from ILV metadata to be considered in a multiplicative model.
+#' @param t_weights Optional dataframe with columns trial, id, time and t_weight. Transmission rates represent rates of production/relevant cues per inter-event period.
 #'
 #' @return A list object containing properly formatted data to run social transmission models.
 #' @export
@@ -17,7 +18,7 @@
 #'   trial = rep(1:2, each = 3),
 #'   id = LETTERS[1:6],
 #'   time = c(0, 1, 2, 0, 1, 4),
-#'   max_time = c(3, 3, 3, 4, 4, 4)
+#'   t_end = c(3, 3, 3, 4, 4, 4)
 #' )
 #' networks <- data.frame(
 #'   trial = rep(1:2, each = 3),
@@ -41,6 +42,12 @@
 #'   # ensure the variable is summarizing these inter-acquisition time periods
 #'   dist_from_task = rnorm(18)
 #' )
+#' t_weights <- data.frame(
+#'   trial = c(rep(1, each = 9), rep(2, each = 9)),
+#'   id = c(rep(LETTERS[1:3], each = 3), rep(LETTERS[4:6], each = 3)),
+#'   time = c(rep(1:3, times = 3), rep(1:3, times = 3)),
+#'   t_weight = exp(rnorm(18))
+#' )
 #' imported_data <- import_user_STb(
 #'   diffusion_data = diffusion_data,
 #'   networks = networks,
@@ -51,7 +58,7 @@
 #'   ILVm = c("weight") # Use weight for multiplicative effect on asocial and social learning
 #' )
 #'
-import_user_STb <- function(diffusion_data, networks, ILV_c = NULL, ILV_tv = NULL, ILVi = NULL, ILVs = NULL, ILVm = NULL) {
+import_user_STb <- function(diffusion_data, networks, ILV_c = NULL, ILV_tv = NULL, ILVi = NULL, ILVs = NULL, ILVm = NULL, t_weights = NULL) {
   # warnings
   if (is.null(ILVi) & is.null(ILVs) & is.null(ILVm) & (!is.null(ILV_c) | !is.null(ILV_tv))) {
     message("WARNING: You have provided ILV, yet did not specify whether they should be additive or multiplicative (missing arguments ILVi, ILVs, ILVm). STbayes defaults to unconstrained additive (i.e. each variable's effect on both asocial and social learning will be separately estimated). It is recommended to explicitly define this.")
@@ -65,8 +72,8 @@ import_user_STb <- function(diffusion_data, networks, ILV_c = NULL, ILV_tv = NUL
   data_list <- list()
 
   #### Diffusion_data ####
-  # diffusion_data should be in format id, trial, time, max_time
-  # if time==0, assume to be trained demonstrator, if time==max_time, assume to be censored
+  # diffusion_data should be in format id, trial, time, t_end
+  # if time==0, assume to be trained demonstrator, if time>t_end, assume to be censored
 
   # create numeric variables in case user has supplied strings
   diffusion_data$id_numeric <- as.numeric(as.factor(diffusion_data$id))
@@ -91,7 +98,7 @@ import_user_STb <- function(diffusion_data, networks, ILV_c = NULL, ILV_tv = NUL
   diffusion_data$seed <- with(diffusion_data, ifelse(time == 0, 1, 0))
 
   # identify censored rows (where time == obs_period)
-  diffusion_data$censored <- with(diffusion_data, ifelse(time < max_time, 0, 1))
+  diffusion_data$censored <- with(diffusion_data, ifelse(time <= t_end, 0, 1))
 
   # summarize censored/uncensored for each trial
   N_data <- do.call(rbind, lapply(split(diffusion_data, diffusion_data$trial_numeric), function(df) {
@@ -120,7 +127,7 @@ import_user_STb <- function(diffusion_data, networks, ILV_c = NULL, ILV_tv = NUL
   # create a matrix where rows are trial_numeric, columns are id_numeric, and values are actual time measurements
   time_data <- with(diffusion_data, tapply(time, list(trial_numeric, id_numeric), FUN = max, default = -1))
   # gets the end of obs period of each trial
-  time_max <- with(diffusion_data, tapply(max_time, list(trial_numeric), FUN = max, default = -1))
+  time_max <- with(diffusion_data, tapply(t_end, list(trial_numeric), FUN = max, default = -1))
   # Replace NA values with -1 to denote individuals who did not participate in a trial
   # t_data[is.na(t_data)] <- -1
 
@@ -129,7 +136,7 @@ import_user_STb <- function(diffusion_data, networks, ILV_c = NULL, ILV_tv = NUL
   # i know this is a really weird way of doing a ragged list, in case there are differing numbers of individuals in each trial... but should work fine
   id_data <- with(diffusion_data, tapply(id_numeric, list(trial_numeric, index), FUN = max, default = NA))
   id_data <- t(apply(id_data, 1, function(row) {
-    c(na.omit(row), rep(-1, sum(is.na(row))))
+    c(stats::na.omit(row), rep(-1, sum(is.na(row))))
   }))
 
   data_list$K <- length(unique(diffusion_data$trial_numeric))
@@ -150,8 +157,14 @@ import_user_STb <- function(diffusion_data, networks, ILV_c = NULL, ILV_tv = NUL
   dim(data_list$D_int) <- dim(data_list$D) # why is r so annoying
   data_list$ind_id <- id_data # individual id data
   data_list$C <- create_knowledge_matrix(diffusion_data) # knowledge state matrix
+  if (!is.null(t_weights)) {
+    data_list$W <- create_W_matrix(t_weights)
+    if (all(dim(data_list$C) != dim(data_list$W))) stop("Dimensions of event state matrix C do not match dimensions of transmission weight matrix W.")
+    data_list$C <- data_list$C * data_list$W
+  }
 
   #### Constant ILV ####
+  ILV_datatypes <- c()
   ILV_names <- c()
   # identify ILVs from ILV_c
   if (!is.null(ILV_c)) {
@@ -167,6 +180,7 @@ import_user_STb <- function(diffusion_data, networks, ILV_c = NULL, ILV_tv = NUL
     ILV_names <- append(ILV_names, ILV_cols)
     # loop through each ILV_c column and add to datalist
     for (col in ILV_cols) {
+      ILV_datatypes[[paste0("ILV_", col)]] <- detect_ILV_datatype(ILV_c$col)
       data_list[[paste0("ILV_", col)]] <- ILV_c[[col]]
     }
   }
@@ -190,6 +204,8 @@ import_user_STb <- function(diffusion_data, networks, ILV_c = NULL, ILV_tv = NUL
     ILV_names <- append(ILV_names, ILV_cols)
     # loop through each ILV column and add to datalist
     for (col in ILV_cols) {
+      # get data type
+      ILV_datatypes[[paste0("ILV_", col)]] <- detect_ILV_datatype(ILV_tv$col)
       # reshape data into matrix
       mat <- with(ILV_tv, tapply(ILV_tv[[col]], list(trial, discrete_time, id), FUN = mean, simplify = TRUE))
       mat[is.na(mat)] <- 0
@@ -197,8 +213,8 @@ import_user_STb <- function(diffusion_data, networks, ILV_c = NULL, ILV_tv = NUL
     }
   }
 
+  # write names
   if (!is.null(ILV_c) | !is.null(ILV_tv)) {
-    # write names
     if (is.null(ILVi)) {
       data_list$ILVi_names <- ILV_names
     } else {
@@ -210,12 +226,16 @@ import_user_STb <- function(diffusion_data, networks, ILV_c = NULL, ILV_tv = NUL
       data_list$ILVs_names <- ILVs
     }
     data_list$ILVm_names <- ILVm
+    # write datatypes
+    data_list$ILV_datatypes <- ILV_datatypes
   } else {
     message("No ILV supplied.")
     data_list$ILVi_names <- "ILVabsent"
     data_list$ILVs_names <- "ILVabsent"
     data_list$ILVm_names <- "ILVabsent"
   }
+
+
 
   #### deal with networks ####
   # network_data should be in format trial, time, from, to, network_value1, network_value2, ... etc
@@ -224,12 +244,12 @@ import_user_STb <- function(diffusion_data, networks, ILV_c = NULL, ILV_tv = NUL
 
   # check if the same number of individuals are included in both datasets
   if (data_list$Z != length(unique(c(networks$from, networks$to)))) {
-    message("Networks do not contain the same number of unique individuals as the diffusion data.")
+    stop("Networks do not contain the same number of unique individuals as the diffusion data.")
   }
 
-  # check if the same number of individuals are included in both datasets
+  # check if the same number of trials are included in both datasets
   if (data_list$K != length(unique(networks$trial))) {
-    message("Networks do not contain the same number of trials as the diffusion data.")
+    stop("Networks do not contain the same number of trials as the diffusion data.")
   }
 
   # check if dynamic networks are supplied
@@ -264,10 +284,10 @@ import_user_STb <- function(diffusion_data, networks, ILV_c = NULL, ILV_tv = NUL
 
   # check if the same number of individuals are included in both datasets
   if (max(data_list$T) != max(networks$discrete_time) & is_dynamic) {
-    message("Networks do not contain the same number of discrete timesteps as the diffusion data.")
+    stop("Networks do not contain the same number of inter-event intervals as the diffusion data.")
   }
 
-  if (is_distribution){
+  if (is_distribution) {
     is_symmetric <- nrow(networks[networks$trial_numeric == 1 & networks$discrete_time == 1 & networks$draw == 1, ]) == data_list$Z * (data_list$Z - 1)
   } else {
     is_symmetric <- nrow(networks[networks$trial_numeric == 1 & networks$discrete_time == 1, ]) == data_list$Z * (data_list$Z - 1)
@@ -297,25 +317,25 @@ import_user_STb <- function(diffusion_data, networks, ILV_c = NULL, ILV_tv = NUL
         value <- as.numeric(temp_df[i, column])
 
         # fill in matrix
-        if (is_distribution){
+        if (is_distribution) {
           A_matrix[k, time, draw, from, to] <- value
           if (!is_symmetric) A_matrix[k, time, draw, to, from] <- value
-        } else{
+        } else {
           A_matrix[k, time, from, to] <- value
           if (!is_symmetric) A_matrix[k, time, to, from] <- value
         }
       }
 
       if (!is_dynamic) {
-          if (is_distribution){
-            A_matrix[k, , , , ] <- rep(A_matrix[k, 1, , , ], each = dim(A_matrix)[2])
-          } else {
-            A_matrix[k,,,] <- rep(A_matrix[k, 1, , ], each = dim(A_matrix)[2])
-          }
+        if (is_distribution) {
+          A_matrix[k, , , , ] <- rep(A_matrix[k, 1, , , ], each = dim(A_matrix)[2])
+        } else {
+          A_matrix[k, , , ] <- rep(A_matrix[k, 1, , ], each = dim(A_matrix)[2])
+        }
       }
 
       # Zero the diagonal for each time step and draw
-      if (is_distribution){
+      if (is_distribution) {
         for (t in 1:max(data_list$T)) {
           for (d in 1:max(networks$draw)) {
             diag(A_matrix[k, t, d, , ]) <- 0
@@ -332,7 +352,7 @@ import_user_STb <- function(diffusion_data, networks, ILV_c = NULL, ILV_tv = NUL
   }
 
   data_list$network_names <- network_cols
-  if (is_distribution) data_list$S = max(networks$draw)
+  if (is_distribution) data_list$S <- max(networks$draw)
 
   # sanity check
   dl_sanity_check(data_list = data_list)

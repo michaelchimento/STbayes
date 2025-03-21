@@ -2,7 +2,7 @@
 #'
 #' A function that automates the workflow of loo-psis or waic elpd comparisons. Relies on loo to do this.
 #'
-#' @param models a list containing model fits for comparison
+#' @param ... model fits for comparison
 #' @param model_names an optional list of model names, otherwise taken from object names
 #' @param method a string either "loo-psis" or "waic" to indicate the method used for elpd. Defaults to "loo-psis". Pareto diagnostics are not calculated for WAIC.
 #'

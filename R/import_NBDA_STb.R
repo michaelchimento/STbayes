@@ -1,11 +1,9 @@
 #' import_NBDA_STb: create STbayes_data object from nbda object
 #'
-#' @param diffusion_data dataframe with columns id, trial, time, max_time
-#' @param networks dataframe with columns trial, from, to, and one or more columns of edge weights named descriptively. Optionally an integer time column can be provided for dynamic network analysis, although networks must be provided for each time period between transmission events.
-#' @param ILV_metadata dataframe with columns id, and any individual-level variables that might be of interest
+#' @param nbda_object object of NBDAdata class
 #' @param network_names character vector of descriptive names of networks you're importing.
-#' @param ILVi Optional character vector of ILVS to be considered when estimating asocial learning rate. If not specified, taken from NBDA object.
-#' @param ILVs Optional character vector of ILVS to be considered when estimating social learning rate. If not specified, taken from NBDA object.
+#' @param ILVi Optional character vector of ILVS to be considered when estimating intrinsic rate. If not specified, taken from NBDA object.
+#' @param ILVs Optional character vector of ILVS to be considered when estimating social transmission rate. If not specified, taken from NBDA object.
 #' @param ILVm Optional character vector of ILVS to be considered in a multiplicative model. If not specified, taken from NBDA object.
 #'
 #' @return A list containing properly formatted data to run social transmission models.
@@ -121,7 +119,7 @@ import_NBDA_STb <- function(nbda_object, network_names= c("default"), ILVi = NUL
     # actually not sure whether this will ever be an issue with nbda data objs..
     id_data <- with(diffusion_data, tapply(id_numeric, list(trial_numeric, index), FUN = max, default = NA))
     id_data <- t(apply(id_data, 1, function(row) {
-        c(na.omit(row), rep(-1, sum(is.na(row))))
+        c(stats::na.omit(row), rep(-1, sum(is.na(row))))
     }))
 
     #### Populate Data List ####
@@ -142,7 +140,9 @@ import_NBDA_STb <- function(nbda_object, network_names= c("default"), ILVi = NUL
     data_list$D_int = D_data_int #duration data in integer format (experimental)
     dim(data_list$D_int) <- dim(data_list$D) #why is r so annoying
     data_list$ind_id <- id_data  # Individual IDs matrix
-    data_list$C = create_knowledge_matrix(diffusion_data) # knowledge state matrix
+    data_list$C <- create_knowledge_matrix(diffusion_data) # knowledge state matrix
+    data_list$C <- sweep(data_list$C, MARGIN = 3, STATS = nbda_object@weights, FUN = "*") #mult with weights
+
 
     #### ILV Metadata ####
 

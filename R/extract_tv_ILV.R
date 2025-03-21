@@ -11,13 +11,13 @@
 #' @return List of vectors for each ILV
 extract_tv_ILV <- function(nbda_object, ILV_type) {
     long_format_list <- list()
-    ILV_matrix <- slot(nbda_object, ILV_type)  # Access the slot via its name
-    nID <- length(slot(nbda_object, "idname"))
+    ILV_matrix <- methods::slot(nbda_object, ILV_type)  # Access the slot via its name
+    nID <- length(methods::slot(nbda_object, "idname"))
 
     for (col in 1:ncol(ILV_matrix)){
         flattened_data = ILV_matrix[,col]
         # Get acquisition events and naive individuals
-        orderAcq <- slot(nbda_object, "orderAcq")
+        orderAcq <- methods::slot(nbda_object, "orderAcq")
         nAcq <- length(orderAcq) # number of acquisition events
 
         # initialize an empty matrix for reconstruction
@@ -44,7 +44,7 @@ extract_tv_ILV <- function(nbda_object, ILV_type) {
 
         # Create data frame
         long_data <- data.frame(value = values)
-        long_data <- setNames(data.frame(values), colnames(ILV_matrix)[col])
+        long_data <- stats::setNames(data.frame(values), colnames(ILV_matrix)[col])
 
         # Store in list
         long_format_list[[col]] <- long_data

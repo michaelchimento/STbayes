@@ -17,8 +17,8 @@ test_that("Network structure is consistent using distribution edgeweights.", {
     diffusion_data <- data.frame(
         trial = 1,
         id = c(1:10),
-        time = sample(1:100, 10, replace = FALSE),
-        max_time = 101
+        time = sample(1:101, 10, replace = FALSE),
+        t_end = 100
     )
 
 

@@ -190,7 +190,7 @@ generate_STb_model_cTADA <- function(STb_data,
             #if user specified this should be include a varying effect for id
             if (is.element(ilv, veff_ID)){
                 #add declaration in transformed parameters
-                transformed_params = append(transformed_params, paste0("vector<lower=0>[Z] ", ilv, "_i = beta_ILVi_", parameter," + v_ID[,",count,"];"))
+                transformed_params = append(transformed_params, paste0("vector<lower=0>[Z] ", ilv, "_i = beta_ILVi_", ilv," + v_ID[,",count,"];"))
                 count = count + 1
                 #rename with [id] so it can be indexed in the main model loop
                 ILVi_vars[ILVi_vars == ilv] <- paste0(ilv, "_i[id]")
@@ -231,7 +231,7 @@ generate_STb_model_cTADA <- function(STb_data,
             #if user specified this should be include a varying effect for id
             if (is.element(ilv, veff_ID)){
                 #add declaration in transformed parameters
-                transformed_params = append(transformed_params, paste0("vector<lower=0>[Z] ", ilv, "_s = beta_ILVs_", parameter," + v_ID[,",count,"];"))
+                transformed_params = append(transformed_params, paste0("vector<lower=0>[Z] ", ilv, "_s = beta_ILVs_", ilv," + v_ID[,",count,"];"))
                 count = count + 1
                 #rename with [id] so it can be indexed in the main model loop
                 ILVs_vars[ILVs_vars == ilv] <- paste0(ilv, "_s[id]")
@@ -271,7 +271,7 @@ generate_STb_model_cTADA <- function(STb_data,
             #if user specified this should be include a varying effect for id
             if (is.element(ilv, veff_ID)){
                 #add declaration in transformed parameters
-                transformed_params = append(transformed_params, paste0("vector<lower=0>[Z] ", ilv, "_m = beta_ILVm_", parameter," + v_ID[,",count,"];"))
+                transformed_params = append(transformed_params, paste0("vector<lower=0>[Z] ", ilv, "_m = beta_ILVm_", ilv," + v_ID[,",count,"];"))
                 count = count + 1
                 #rename with [id] so it can be indexed in the main model loop
                 ILVm_vars[ILVm_vars == ilv] <- paste0(ilv, "_m[id]")

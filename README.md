@@ -354,7 +354,7 @@ generate_STb_model(data_list, transmission_func="freq-dep")
 
 The package defaults to the model of frequency-dependent bias as:
 
-<img src="https://latex.codecogs.com/svg.image?\frac{(\text{n&space;knowledgable&space;associates})^f}{(\text{n&space;knowledgable&space;associates})^f&plus;(\text{n&space;naive&space;associates})^f)}" alt="\frac{(\text{n knowledgable associates})^f}{(\text{n knowledgable associates})^f&plus;(\text{n naive associates})^f)}" />
+<img src="https://latex.codecogs.com/svg.image?\frac{(\text{n&space;knowledgable&space;associates})^f}{(\text{n&space;knowledgeable&space;associates})^f&plus;(\text{n&space;naive&space;associates})^f)}" alt="\frac{(\text{n knowledgeable associates})^f}{(\text{n knowledgable associates})^f&plus;(\text{n naive associates})^f)}" />
 
 
 But also includes an alternative parameterization based on a scaled version of Dino Dini's normalized tunable sigmoid function. In the first case, f<1 would be evidence of an anti-conformist transmission bias, f=1 would be proportional, and f>1 would be conformist. In the second case, the shape parameter k < 0 is conformist, k=0 proportional, and k>0 anti-conformist. Both parameterizations create a relationship betwen the proportion of neighbors that are knowledgable and the weight of that information on the rate of an event happening for a given individual:

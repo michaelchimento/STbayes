@@ -43,7 +43,7 @@ STb_summary <- function(fit, depth = 1, prob = 0.95, ignore_params = c("lp__", "
 
                 # compute statistics
                 mean_value <- mean(param_samples)
-                median_value <- median(param_samples)
+                median_value <- stats::median(param_samples)
                 hpdi <- coda::HPDinterval(param_samples, prob = prob)
                 n_eff <- coda::effectiveSize(param_samples)
                 rhat <- rstan::Rhat(as.matrix(param_samples))
@@ -66,7 +66,7 @@ STb_summary <- function(fit, depth = 1, prob = 0.95, ignore_params = c("lp__", "
 
             # compute statistics
             mean_value <- mean(param_samples)
-            median_value <- median(param_samples)
+            median_value <- stats::median(param_samples)
             hpdi <- coda::HPDinterval(param_samples, prob = prob)
             n_eff <- coda::effectiveSize(param_samples)
             rhat <- rstan::Rhat(as.matrix(param_samples))
@@ -90,7 +90,7 @@ STb_summary <- function(fit, depth = 1, prob = 0.95, ignore_params = c("lp__", "
             param_samples <- coda::as.mcmc(as.matrix(param_samples))
 
             mean_value <- mean(param_samples)
-            median_value <- median(param_samples)
+            median_value <- stats::median(param_samples)
             hpdi <- coda::HPDinterval(param_samples, prob = prob)
             n_eff <- coda::effectiveSize(param_samples)
             rhat <- rstan::Rhat(as.matrix(param_samples))
