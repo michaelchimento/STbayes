@@ -1,6 +1,6 @@
 #' import_user_STb: Create STbayes_data object from user supplied data
 #'
-#' @param diffusion_data dataframe with columns id, trial, time, t_end
+#' @param event_data dataframe with columns id, trial, time, t_end
 #' @param networks dataframe with columns trial, from, to, and one or more columns of edge weights named descriptively. Optionally an integer time column can be provided for dynamic network analysis, although networks must be provided for each time period between transmission events.
 #' @param ILV_c optional dataframe with columns id, and any constant individual-level variables that might be of interest
 #' @param ILV_tv optional dataframe with columns trial, id, time and any time-varying variables. Variable values should summarize the variable for each inter-acquisition period.
@@ -14,7 +14,7 @@
 #'
 #' @examples
 #' # very mock data
-#' diffusion_data <- data.frame(
+#' event_data <- data.frame(
 #'   trial = rep(1:2, each = 3),
 #'   id = LETTERS[1:6],
 #'   time = c(0, 1, 2, 0, 1, 4),
@@ -49,7 +49,7 @@
 #'   t_weight = exp(rnorm(18))
 #' )
 #' imported_data <- import_user_STb(
-#'   diffusion_data = diffusion_data,
+#'   event_data = event_data,
 #'   networks = networks,
 #'   ILV_c = ILV_c,
 #'   ILV_tv = ILV_tv,
@@ -58,7 +58,7 @@
 #'   ILVm = c("weight") # Use weight for multiplicative effect on asocial and social learning
 #' )
 #'
-import_user_STb <- function(diffusion_data, networks, ILV_c = NULL, ILV_tv = NULL, ILVi = NULL, ILVs = NULL, ILVm = NULL, t_weights = NULL) {
+import_user_STb <- function(event_data, networks, ILV_c = NULL, ILV_tv = NULL, ILVi = NULL, ILVs = NULL, ILVm = NULL, t_weights = NULL) {
   # warnings
   if (is.null(ILVi) & is.null(ILVs) & is.null(ILVm) & (!is.null(ILV_c) | !is.null(ILV_tv))) {
     message("WARNING: You have provided ILV, yet did not specify whether they should be additive or multiplicative (missing arguments ILVi, ILVs, ILVm). STbayes defaults to unconstrained additive (i.e. each variable's effect on both asocial and social learning will be separately estimated). It is recommended to explicitly define this.")
@@ -71,37 +71,37 @@ import_user_STb <- function(diffusion_data, networks, ILV_c = NULL, ILV_tv = NUL
   # Initialize list
   data_list <- list()
 
-  #### Diffusion_data ####
-  # diffusion_data should be in format id, trial, time, t_end
+  #### event_data ####
+  # event_data should be in format id, trial, time, t_end
   # if time==0, assume to be trained demonstrator, if time>t_end, assume to be censored
 
   # create numeric variables in case user has supplied strings
-  diffusion_data$id_numeric <- as.numeric(as.factor(diffusion_data$id))
-  diffusion_data$trial_numeric <- as.numeric(as.factor(diffusion_data$trial))
+  event_data$id_numeric <- as.numeric(as.factor(event_data$id))
+  event_data$trial_numeric <- as.numeric(as.factor(event_data$trial))
 
   # order in case user has not, assign indexes per trial
-  diffusion_data <- diffusion_data[order(diffusion_data$trial_numeric, diffusion_data$time), ]
-  diffusion_data$index <- with(diffusion_data, ave(trial_numeric, trial_numeric, FUN = seq_along))
+  event_data <- event_data[order(event_data$trial_numeric, event_data$time), ]
+  event_data$index <- with(event_data, ave(trial_numeric, trial_numeric, FUN = seq_along))
 
   # create discrete time (this should be 0 if ID was a demo/seed)
-  diffusion_data$discrete_time <- NA
-  diffusion_data$discrete_time[diffusion_data$time != 0] <- with( # assign values only where time != 0
-    diffusion_data[diffusion_data$time != 0, ],
+  event_data$discrete_time <- NA
+  event_data$discrete_time[event_data$time != 0] <- with( # assign values only where time != 0
+    event_data[event_data$time != 0, ],
     ave(time, trial_numeric, FUN = function(x) as.numeric(as.factor(x)))
   )
-  diffusion_data$discrete_time[diffusion_data$time == 0] <- 0
+  event_data$discrete_time[event_data$time == 0] <- 0
 
   # group by time/trial and see if there's more than 1
-  diffusion_data$tie <- with(diffusion_data, ave(time, interaction(trial_numeric, time), FUN = function(x) length(x) > 1))
+  event_data$tie <- with(event_data, ave(time, interaction(trial_numeric, time), FUN = function(x) length(x) > 1))
 
   # identify seeds/demonstrators (where time == 0)
-  diffusion_data$seed <- with(diffusion_data, ifelse(time == 0, 1, 0))
+  event_data$seed <- with(event_data, ifelse(time == 0, 1, 0))
 
   # identify censored rows (where time == obs_period)
-  diffusion_data$censored <- with(diffusion_data, ifelse(time <= t_end, 0, 1))
+  event_data$censored <- with(event_data, ifelse(time <= t_end, 0, 1))
 
   # summarize censored/uncensored for each trial
-  N_data <- do.call(rbind, lapply(split(diffusion_data, diffusion_data$trial_numeric), function(df) {
+  N_data <- do.call(rbind, lapply(split(event_data, event_data$trial_numeric), function(df) {
     data.frame(
       trial_numeric = unique(df$trial_numeric),
       num_uncensored = nrow(df) - sum(df$censored),
@@ -112,7 +112,7 @@ import_user_STb <- function(diffusion_data, networks, ILV_c = NULL, ILV_tv = NUL
 
   # create matrix of where rows = trial and columns = discrete_time, and values = duration
   # summarize by trial and time
-  D_data <- unique(diffusion_data[order(diffusion_data$trial_numeric, diffusion_data$time), c("trial_numeric", "time", "discrete_time")])
+  D_data <- unique(event_data[order(event_data$trial_numeric, event_data$time), c("trial_numeric", "time", "discrete_time")])
   D_data <- D_data[D_data$time != 0, ] # remove demos
   # Calculate the duration as time - lag(time) for each group
   D_data$duration <- with(D_data, ave(time, trial_numeric, FUN = function(x) c(x[1], diff(x))))
@@ -123,24 +123,24 @@ import_user_STb <- function(diffusion_data, networks, ILV_c = NULL, ILV_tv = NUL
   D_data_int <- with(D_data, tapply(duration, list(trial_numeric, as.integer(discrete_time)), FUN = max, default = 0))
 
   # create a matrix where rows are trial_numeric, columns are id_numeric, and values are discrete_time
-  t_data <- with(diffusion_data, tapply(discrete_time, list(trial_numeric, id_numeric), FUN = max, default = -1))
+  t_data <- with(event_data, tapply(discrete_time, list(trial_numeric, id_numeric), FUN = max, default = -1))
   # create a matrix where rows are trial_numeric, columns are id_numeric, and values are actual time measurements
-  time_data <- with(diffusion_data, tapply(time, list(trial_numeric, id_numeric), FUN = max, default = -1))
+  time_data <- with(event_data, tapply(time, list(trial_numeric, id_numeric), FUN = max, default = -1))
   # gets the end of obs period of each trial
-  time_max <- with(diffusion_data, tapply(t_end, list(trial_numeric), FUN = max, default = -1))
+  time_max <- with(event_data, tapply(t_end, list(trial_numeric), FUN = max, default = -1))
   # Replace NA values with -1 to denote individuals who did not participate in a trial
   # t_data[is.na(t_data)] <- -1
 
   # create a matrix where rows are trial_numeric, columns are N + N_c, and values are id_numeric
   # values are then left aligned such that individuals who were in each trial will appear in the first indices
   # i know this is a really weird way of doing a ragged list, in case there are differing numbers of individuals in each trial... but should work fine
-  id_data <- with(diffusion_data, tapply(id_numeric, list(trial_numeric, index), FUN = max, default = NA))
+  id_data <- with(event_data, tapply(id_numeric, list(trial_numeric, index), FUN = max, default = NA))
   id_data <- t(apply(id_data, 1, function(row) {
     c(stats::na.omit(row), rep(-1, sum(is.na(row))))
   }))
 
-  data_list$K <- length(unique(diffusion_data$trial_numeric))
-  data_list$Z <- length(unique(diffusion_data$id_numeric)) # number of distinct individuals
+  data_list$K <- length(unique(event_data$trial_numeric))
+  data_list$Z <- length(unique(event_data$id_numeric)) # number of distinct individuals
   data_list$N <- N_data$num_uncensored # Uncensored counts per trial
   dim(data_list$N) <- length(data_list$N)
   data_list$N_c <- N_data$num_censored # Censored counts per trial
@@ -151,12 +151,12 @@ import_user_STb <- function(diffusion_data, networks, ILV_c = NULL, ILV_tv = NUL
   data_list$T_max <- max(N_data$max_periods)
   data_list$time <- time_data
   data_list$time_max <- time_max
-  data_list$Q <- max(diffusion_data$index) # number individuals per trial
+  data_list$Q <- max(event_data$index) # number individuals per trial
   data_list$D <- D_data_real # duration data
   data_list$D_int <- D_data_int # duration data in integer format (experimental)
   dim(data_list$D_int) <- dim(data_list$D) # why is r so annoying
   data_list$ind_id <- id_data # individual id data
-  data_list$C <- create_knowledge_matrix(diffusion_data) # knowledge state matrix
+  data_list$C <- create_knowledge_matrix(event_data) # knowledge state matrix
   if (!is.null(t_weights)) {
     data_list$W <- create_W_matrix(t_weights)
     if (all(dim(data_list$C) != dim(data_list$W))) stop("Dimensions of event state matrix C do not match dimensions of transmission weight matrix W.")
@@ -244,12 +244,12 @@ import_user_STb <- function(diffusion_data, networks, ILV_c = NULL, ILV_tv = NUL
 
   # check if the same number of individuals are included in both datasets
   if (data_list$Z != length(unique(c(networks$from, networks$to)))) {
-    stop("Networks do not contain the same number of unique individuals as the diffusion data.")
+    stop("Networks do not contain the same number of unique individuals as the event data.")
   }
 
   # check if the same number of trials are included in both datasets
   if (data_list$K != length(unique(networks$trial))) {
-    stop("Networks do not contain the same number of trials as the diffusion data.")
+    stop("Networks do not contain the same number of trials as the event data.")
   }
 
   # check if dynamic networks are supplied
@@ -284,7 +284,7 @@ import_user_STb <- function(diffusion_data, networks, ILV_c = NULL, ILV_tv = NUL
 
   # check if the same number of individuals are included in both datasets
   if (max(data_list$T) != max(networks$discrete_time) & is_dynamic) {
-    stop("Networks do not contain the same number of inter-event intervals as the diffusion data.")
+    stop("Networks do not contain the same number of inter-event intervals as the event data.")
   }
 
   if (is_distribution) {

@@ -11,7 +11,6 @@ lambda_0_sd <- .5
 s_mean <- 2
 s_sd <- .5
 t_steps <- 1000
-max_time <- t_steps + 1
 num_trials <- 25
 
 # Assign individual parameters
@@ -23,10 +22,10 @@ individual_params <- data.frame(
 individual_params %>% summarize(mean(lambda_0), mean(s))
 plot(density(individual_params$lambda_0))
 # storage for all trials
-all_diffusion_data <- data.frame(
+all_event_data <- data.frame(
     id = integer(),
     time = numeric(),
-    max_time = numeric(),
+    t_end = numeric(),
     trial = integer()
 )
 all_edge_list <- data.frame(
@@ -43,12 +42,12 @@ for (trial in 1:num_trials) {
     V(g)$name <- 1:N  # Name vertices
 
     # Initialize a dataframe to store the time of acquisition data
-    df <- data.frame(id = 1:N, time = max_time, max_time = max_time)
+    df <- data.frame(id = 1:N, time = t_steps+1, t_end = t_steps)
 
     # Simulate the diffusion
     for (t in 1:t_steps) {
         # Identify knowledgeable individuals
-        informed <- df[df$time < max_time, "id"]
+        informed <- df[df$time <= t_steps, "id"]
 
         # identify naive individuals
         potential_learners <- c(1:N)
@@ -77,14 +76,14 @@ for (trial in 1:num_trials) {
         df[df$id %in% new_learners, "time"] <- t
     }
 
-    diffusion_data <- df %>%
+    event_data <- df %>%
         arrange(time) %>%
         group_by(time, .drop = T) %>%
         mutate(tie=ifelse(n()>1,1,0),
                seed=ifelse(time==0,1,0))
 
     #### Create trial data and append to dataframe
-    diffusion_data <- diffusion_data %>%
+    event_data <- event_data %>%
         mutate(trial=trial) %>%
         select(-c(tie, seed))
     edge_list <- as.data.frame(as_edgelist(g))
@@ -93,13 +92,13 @@ for (trial in 1:num_trials) {
     edge_list$assoc = 1 #assign named edgeweight since this is just an edge list
 
     # add data
-    all_diffusion_data <- rbind(all_diffusion_data, diffusion_data)
+    all_event_data <- rbind(all_event_data, event_data)
     all_edge_list <- rbind(all_edge_list, edge_list)
     message("Trial", trial, "completed.\n")
 }
 
 # import data to STbayes and fit model
-data_list_user <- import_user_STb(all_diffusion_data, all_edge_list)
+data_list_user <- import_user_STb(all_event_data, all_edge_list)
 model_obj <- generate_STb_model(data_list_user, veff=c("lambda_0", "s"), priors = list(log_s="normal(2,3)"))
 write(model_obj, file = "../data/STAN_example_veff.stan")
 fit <- fit_STb(data_list_user, model_obj, chains = 5, cores = 5, iter = 5000, control = list(adapt_delta = 0.99))

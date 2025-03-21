@@ -1,10 +1,10 @@
 library(STbayes)
 #very mock data
-diffusion_data <- data.frame(
+event_data <- data.frame(
     trial = rep(1:2, each = 3),
     id = LETTERS[1:6],
-    time = c(0, 1, 2, 0, 1, 4),
-    max_time = c(3, 3, 3, 4, 4, 4)
+    time = c(0, 1, 2, 0, 1, 5),
+    t_end = c(3, 3, 3, 4, 4, 4)
 )
 networks <- data.frame(
     trial = rep(1:2, each = 3),
@@ -31,7 +31,7 @@ ILV_tv <- data.frame(
 
 #### explicitly setting which variables are additive and multiplicative ####
 STb_data <- import_user_STb(
-    diffusion_data = diffusion_data,
+    event_data = event_data,
     networks = networks,
     ILV_c = ILV_c,
     ILV_tv = ILV_tv,
@@ -47,7 +47,7 @@ fit = fit_STb(STb_data, model_obj)
 
 #### if not explicitly set, these variables will be additive unconstrained ####
 STb_data <- import_user_STb(
-    diffusion_data = diffusion_data,
+    event_data = event_data,
     networks = networks,
     ILV_c = ILV_c,
     ILV_tv = ILV_tv

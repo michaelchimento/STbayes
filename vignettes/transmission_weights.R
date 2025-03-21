@@ -1,10 +1,10 @@
 library(dplyr)
 library(STbayes)
 
-diffusion_data = STbayes::diffusion_data
+event_data = STbayes::event_data
 networks = STbayes::edge_list
 
-n_distinct(diffusion_data$time) #45 unique events
+n_distinct(event_data$time) #45 unique events
 
 t_weights = data.frame(
     trial = 1,
@@ -18,7 +18,7 @@ n_distinct(t_weights$t_weight)
 #but there's nothing stopping you from inputting dynamic transmission weights.
 
 # format data
-data_list_user = import_user_STb(diffusion_data = diffusion_data,
+data_list_user = import_user_STb(event_data = event_data,
                                  networks=edge_list,
                                  t_weights = t_weights)
 

@@ -19,7 +19,6 @@ lambda_0 <- 0.0005
 A <- 1    # Individual learning rate
 s <- 5    # Social learning rate per unit connection
 t_steps <- 1000
-max_time <- t_steps + 1
 
 # Run 100 simulations
 num_simulations <- 100
@@ -30,12 +29,12 @@ for (sim in 1:num_simulations) {
     V(g)$name <- 1:N  # Name vertices
 
     # Initialize a dataframe to store the time of acquisition data
-    df <- data.frame(id = 1:N, time = max_time, max_time = max_time)
+    df <- data.frame(id = 1:N, time = t_steps+1, t_end = t_steps)
 
     # Simulate the diffusion
     for (t in 1:t_steps) {
         # Identify knowledgeable individuals
-        informed <- df[df$time < max_time, "id"]
+        informed <- df[df$time <= t_steps, "id"]
 
         # identify naive individuals
         potential_learners <- c(1:N)
@@ -63,7 +62,7 @@ for (sim in 1:num_simulations) {
         df[df$id %in% new_learners, "time"] <- t
     }
 
-    diffusion_data <- df %>%
+    event_data <- df %>%
         arrange(time) %>%
         group_by(time, .drop = T) %>%
         mutate(tie=ifelse(n()>1,1,0),
@@ -74,16 +73,16 @@ for (sim in 1:num_simulations) {
     dim(adj_matrix) <- c(N, N, 1)
 
     # Define tie and seed vectors
-    tie_vec = diffusion_data %>% arrange(time) %>% ungroup() %>% pull(tie)
-    seed_vec = diffusion_data %>% arrange(id) %>% ungroup() %>% pull(seed)
+    tie_vec = event_data %>% arrange(time) %>% ungroup() %>% pull(tie)
+    seed_vec = event_data %>% arrange(id) %>% ungroup() %>% pull(seed)
 
     #### Fit NBDA model ####
     d <- nbdaData(
         label = "sim_data",
         assMatrix = adj_matrix,
-        orderAcq = diffusion_data$id,
-        timeAcq = diffusion_data$time,
-        endTime = max_time,
+        orderAcq = event_data$id,
+        timeAcq = event_data$time,
+        endTime = t_steps+1,
         ties = tie_vec,
         demons = seed_vec
     )
@@ -98,7 +97,7 @@ for (sim in 1:num_simulations) {
     final_results <- rbind(final_results, result_NBDA)
 
     #### Fit STbayes model ####
-    diffusion_data <- diffusion_data %>%
+    event_data <- event_data %>%
         mutate(trial=1) %>%
         select(-c(tie, seed))
     edge_list <- as.data.frame(as_edgelist(g))
@@ -107,7 +106,7 @@ for (sim in 1:num_simulations) {
     edge_list$assoc = 1 #assign named edgeweight since this is just an edge list
 
     # import data to STbayes
-    data_list_user <- import_user_STb(diffusion_data, edge_list)
+    data_list_user <- import_user_STb(event_data, edge_list)
     model_obj <- generate_STb_model(data_list_user)
     fit <- fit_STb(data_list_user, model_obj, chains = 4, cores = 4, iter = 2000, control = list(adapt_delta = 0.99))
     STb_estimates <- STb_summary(fit, digits=5)

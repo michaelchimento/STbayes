@@ -1,11 +1,12 @@
 library(STbayes)
 library(ggplot2)
 
-diffusion_data = STbayes::diffusion_data
+event_data = STbayes::event_data
+
 edge_list = STbayes::edge_list
 
 # format data
-data_list_user = import_user_STb(diffusion_data, edge_list)
+data_list_user = import_user_STb(event_data, edge_list)
 
 # generate, fit, and summarize models
 model = generate_STb_model(data, est_acqTime = TRUE, model_type="full")

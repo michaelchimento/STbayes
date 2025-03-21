@@ -13,15 +13,15 @@ networks = extract_bisonr_edgeweights(bisonr_fit, draws=100)
 networks$value = scales::rescale(networks$value) #networks can now be used in import_user_STb following normal workflow
 
 #network has 10 individuals, create mock diffusion data
-diffusion_data <- data.frame(
+event_data <- data.frame(
     trial = 1,
     id = c(1:10),
-    time = sample(1:100, 10, replace = FALSE),
-    max_time = 101
+    time = sample(1:101, 10, replace = FALSE),
+    t_end = 100
 )
 
 #create data_list as usual
-data_list = import_user_STb(diffusion_data, networks)
+data_list = import_user_STb(event_data, networks)
 
 # STb detects that you've entered posterior distributions as edgeweights automatically
 # it will generate a model wherein each iteration, model will marginalize LL over S=100 draws
@@ -40,13 +40,13 @@ strand_results = STbayes::strand_results_obj
 
 #the rest is the same as above
 networks = extract_strand_edgeweights(strand_results, draws=100)
-diffusion_data <- data.frame(
+event_data <- data.frame(
     trial = 1,
     id = c(1:10),
-    time = sample(1:100, 10, replace = FALSE),
-    max_time = 101
+    time = sample(1:101, 10, replace = FALSE),
+    t_end = 100
 )
-data_list = import_user_STb(diffusion_data, networks)
+data_list = import_user_STb(event_data, networks)
 model = generate_STb_model(data_list)
 fit = fit_STb(data_list, model)
 STb_summary(fit)

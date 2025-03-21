@@ -24,7 +24,7 @@ import_NBDA_STb <- function(nbda_object, network_names= c("default"), ILVi = NUL
 
     if (is.na(sum(nbda_object@timeAcq))){
         message("This NBDA object is likely in OADA format.")
-        diffusion_data <- data.frame(
+        event_data <- data.frame(
             id = nbda_object@orderAcq,
             trial = 1,  # NBDA assumes a single trial (adjust if multi-trial support is added)
             time = seq_along(1:max(nbda_object@orderAcq)),
@@ -32,7 +32,7 @@ import_NBDA_STb <- function(nbda_object, network_names= c("default"), ILVi = NUL
         )
     } else {
         message("This NBDA object is likely in TADA format.")
-        diffusion_data <- data.frame(
+        event_data <- data.frame(
             id = nbda_object@orderAcq,
             trial = 1,  # NBDA assumes a single trial (adjust if multi-trial support is added)
             time = nbda_object@timeAcq,
@@ -54,37 +54,37 @@ import_NBDA_STb <- function(nbda_object, network_names= c("default"), ILVi = NUL
             max_time = nbda_object@endTime
         )
         # Combine both dataframes
-        diffusion_data <- rbind(diffusion_data, censored_data)
+        event_data <- rbind(event_data, censored_data)
     }
 
 
 
-    #### Diffusion_data ####
+    #### event_data ####
     # Extract event times, IDs, and trial information
 
 
     # Convert IDs and trials to numeric values
-    diffusion_data$id_numeric <- as.numeric(as.factor(diffusion_data$id))
-    diffusion_data$trial_numeric <- as.numeric(as.factor(diffusion_data$trial))
+    event_data$id_numeric <- as.numeric(as.factor(event_data$id))
+    event_data$trial_numeric <- as.numeric(as.factor(event_data$trial))
 
     # Sort data and assign index within trials
-    diffusion_data <- diffusion_data[order(diffusion_data$trial_numeric, diffusion_data$time), ]
-    diffusion_data$index <- with(diffusion_data, ave(trial_numeric, trial_numeric, FUN = seq_along))
+    event_data <- event_data[order(event_data$trial_numeric, event_data$time), ]
+    event_data$index <- with(event_data, ave(trial_numeric, trial_numeric, FUN = seq_along))
 
     # create discrete time (this should be 0 if ID was a demo/seed)
-    diffusion_data$discrete_time <- NA
-    diffusion_data$discrete_time[diffusion_data$time != 0] <- with( # assign values only where time != 0
-        diffusion_data[diffusion_data$time != 0, ],
+    event_data$discrete_time <- NA
+    event_data$discrete_time[event_data$time != 0] <- with( # assign values only where time != 0
+        event_data[event_data$time != 0, ],
         ave(time, trial_numeric, FUN = function(x) as.numeric(as.factor(x)))
     )
-    diffusion_data$discrete_time[diffusion_data$time == 0] = 0
+    event_data$discrete_time[event_data$time == 0] = 0
 
     # Identify seeds (demonstrators) and censored individuals
-    diffusion_data$seed <- with(diffusion_data, ifelse(time == 0, 1, 0))
-    diffusion_data$censored <- with(diffusion_data, ifelse(time < max_time, 0, 1))
+    event_data$seed <- with(event_data, ifelse(time == 0, 1, 0))
+    event_data$censored <- with(event_data, ifelse(time < max_time, 0, 1))
 
     # Summarize trial data
-    N_data <- do.call(rbind, lapply(split(diffusion_data, diffusion_data$trial_numeric), function(df) {
+    N_data <- do.call(rbind, lapply(split(event_data, event_data$trial_numeric), function(df) {
         data.frame(
             trial_numeric = unique(df$trial_numeric),
             num_uncensored = nrow(df) - sum(df$censored),
@@ -94,7 +94,7 @@ import_NBDA_STb <- function(nbda_object, network_names= c("default"), ILVi = NUL
     }))
 
     #### Duration Matrix ####
-    D_data <- unique(diffusion_data[order(diffusion_data$trial_numeric, diffusion_data$time), c("trial_numeric", "time", "discrete_time")])
+    D_data <- unique(event_data[order(event_data$trial_numeric, event_data$time), c("trial_numeric", "time", "discrete_time")])
     D_data <- D_data[D_data$time!=0,] # remove demos
     D_data$duration <- with(D_data, ave(time, trial_numeric, FUN = function(x) c(x[1], diff(x))))
     D_data$duration <- ifelse(is.na(D_data$duration), D_data$time, D_data$duration)
@@ -105,11 +105,11 @@ import_NBDA_STb <- function(nbda_object, network_names= c("default"), ILVi = NUL
 
     #### Discrete Time Matrix ####
     # create a matrix where rows are trial_numeric, columns are id_numeric, and values are discrete_time
-    t_data <- with(diffusion_data, tapply(discrete_time, list(trial_numeric, id_numeric), FUN = max, default = -1))
+    t_data <- with(event_data, tapply(discrete_time, list(trial_numeric, id_numeric), FUN = max, default = -1))
     # create a matrix where rows are trial_numeric, columns are id_numeric, and values are actual time measurements
-    time_data <- with(diffusion_data, tapply(time, list(trial_numeric, id_numeric), FUN = max, default = -1))
+    time_data <- with(event_data, tapply(time, list(trial_numeric, id_numeric), FUN = max, default = -1))
     # gets the end of obs period of each trial
-    time_max <- with(diffusion_data, tapply(max_time, list(trial_numeric), FUN = max, default = -1))
+    time_max <- with(event_data, tapply(max_time, list(trial_numeric), FUN = max, default = -1))
     #t_data[is.na(t_data)] <- -1
 
     #### Individual IDs Matrix ####
@@ -117,14 +117,14 @@ import_NBDA_STb <- function(nbda_object, network_names= c("default"), ILVi = NUL
     # values are then left aligned such that individuals who were in each trial will appear in the first indices
     # i know this is a really weird way of doing a ragged list, in case there are differing numbers of individuals in each trial... but should work fine
     # actually not sure whether this will ever be an issue with nbda data objs..
-    id_data <- with(diffusion_data, tapply(id_numeric, list(trial_numeric, index), FUN = max, default = NA))
+    id_data <- with(event_data, tapply(id_numeric, list(trial_numeric, index), FUN = max, default = NA))
     id_data <- t(apply(id_data, 1, function(row) {
         c(stats::na.omit(row), rep(-1, sum(is.na(row))))
     }))
 
     #### Populate Data List ####
-    data_list$K <- length(unique(diffusion_data$trial_numeric))  # Number of trials
-    data_list$Z <- length(unique(diffusion_data$id_numeric))  # Number of individuals
+    data_list$K <- length(unique(event_data$trial_numeric))  # Number of trials
+    data_list$Z <- length(unique(event_data$id_numeric))  # Number of individuals
     data_list$N <- N_data$num_uncensored  # Uncensored counts per trial
     dim(data_list$N) = length(data_list$N)
     data_list$N_c <- N_data$num_censored  # Censored counts per trial
@@ -135,12 +135,12 @@ import_NBDA_STb <- function(nbda_object, network_names= c("default"), ILVi = NUL
     data_list$T_max <- max(N_data$max_periods)
     data_list$time <- time_data
     data_list$time_max <- time_max
-    data_list$Q <- max(diffusion_data$index)  # Max individuals per trial
+    data_list$Q <- max(event_data$index)  # Max individuals per trial
     data_list$D <- D_data_real # duration data
     data_list$D_int = D_data_int #duration data in integer format (experimental)
     dim(data_list$D_int) <- dim(data_list$D) #why is r so annoying
     data_list$ind_id <- id_data  # Individual IDs matrix
-    data_list$C <- create_knowledge_matrix(diffusion_data) # knowledge state matrix
+    data_list$C <- create_knowledge_matrix(event_data) # knowledge state matrix
     data_list$C <- sweep(data_list$C, MARGIN = 3, STATS = nbda_object@weights, FUN = "*") #mult with weights
 
 

@@ -8,7 +8,7 @@ STbayes can currently accomodate:
  - cTADA (acquisition time known) and OADA (only acquisition order known) model types.
  - static and dynamic networks.
  - multi-network comparison (with static or dynamic networks).
- - multiple diffusion trials with the same set, subsets, or different sets of individuals.
+ - multiple trials with the same set, subsets, or different sets of individuals.
  - constant and time-varying ILVs for additive and multiplicative transmission models.
  - varying effects by individual for strength of social transmission, baseline hazard rates, and other user defined ILVs.
  - Easy workflow for ELPD (loo-psis, waic) model comparison.
@@ -57,11 +57,11 @@ An example dataset is provided where data was simulated on a random-regular netw
 
 ```r
 library(STbayes)
-diffusion_data = STbayes::diffusion_data
+event_data = STbayes::event_data
 edge_list = STbayes::edge_list
 
 # import_user_STb formats your data for further steps
-data_list_user = import_user_STb(diffusion_data, edge_list)
+data_list_user = import_user_STb(event_data, edge_list)
 
 #generate STAN model from input data
 model_obj = generate_STb_model(data_list_user, gq=T, est_acqTime = T)
@@ -116,11 +116,11 @@ Like NBDA, we can compare a full model with both a social and asocial component,
 library(STbayes)
 library(ggplot2)
 
-diffusion_data = STbayes::diffusion_data
+event_data = STbayes::event_data
 edge_list = STbayes::edge_list
 
 # format data
-data_list_user = import_user_STb(diffusion_data, edge_list)
+data_list_user = import_user_STb(event_data, edge_list)
 
 # reusable function to generate and fit a model
 generate_and_fit_model <- function(data, model_type, chains = 5, cores = 5, iter = 2000, control = list(adapt_delta = 0.99)) {
@@ -180,9 +180,9 @@ The full model describes the data much better and obtains a better (lower) LOO-P
 
 If you'd prefer to import your own data, STbayes requires two dataframes, and accept an optional third dataframe of individual-level variables. The first dataframe gives information  about the spreading of the behavior or information and must contain columns:
 - ```id```: Character or numeric (all converted to numeric, anyway) column of individual identites.
-- ```trial```: Character or numeric column indicating which trial the diffusion belongs to. If there is only one diffusion, set all values to 1.
+- ```trial```: Character or numeric column indicating which trial the event belongs to. If there is only one trial, set all values to 1.
 - ```time```: This is an integer or float column indicating when the individual was recorded as first informed/knowledgable. If an ID was a **pretrained demonstrator, or otherwise became informed prior to the start of the observation period, set as 0**. Left censored individuals will not contribute to the likelihood calculation. If an individual **never learned during the observation period, set its value to the duration of the observation period**. These will be treated as right-censored individuals in the likelihood calculation.
-- ```max_time```: this is the duration of the observation period for each trial. If you observed a population for 7 days, max_time=7.
+- ```t_end```: this is the duration of the observation period for each trial. If you observed a population for 7 days, t_end=7.
 
 The second dataframe gives information regarding the network connections of each individual in a long format (i.e. an edge list). The edge list can be symmetric (all combinations of individuals provided, useful for directed networks) or asymmetric. The first three columns must be:
 - ```trial```: Character or numeric column indicating which trial the networks belong to. If there is only one diffusion, set all values to 1.
@@ -200,11 +200,11 @@ Finally, the user must supply at least one descriptively named column of integer
 ``` r
 library(STbayes)
 
- diffusion_data <- data.frame(
+ event_data <- data.frame(
    id = c("A", "B", "C", "D", "E", "F"), #this can be character or numeric
    trial = c(1, 1, 1, 2, 2, 2), #this can be character or numeric
-   time = c(0, 1, 2, 0, 1, 4), #this must be numeric, integer or float. If time=0, left-censored, if time=max_time, right-censored
-   max_time = c(3, 3, 3, 4, 4, 4) #this is the duration of the observation period.
+   time = c(0, 1, 2, 0, 1, 4), #this must be numeric, integer or float. If time=0, left-censored, if time>t_end, right-censored
+   t_end = c(3, 3, 3, 4, 4, 4) #this is the duration of the observation period.
  )
  
  networks <- data.frame(
@@ -235,7 +235,7 @@ library(STbayes)
 )
  
  data_list <- import_user_STb(
-   diffusion_data = diffusion_data,
+   event_data = event_data,
    networks = networks,
    ILV_c = ILV_c,
    ILV_tv = ILV_tv,
@@ -265,7 +265,7 @@ You may apply varying effects for each individual for the baseline rate (lambda_
 model = generate_STb_model(data_list, veff_ID = c("lambda_0", "s"))
 ```
 
-This can be used if you have multiple diffusion trials with the same individuals, and you expect there are consistent individual differences in effects. For lambda_0 and s, varying effects are added onto the main effect prior to transformation from log scale back to linear. For example, if we apply a varying effect for lambda_0, the model will calculate a vector of lambda_0 values for each individual in the ```transformed parameters``` block:
+This can be used if you have multiple trials with the same individuals, and you expect there are consistent individual differences in effects. For lambda_0 and s, varying effects are added onto the main effect prior to transformation from log scale back to linear. For example, if we apply a varying effect for lambda_0, the model will calculate a vector of lambda_0 values for each individual in the ```transformed parameters``` block:
 
 <img src="https://latex.codecogs.com/svg.latex?\boldsymbol{\lambda}_0%20=%20\frac{1}{\exp(\mu_{\log%20\lambda_0}%20+%20\boldsymbol{v}_{\text{ID},%20\lambda_0})}" alt="\boldsymbol{\lambda}_0 = \frac{1}{\exp(\mu_{\log \lambda_0} + \boldsymbol{v}_{\text{ID}, \lambda_0})}" />
 
@@ -318,16 +318,16 @@ networks = extract_bisonr_edgeweights(bisonr_fit, draws=100)
 # edgeweights must be positive for STbayes, so rescale between 0 and 1 here
 networks$value = scales::rescale(networks$value) #networks can now be used in import_user_STb following normal workflow
 
-#network has 10 individuals, create mock diffusion data
-diffusion_data <- data.frame(
+#network has 10 individuals, create mock event data
+event_data <- data.frame(
    trial = 1,
    id = c(1:10),
-   time = sample(1:100, 10, replace = FALSE),
-   max_time = 101
+   time = sample(1:101, 10, replace = FALSE),
+   t_end = 100
  )
 
 #create data_list as usual
-data_list = import_user_STb(diffusion_data, networks)
+data_list = import_user_STb(event_data, networks)
 
 # STb detects that you've entered posterior distributions as edgeweights automatically
 # it will generate a model wherein each iteration, model will marginalize LL over S=100 draws
@@ -348,7 +348,7 @@ where draw is just the index from 1:S of samples. Each row should contain one sa
 STbayes can be used to fit and create models of complex transmission. As an example, you can create a log-likelihood that includes a frequency-dependent transmission rule by using the ```transmission_func``` argument of ```generate_STb_model```:
 
 ```
-data_list = import_user_STb(STbayes::diffusion_data, STbayes::networks)
+data_list = import_user_STb(STbayes::event_data, STbayes::networks)
 generate_STb_model(data_list, transmission_func="freq-dep")
 ```
 

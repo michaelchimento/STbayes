@@ -4,11 +4,11 @@ library(dplyr)
 library(NBDA)
 library(ggplot2)
 # Parameters
-N <- 50  # Population size
-k <- 4    # Degree of each node in the random regular graph
+N <- 100  # Population size
+k <- 7    # Degree of each node in the random regular graph
 lambda_0=0.001 #baseline
 A <- 1  # Individual learning rate
-s <- 5  # Social learning rate per unit connection
+s <- 3  # Social learning rate per unit connection
 t_steps <- 1000
 
 # create random regular graph
@@ -53,26 +53,26 @@ for (t in 1:t_steps) {
     df[df$id %in% new_learners, "time"] <- t
 }
 
-diffusion_data <- df %>%
+event_data <- df %>%
     arrange(time) %>%
     group_by(time, .drop = T) %>%
     mutate(tie=ifelse(n()>1,1,0),
            seed=ifelse(time==0,1,0))
 
-hist(diffusion_data$time)
+hist(event_data$time)
 
 # Define the adjacency matrix
 adj_matrix <- as_adjacency_matrix(g, attr=NULL, sparse=FALSE)
 dim(adj_matrix) = c(N,N,1)
 
-tie_vec = diffusion_data %>% arrange(time) %>% ungroup() %>% select(tie)
-seed_vec = diffusion_data %>% arrange(id) %>% ungroup() %>% select(seed)
+tie_vec = event_data %>% arrange(time) %>% ungroup() %>% select(tie)
+seed_vec = event_data %>% arrange(id) %>% ungroup() %>% select(seed)
 
 #### Fit NBDA model ####
 d = nbdaData(label="sim_data",
              assMatrix = adj_matrix,
-             orderAcq = diffusion_data$id,
-             timeAcq = diffusion_data$time,
+             orderAcq = event_data$id,
+             timeAcq = event_data$time,
              endTime = t_steps+1,
              ties = tie_vec$tie,
              demons = seed_vec$seed)
@@ -82,7 +82,7 @@ est_rate = 1/result@outputPar[1]
 est_rate
 
 #import into STbayes
-diffusion_data <- diffusion_data %>%
+event_data <- event_data %>%
     mutate(trial=1) %>%
     select(-c(tie, seed))
 edge_list <- as.data.frame(as_edgelist(g))
@@ -90,24 +90,23 @@ names(edge_list) = c("from","to")
 edge_list$trial = 1
 edge_list$assoc = 1 #assign named edgeweight since this is just an edge list
 
-#save(diffusion_data, file="../data/example_diffusion_data.rda")
+#save(event_data, file="../data/example_event_data.rda")
 #save(edge_list, file="../data/example_edge_list.rda")
 
 #generate STAN model from input data
-data_list_user = import_user_STb(diffusion_data, edge_list)
+data_list_user = import_user_STb(event_data, edge_list)
 
 #generate STAN model from input data
 model_obj = generate_STb_model(data_list_user, gq=T, est_acqTime = T)
 
 # Write to file for debugging? uncomment below why not
-write(model_obj, file = "../data/STAN_example_vanilla_ctada.stan")
+#write(model_obj, file = "../inst/extdata/STAN_example_vanilla_ctada.stan")
 
 # fit model
-fit = fit_STb(data_list_user, model_obj, chains = 5, cores = 5, iter=2000, control = list(adapt_delta=0.99))
+fit = fit_STb(data_list_user, model_obj, chains = 5, cores = 5, iter=5000, control = list(adapt_delta=0.9))
 
 # check estimates
 STb_summary(fit, digits=4)
-
 #get data for estimated times
 acqdata = extract_acqTime(fit, data_list_user)
 

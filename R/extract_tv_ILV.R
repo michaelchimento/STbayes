@@ -12,6 +12,7 @@
 extract_tv_ILV <- function(nbda_object, ILV_type) {
     long_format_list <- list()
     ILV_matrix <- methods::slot(nbda_object, ILV_type)  # Access the slot via its name
+    if (sum(ILV_matrix)==0) message("Warning, ILV values are all 0, is this correct?")
     nID <- length(methods::slot(nbda_object, "idname"))
 
     for (col in 1:ncol(ILV_matrix)){
