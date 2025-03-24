@@ -2,18 +2,17 @@ library(STbayes)
 library(ggplot2)
 
 event_data = STbayes::event_data
-
 edge_list = STbayes::edge_list
 
 # format data
 data_list_user = import_user_STb(event_data, edge_list)
 
 # generate, fit, and summarize models
-model = generate_STb_model(data, est_acqTime = TRUE, model_type="full")
-full_fit = fit_STb(data, chains = 5, cores = 5, iter = 2000, control = list(adapt_delta = 0.99))
+model = generate_STb_model(data_list_user, est_acqTime = TRUE, model_type="full")
+full_fit = fit_STb(data_list_user, model, chains = 5, cores = 5, iter = 2000, control = list(adapt_delta = 0.99))
 
-model = generate_STb_model(data, est_acqTime = TRUE, model_type="asocial")
-asocial_fit = fit_STb(data, chains = 5, cores = 5, iter = 2000, control = list(adapt_delta = 0.99))
+model = generate_STb_model(data_list_user, est_acqTime = TRUE, model_type="asocial")
+asocial_fit = fit_STb(data_list_user, model, chains = 5, cores = 5, iter = 2000, control = list(adapt_delta = 0.99))
 
 STb_summary(full_fit, digits = 4)
 STb_summary(asocial_fit, digits = 4)
@@ -85,9 +84,9 @@ plot_acq_time <- function(fit, data, title, label) {
 }
 
 # plot estimated times
-p1 = plot_acq_time(asocial_fit, data_list_user, "Asocial (null) model estimates", label_null)
+p1 = plot_acq_time(asocial_fit, data_list_user, "Asocial model estimates", label_null)
 p2 = plot_acq_time(full_fit, data_list_user, "Full model estimates", label_full)
 
 library(ggpubr)
 ggarrange(p1, p2)
-ggsave("../docs/compare_social_asocial.png", width=10, height=5, units="cm", scale=2)
+ggsave("../docs/compare_social_asocial.png", width=10, height=5, units="cm", scale=2.5)

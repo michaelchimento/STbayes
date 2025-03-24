@@ -4,10 +4,10 @@
 \alias{create_knowledge_matrix}
 \title{create_knowledge_matrix: private function to create the knowledge state matrix C\link{t,n}}
 \usage{
-create_knowledge_matrix(diffusion_data)
+create_knowledge_matrix(event_data)
 }
 \arguments{
-\item{diffusion_data}{dataframe (diffusion_data) in import_NBDA_data.R / create_STb_data.R}
+\item{event_data}{dataframe (event_data) in import_NBDA_data.R / create_STb_data.R}
 }
 \value{
 matrix \link{t,n} where value=0 if naive at t, otherwise 1

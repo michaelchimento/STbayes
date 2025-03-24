@@ -11,18 +11,18 @@ data_list_user = import_user_STb(event_data, edge_list)
 model_obj = generate_STb_model(data_list_user, gq=T, est_acqTime = T)
 
 # fit model
-fit = fit_STb(data_list_user, model_obj, chains = 5, cores = 5, iter=2000, control = list(adapt_delta=0.99))
+full_fit = fit_STb(data_list_user, model_obj, chains = 5, cores = 5, iter=5000, control = list(adapt_delta=0.99))
 
 # check estimates
-STb_summary(fit, digits=4)
+STb_summary(full_fit, digits=4)
 
 #get estimated times
-acqdata = extract_acqTime(fit, data_list_user)
+acqdata = extract_acqTime(full_fit, data_list_user)
 
 #plot estimated times versus observed times w/ residuals
-ggplot(acqdata, aes(x = observed_time, y = mean_time)) +
+ggplot(acqdata, aes(x = observed_time, y = median_time)) +
     geom_segment(
-        aes(x = observed_time, xend = observed_time, y = mean_time, yend = observed_time), # connect predicted to slope line
+        aes(x = observed_time, xend = observed_time, y = median_time, yend = observed_time), # connect predicted to slope line
         color = "red",
         alpha = 0.2
     ) +

@@ -22,6 +22,7 @@ extract_acqTime <- function(fit, data_list, var_name = "acquisition_time") {
 
     # Flatten and summarize acquisition times
     mean_acquisition <- matrix(0, K, Q)
+    median_acquisition <- matrix(0, K, Q)
     lower_hpd <- matrix(0, K, Q)
     upper_hpd <- matrix(0, K, Q)
 
@@ -31,6 +32,7 @@ extract_acqTime <- function(fit, data_list, var_name = "acquisition_time") {
             id_intrial = rep(n, K)
             samples <- posterior_samples[, trial, n]
             mean_acquisition[trial, n] <- mean(samples, na.rm = TRUE)
+            median_acquisition[trial, n] <- median(samples, na.rm = TRUE)
             hpd <- coda::HPDinterval(coda::as.mcmc(samples), prob = 0.95)
             lower_hpd[trial, n] <- hpd[1]
             upper_hpd[trial, n] <- hpd[2]
@@ -50,6 +52,7 @@ extract_acqTime <- function(fit, data_list, var_name = "acquisition_time") {
         id = id_all,
         observed_time = observed_time_ordered,
         mean_time = as.vector(mean_acquisition),
+        median_time = as.vector(median_acquisition),
         lower_hpd = as.vector(lower_hpd),
         upper_hpd = as.vector(upper_hpd)
     )

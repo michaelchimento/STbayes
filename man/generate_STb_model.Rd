@@ -40,7 +40,7 @@ generate_STb_model: Dynamically generate STAN model based on input data
 }
 \examples{
 #very mock data
-diffusion_data <- data.frame(
+event_data <- data.frame(
   id = c("A", "B", "C", "D", "E", "F"),
   trial = c(1, 1, 1, 2, 2, 2),
   time = c(0, 1, 2, 0, 1, 4),
@@ -60,7 +60,7 @@ networks <- data.frame(
     weight = c(0.5, .25, .3, 0, -.2, -.4)
  )
 data_list <- import_user_STb(
-  diffusion_data = diffusion_data,
+  event_data = event_data,
   networks = networks,
   ILV_c = ILV_c,
   ILVi = c("age"), # Use only 'age' for asocial learning

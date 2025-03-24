@@ -36,7 +36,7 @@ rstan fit
 Title
 }
 \examples{
-data_list_user = import_user_STb(diffusion_data, edge_list)
+data_list_user = import_user_STb(event_data, edge_list)
 model_obj = generate_STb_model(data_list_user)
 fit = fit_STb(data_list_user, model_obj, chains = 5, cores = 5, iter=2000, control = list(adapt_delta=0.99))
 #or alternatively

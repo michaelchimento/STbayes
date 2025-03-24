@@ -5,7 +5,7 @@
 \title{import_user_STb: Create STbayes_data object from user supplied data}
 \usage{
 import_user_STb(
-  diffusion_data,
+  event_data,
   networks,
   ILV_c = NULL,
   ILV_tv = NULL,
@@ -16,7 +16,7 @@ import_user_STb(
 )
 }
 \arguments{
-\item{diffusion_data}{dataframe with columns id, trial, time, t_end}
+\item{event_data}{dataframe with columns id, trial, time, t_end}
 
 \item{networks}{dataframe with columns trial, from, to, and one or more columns of edge weights named descriptively. Optionally an integer time column can be provided for dynamic network analysis, although networks must be provided for each time period between transmission events.}
 
@@ -40,7 +40,7 @@ import_user_STb: Create STbayes_data object from user supplied data
 }
 \examples{
 # very mock data
-diffusion_data <- data.frame(
+event_data <- data.frame(
   trial = rep(1:2, each = 3),
   id = LETTERS[1:6],
   time = c(0, 1, 2, 0, 1, 4),
@@ -75,7 +75,7 @@ t_weights <- data.frame(
   t_weight = exp(rnorm(18))
 )
 imported_data <- import_user_STb(
-  diffusion_data = diffusion_data,
+  event_data = event_data,
   networks = networks,
   ILV_c = ILV_c,
   ILV_tv = ILV_tv,

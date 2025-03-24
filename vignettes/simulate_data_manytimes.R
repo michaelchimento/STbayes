@@ -2,20 +2,24 @@ library(STbayes)
 library(igraph)
 library(dplyr)
 library(NBDA)
+library(ggplot2)
+library(ggpubr)
 
 # Initialize final results dataframe
 final_results <- data.frame(
     sim_id = integer(),
     model = character(),
-    est_baseline = numeric(),
-    est_s = numeric(),
+    mean_lambda_0 = numeric(),
+    mean_s = numeric(),
+    median_lambda_0 = numeric(),
+    median_s = numeric(),
     stringsAsFactors = FALSE
 )
 
 # Parameters
 N <- 30  # Population size
-k <- 4   # Degree of each node in the random regular graph
-lambda_0 <- 0.0005
+k <- 3   # Degree of each node in the random regular graph
+lambda_0 <- 0.001
 A <- 1    # Individual learning rate
 s <- 5    # Social learning rate per unit connection
 t_steps <- 1000
@@ -23,11 +27,9 @@ t_steps <- 1000
 # Run 100 simulations
 num_simulations <- 100
 for (sim in 1:num_simulations) {
-
     # Create random regular graph
     g <- sample_k_regular(N, k, directed = FALSE, multiple = FALSE)
     V(g)$name <- 1:N  # Name vertices
-
     # Initialize a dataframe to store the time of acquisition data
     df <- data.frame(id = 1:N, time = t_steps+1, t_end = t_steps)
 
@@ -66,14 +68,16 @@ for (sim in 1:num_simulations) {
         arrange(time) %>%
         group_by(time, .drop = T) %>%
         mutate(tie=ifelse(n()>1,1,0),
-               seed=ifelse(time==0,1,0))
+               seed=ifelse(time==0,1,0)) %>%
+        ungroup() %>%
+        mutate(tie_nbda = if_else(lag(time)==time,1,0, missing = 0))
 
     # Define the adjacency matrix
     adj_matrix <- as_adjacency_matrix(g, attr = NULL, sparse = FALSE)
     dim(adj_matrix) <- c(N, N, 1)
 
     # Define tie and seed vectors
-    tie_vec = event_data %>% arrange(time) %>% ungroup() %>% pull(tie)
+    tie_vec = event_data %>% arrange(time) %>% ungroup() %>% pull(tie_nbda)
     seed_vec = event_data %>% arrange(id) %>% ungroup() %>% pull(seed)
 
     #### Fit NBDA model ####
@@ -83,16 +87,17 @@ for (sim in 1:num_simulations) {
         orderAcq = event_data$id,
         timeAcq = event_data$time,
         endTime = t_steps+1,
-        ties = tie_vec,
-        demons = seed_vec
+        ties = tie_vec
     )
 
     result <- tadaFit(d)
     result_NBDA <- data.frame(
         sim_id = sim,
         model = "NBDA",
-        est_baseline = 1 / result@outputPar[1],
-        est_s = result@outputPar[2]
+        mean_lambda_0 = 1 / result@outputPar[1],
+        mean_s = result@outputPar[2],
+        median_lambda_0 = 1 / result@outputPar[1],
+        median_s = result@outputPar[2]
     )
     final_results <- rbind(final_results, result_NBDA)
 
@@ -107,17 +112,17 @@ for (sim in 1:num_simulations) {
 
     # import data to STbayes
     data_list_user <- import_user_STb(event_data, edge_list)
-    model_obj <- generate_STb_model(data_list_user)
-    fit <- fit_STb(data_list_user, model_obj, chains = 4, cores = 4, iter = 2000, control = list(adapt_delta = 0.99))
+    model_obj <- generate_STb_model(data_list_user, gq=F)
+    fit <- fit_STb(data_list_user, model_obj, chains = 5, cores = 5, iter = 5000, control = list(adapt_delta = 0.99))
     STb_estimates <- STb_summary(fit, digits=5)
-    transformed_s <- STb_estimates %>% filter(Parameter == "transformed_s") %>% pull(Mean)
-    transformed_baseline <- STb_estimates %>% filter(Parameter == "transformed_baserate") %>% pull(Mean)
 
     result_STbayes <- data.frame(
         sim_id = sim,
         model = "STbayes",
-        est_baseline = transformed_baseline,
-        est_s = transformed_s
+        median_lambda_0 = STb_estimates %>% filter(Parameter == "lambda_0") %>% pull(Median),
+        mean_lambda_0 = STb_estimates %>% filter(Parameter == "lambda_0") %>% pull(Mean),
+        median_s = STb_estimates %>% filter(Parameter == "s") %>% pull(Median),
+        mean_s = STb_estimates %>% filter(Parameter == "s") %>% pull(Mean)
     )
 
     # add STbayes results to final results
@@ -126,21 +131,50 @@ for (sim in 1:num_simulations) {
     message("Simulation", sim, "completed.\n")
 }
 
-print(final_results)
+ggplot(final_results, aes(y=median_lambda_0, x=median_s))+
+    facet_wrap(~model)+
+    geom_point(alpha=0.4)+
+    geom_density_2d()+
+    geom_hline(yintercept = lambda_0, color="red", linetype="dashed") +
+    geom_vline(xintercept = s, color="red", linetype="dashed") +
+    labs(
+        y = expression("Estimated " * lambda[0] ),
+        x = expression("Estimated " * s )
+    ) +
+    theme_bw()
+ggsave(file="../docs/Fig2_NBDA_STbayes_estimates.png", width=10, height=4, units="cm", scale=2)
 
-library(ggplot2)
-p1 = ggplot(final_results, aes(y=est_s, x=model))+
+final_results_wide <- final_results %>%
+    select(sim_id, model, median_lambda_0, median_s) %>%
+    tidyr::pivot_wider(
+        names_from = model,
+        values_from = c(median_lambda_0, median_s),
+        names_glue = "{model}_{.value}",
+        values_fn = mean
+    )
+
+p1 = ggplot(final_results_wide, aes(y=NBDA_median_lambda_0, x=STbayes_median_lambda_0))+
     geom_jitter()+
-    stat_summary()+
-    geom_hline(yintercept = s, color="red") +
-    labs(y="Est. S")
+    labs(y = expression("NBDA estimated " * lambda[0] ),
+         x = expression("STbayes estimated " * lambda[0] ))+
+    theme_bw()
 
-p2 = ggplot(final_results, aes(y=est_baseline, x=model))+
+p2 = ggplot(final_results_wide, aes(y=NBDA_median_s, x=STbayes_median_s))+
     geom_jitter()+
-    stat_summary()+
-    geom_hline(yintercept = lambda_0, color="red") +
-    labs(y="Est. Baseline")
+    labs(y = expression("NBDA estimated " * s ),
+         x = expression("STbayes estimated " * s ))+
+    theme_bw()
 
-library(ggpubr)
-ggarrange(p1,p2)
-ggsave("../docs/NBDA_STbayes_model_comparison", width=6, height=8, units="cm", scale=2)
+ggarrange(p1,p2, labels = c("A","B"))
+ggsave(file="../docs/FigS_NBDA_STbayes_correlations.png", width=10, height=4, units="cm", scale=2)
+
+ggplot(final_results, aes(y=log(median_lambda_0), x=log(median_s)))+
+    facet_wrap(~model)+
+    geom_point(alpha=0.2)+
+    geom_density_2d()+
+    geom_hline(yintercept = log(lambda_0), color="red") +
+    geom_vline(xintercept = log(s), color="red") +
+    labs(y="Est. Baseline", x="Est_s")
+
+
+

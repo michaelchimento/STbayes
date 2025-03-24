@@ -442,22 +442,32 @@ model {{
         for (n in 1:Q) {{
             int id = ind_id[trial, n];
             int learn_time = t[trial, id];
-            if (learn_time > 0){{
-                real cum_hazard = 0; //set val before adding
-                int global_time = 1;
-                for (time_step in 1:T[trial]) {{
-                    for (micro_time in 1:D_int[trial, time_step]){{
-                        real ind_term = {ILVi_variable_effects};
-                        {social_info_statement}
-                        {lambda_statement_estAcq}
-                        real prob = 1-exp(-lambda);
-                        if (bernoulli_rng(prob) && acquisition_time[trial, n]>=time_max[trial]) {{
-                            acquisition_time[trial, n] = global_time;
-                        }}
-                        global_time += 1;
-                    }}
-                }}
+            // if demonstrator, skip simulation
+            if (learn_time < 0) {{
+                acquisition_time[trial, n] = 0;
+                continue;
             }}
+
+            // if observed first innovator (learn_time == 1), fix acquisition time
+            if (learn_time == 1) {{
+                acquisition_time[trial, n] = D_int[trial, 1];
+                continue;
+            }}
+
+            real cum_hazard = 0; //set val before adding
+            int global_time = D_int[trial, 1];
+            for (time_step in 2:T[trial]) {{
+                for (micro_time in 1:D_int[trial, time_step]){{
+                    real ind_term = {ILVi_variable_effects};
+                    {social_info_statement}
+                    {lambda_statement_estAcq}
+                    real prob = 1-exp(-lambda);
+                    if (bernoulli_rng(prob) && acquisition_time[trial, n]>=time_max[trial]) {{
+                        acquisition_time[trial, n] = global_time;
+                    }}
+                    global_time += 1;
+                }}
+             }}
         }}
     }}"
     ) else ""
