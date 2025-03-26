@@ -15,7 +15,7 @@
 create_W_matrix <- function(t_weights){
 
     t_weights$trial_numeric <- as.numeric(as.factor(t_weights$trial))
-
+    t_weights$id_numeric <- as.numeric(as.factor(t_weights$id))
     #add discrete time in case user supplied cont. time of events.
     t_weights$discrete_time <- NA
     t_weights$discrete_time[t_weights$time != 0] <- with( # assign values only where time != 0

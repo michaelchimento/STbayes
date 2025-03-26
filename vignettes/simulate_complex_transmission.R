@@ -4,78 +4,90 @@ library(dplyr)
 library(NBDA)
 library(ggplot2)
 
-
 dini_func <- function (x, k){
-    x = 2*x-1
-    y = ((x-k*x) / (k - 2*k*abs(x) + 1) + 1) / 2
+    x = 2*x - 1
+    y = ((x - k * x) / (k - 2 * k * abs(x) + 1) + 1) / 2
     return(y)
 }
 
-
 # Parameters
-N <- 100  # Population size
-k <- 10    # Degree of each node in the random regular graph
-log_lambda_0_mean = 7 #baseline
-lambda_0 = 1/exp(log_lambda_0_mean)
-s = 4
-s_prime = lambda_0*s
-A <- 1  # Individual learning rate
-#f <- .6 # conformist transmission
-k_shape = -.8
-x = seq(0,1,.05)
-plot(x,dini_func(x, k=k_shape))
+N <- 50  # Population size
+n_trials <- 10
+k <- 5   # Degree of each node
+log_lambda_0_mean <- 7  # baseline
+lambda_0 <- 1 / exp(log_lambda_0_mean)
+s <- 4
+s_prime <- lambda_0 * s
+A <- 1   # Individual learning rate
+k_shape <- -0.9
 t_steps <- 3000
+# run multiple trials
+trial_results <- vector("list", n_trials)
 
 # create random regular graph
 g <- sample_k_regular(N, k, directed = FALSE, multiple = FALSE)
 V(g)$name <- 1:N
 
-# initialize a dataframe to store the time of acquisition data
-df <- data.frame(id=1:N, time=t_steps+1, t_end = t_steps)
+for (trial in 1:n_trials) {
 
-# If you want to set a demonstrator, uncomment below
-# seed <- sample(1:N, 1)
-# df[df$id == seed, c("time", "informed_associates")] <- c(0, 0)
 
-# simulate the diffusion
-for (t in 1:t_steps) {
-    # identify knowledgeable individuals
-    informed <- df[df$time <= t_steps, "id"]
+    # initialize df for this trial
+    df <- data.frame(id = 1:N, time = t_steps + 1, t_end = t_steps)
 
-    # identify naive
-    potential_learners <- c(1:N)
-    potential_learners <- potential_learners[!(potential_learners %in% informed)]
+    # uncomment below if you want a random seed informed individual each trial
+    # seed <- sample(1:N, 1)
+    # df[df$id == seed, "time"] <- 0
 
-    # break the loop if no one left to learn,
-    if (length(potential_learners) == 0) break
+    # simulate diffusion
+    for (t in 1:t_steps) {
+        # get informed
+        informed <- df[df$time <= t_steps, "id"]
 
-    # calc the hazard
-    learning_rates <- sapply(potential_learners, function(x) {
-        neighbors <- neighbors(g, x)
-        C <- sum(neighbors$name %in% informed)
+        # get naive
+        potential_learners <- setdiff(1:N, informed)
 
-        #prop_know = C^f/(C^f + (k-C)^f)
-        prop_know = C/k
-        s_term = dini_func(prop_know, k_shape)
-        lambda <- lambda_0 * A + s_prime * s_term
-        return(lambda)
-    })
+        # break if everyone knows
+        if (length(potential_learners) == 0) break
 
-    # convert hazard to probability
-    learning_probs <- 1 - exp(-learning_rates)
+        # calc hazard for each naive
+        learning_rates <- sapply(potential_learners, function(x) {
+            neighbors <- neighbors(g, x)
+            C <- sum(neighbors$name %in% informed)
+            prop_know <- C / k
+            s_term <- dini_func(prop_know, k_shape)
+            lambda <- lambda_0 * A + s_prime * s_term
+            return(lambda)
+        })
 
-    # for each potential learner, determine whether they learn the behavior
-    learners_this_step <- rbinom(n=length(potential_learners), size=1, prob=learning_probs)
+        # hazard to prob
+        learning_probs <- 1 - exp(-learning_rates)
 
-    # update their time of acquisition
-    new_learners <- potential_learners[learners_this_step == 1]
-    df[df$id %in% new_learners, "time"] <- t
+        # draw who learns
+        learners_this_step <- rbinom(n = length(potential_learners), size = 1, prob = learning_probs)
 
+        # update time of acquisition
+        new_learners <- potential_learners[learners_this_step == 1]
+        df[df$id %in% new_learners, "time"] <- t
+    }
+
+    # store trial
+    trial_results[[trial]] <- df
 }
 
-event_data <- df %>%
-    arrange(time) %>%
-    group_by(time, .drop = T) %>%
+# after the simulation loop
+for (trial in 1:n_trials) {
+    trial_results[[trial]]$trial <- trial
+}
+
+# combine all trials into one dataframe
+combined_df <- bind_rows(trial_results)
+
+# check the result
+head(combined_df)
+
+event_data <- combined_df %>%
+    arrange(trial, time) %>%
+    group_by(trial, time, .drop = T) %>%
     mutate(tie=ifelse(n()>1,1,0),
            seed=ifelse(time==0,1,0))
 
@@ -102,32 +114,36 @@ est_rate = 1/result@outputPar[1]
 est_rate
 
 #import into STbayes
-event_data <- event_data %>%
-    mutate(trial=1) %>%
+event_data <- event_data  %>%
     select(-c(tie, seed))
 edge_list <- as.data.frame(as_edgelist(g))
 names(edge_list) = c("from","to")
-edge_list$trial = 1
 edge_list$assoc = 1 #assign named edge weight since this is just an edge list
+
+# now replicate the edgelist for each trial and tag trial number
+edge_list_trials <- bind_rows(lapply(1:n_trials, function(trial) {
+    edge_list %>% mutate(trial = trial)
+}))
 
 #save(event_data, file="../data/example_event_data.rda")
 #save(edge_list, file="../data/example_edge_list.rda")
 
 #generate STAN model from input data
-data_list_user = import_user_STb(event_data, edge_list)
+data_list_user = import_user_STb(event_data, edge_list_trials)
 
 #generate STAN model from input data
+model_obj = generate_STb_model(data_list_user, gq=T, est_acqTime = F, transmission_func = "standard")
 model_obj1 = generate_STb_model(data_list_user, gq=T, est_acqTime = F, transmission_func = "freq-dep1")
 model_obj2 = generate_STb_model(data_list_user, gq=T, est_acqTime = F, transmission_func = "freq-dep2")
-model_obj2
+
 # Write to file for debugging? uncomment below why not
-write(model_obj1, file = "../data/STAN_example_complex_f_transmission.stan")
-write(model_obj2, file = "../data/STAN_example_complex_k_transmission.stan")
+write(model_obj1, file = "../inst/extdata/STAN_example_complex_f_transmission.stan")
+write(model_obj2, file = "../inst/extdata/STAN_example_complex_k_transmission.stan")
 
 # fit model
+fit_simple = fit_STb(data_list_user, model_obj, chains = 5, cores = 5, iter=2000, control = list(adapt_delta=0.95))
 fit_complex = fit_STb(data_list_user, model_obj2, chains = 5, cores = 5, iter=2000, control = list(adapt_delta=0.95))
-#fit_complex = fit_STb(data_list_user, model_obj_f, chains = 5, cores = 5, iter=2000, control = list(adapt_delta=0.95))
-fit_complex = fit_STb(data_list_user, model="../data/overhaul_v2.stan", chains = 5, cores = 5, iter=2000, control = list(adapt_delta=0.95))
+
 STb_summary(fit_complex)
 
 loo_output = STb_compare(fit_simple, fit_complex)
