@@ -2,7 +2,7 @@
 #'
 #' @param STb_data a list of formatted data returned from the STbayes_data() function
 #' @param model_type string specifying the model type: "asocial" or "full"
-#' @param transmission_func string specifying transmission function: "standard", "freq-dep" for frequency dependent complex contagion. Defaults to "standard".
+#' @param transmission_func string specifying transmission function: "standard", "freq-dep1" or "freq-dep2" for frequency dependent complex contagion. Defaults to "standard".
 #' @param veff_ID Parameters for which to estimate varying effects by individuals. Default is no varying effects.
 #' @param gq Boolean to indicate whether the generated quantities block is added (incl. ll for WAIC)
 #' @param priors named list with strings containing the prior for log s or f. defaults to list(log_s = "uniform(-10, 10)", log_f = "normal(0,1)")
@@ -48,8 +48,7 @@ generate_STb_model_OADA <- function(STb_data,
                                     transmission_func="standard",
                                     veff_ID = c(),
                                     gq = TRUE,
-                                    priors = list(log_s = "uniform(-10,10)",
-                                                  log_f = "normal(0,1)")) {
+                                    priors = list()) {
     #maybe one day this can be an argument :(
     est_acqTime = FALSE
 
@@ -59,13 +58,14 @@ generate_STb_model_OADA <- function(STb_data,
 
     prior_s <- priors[["log_s"]]
     prior_f <- priors[["log_f"]]
+    prior_k <- priors[["k_raw"]]
 
     #check if edgeweights are sampled from posterior distribution (import func should have created S variable)
     if ("S" %in% names(STb_data)) is_distribution=TRUE else is_distribution=FALSE
     if ("S" %in% names(STb_data)) est_acqTime=FALSE # don't want to deal with that rn
 
     #check if user wants to fit f parameter w complex contagion
-    if (transmission_func=="freq-dep"){
+    if (transmission_func=="freq-dep1"){
         f_param = "real log_f_mean;"
         f_prior = paste0("log_f_mean ~ ", prior_f, ";")
         if (is.element('f', veff_ID)) {
@@ -77,6 +77,21 @@ generate_STb_model_OADA <- function(STb_data,
     } else {
         f_param = ""
         f_prior = ""
+    }
+
+    #check if user wants to fit k parameter w complex contagion
+    if (transmission_func=="freq-dep2"){
+        k_param = "real k_raw;"
+        k_prior = paste0("k_raw ~ ", prior_k, ";")
+        if (is.element('k', veff_ID)){
+            k_statement='k_shape[id]'
+            k_statement_j = gsub("[id]", "[j]", f_statement, fixed = TRUE)
+        } else {
+            k_statement='k_shape'
+        }
+    } else {
+        k_param = ""
+        k_prior = ""
     }
 
     # Declare network variables and weight parameter if multi-network (only for social model)
@@ -93,7 +108,7 @@ generate_STb_model_OADA <- function(STb_data,
                 }
 
             }
-            else if (transmission_func=="freq-dep"){
+            else if (transmission_func=="freq-dep1"){
                 network_term <- paste0("sum(A_", network_names[1], "[trial, time_step][id, ] .* C[trial][time_step, ])^", f_statement,
                                        "/ (sum(A_", network_names[1], "[trial, time_step][id, ] .* C[trial][time_step, ])^",f_statement," +",
                                        "sum(A_", network_names[1], "[trial, time_step][id, ] .* (1-C[trial][time_step, ]))^", f_statement,")")
@@ -101,6 +116,18 @@ generate_STb_model_OADA <- function(STb_data,
                     network_term <- paste0("sum(A_", network_names[1], "[trial, time_step , d][id, ] .* C[trial][time_step, ])^", f_statement,
                                            "/ (sum(A_", network_names[1], "[trial, time_step , d][id, ] .* C[trial][time_step, ])^",f_statement,
                                            "+ sum(A_", network_names[1], "[trial, time_step , d][id, ] .* (1-C[trial][time_step, ]))^", f_statement,")")
+                }
+            }
+            else if (transmission_func=="freq-dep2"){
+                network_term <- paste0("sum_ass = sum(A_", network_names[1], "[trial, time_step][id, ]);
+                                       prop_know = 0.0;
+                                       if (sum_ass>0) prop_know = sum(A_", network_names[1], "[trial, time_step][id, ] .* C[trial][time_step, ])/sum_ass;
+                                       real dini_transformed = dini_func(prop_know,", k_statement, ");")
+                if (is_distribution) {
+                    network_term <- paste0("sum_ass = sum(A_", network_names[1], "[trial, time_step, d][id, ]);
+                                           prop_know = 0.0;
+                                           if (sum_ass>0) prop_know = sum(A_", network_names[1], "[trial, time_step, d][id, ] .* C[trial][time_step, ])/sum_ass;
+                                           real dini_transformed = dini_func(prop_know", k_statement, ");")
                 }
             }
             w_param <- ""
@@ -156,8 +183,12 @@ generate_STb_model_OADA <- function(STb_data,
         transformed_params = append(transformed_params,"real<lower=0> s = exp(log_s_mean);")
     }
     #if user didn't specify veff_ID for f
-    if (!is.element('f', veff_ID) & model_type=="full" & transmission_func=="freq-dep"){
+    if (!is.element('f', veff_ID) & model_type=="full" & transmission_func=="freq-dep1"){
         transformed_params = append(transformed_params,"real<lower=0> f = exp(log_f_mean);")
+    }
+    #if user didn't specify veff_ID for k
+    if (!is.element('k', veff_ID) & model_type=="full" & transmission_func=="freq-dep2"){
+        transformed_params = append(transformed_params,"real<lower=-1, upper=1> k_shape = 2 / (1 + exp(-k_raw)) - 1;")
     }
 
     count = 1
@@ -171,6 +202,10 @@ generate_STb_model_OADA <- function(STb_data,
             else if (parameter=="f" & model_type=="full"){
                 transformed_params = append(transformed_params, paste0("vector<lower=0>[Z] f = exp(log_f_mean + v_ID[,",count,"]);"))
                 transformed_params = append(transformed_params, paste0("real<lower=0> f_mean = exp(log_f_mean);"))
+            }
+            else if (parameter=="k" & model_type=="full"){
+                transformed_params = append(transformed_params, paste0("vector<lower=0>[Z] k_shape = 2 / (1 + exp(-k_raw+ v_ID[,",count,"])) - 1;"))
+                transformed_params = append(transformed_params, paste0("real<lower=-1, upper=1> k_shape_mean = 2 / (1 + exp(-k_raw)) - 1;"))
             }
             count = count + 1
         }
@@ -315,6 +350,16 @@ generate_STb_model_OADA <- function(STb_data,
     ILVm_prior = paste0(ILVm_prior, collapse = "\n")
     transformed_params_declaration = paste0(transformed_params, collapse = "\n")
 
+    functions_block <- if (transmission_func=="freq-dep2") glue::glue("
+functions {{
+  real dini_func(real x, real k) {{
+    // transform x from [0,1] to [-1,1]
+    real x_transformed = 2 * x - 1;
+    real y = ((x_transformed - k * x_transformed) / (k - 2 * k * fabs(x_transformed) + 1) + 1) / 2;
+    return y;
+  }}
+}}") else ""
+
     data_block <- glue::glue("
 data {{
     int<lower=0> K;                // Number of trials
@@ -369,6 +414,15 @@ transformed parameters {{
         j_social_info_statement = glue::glue("real j_soc = {if (is.element('s', veff_ID)) 's[j]' else 's'} * ({network_term_j}) {ILVs_variable_effects_j};")
         j_lambda_statement = glue::glue("real j_lambda = {ILVm_variable_effects_j} * (j_ind + j_soc);")
 
+        if (transmission_func=="freq_dep2"){
+            i_social_info_statement = glue::glue(
+                "{network_term}
+                real i_soc = {if (is.element('s', veff_ID)) 's_prime[id]' else 's_prime'} * (dini_transformed) {ILVs_variable_effects};")
+            j_social_info_statement = glue::glue(
+                "{network_term_j}
+                real j_soc = {if (is.element('s', veff_ID)) 's_prime[j]' else 's_prime'} * (dini_transformed) {ILVs_variable_effects_j};")
+        }
+
         target_increment_statement = glue::glue("target += log(i_lambda) - log(sum(j_rates));")
         if (is_distribution) target_increment_statement = glue::glue("log_likelihoods[d] += log(i_lambda) - log(sum(j_rates));")
         log_lik_statement = glue::glue("log_lik_matrix[trial, n] = log(i_lambda) - log(sum(j_rates));")
@@ -385,7 +439,9 @@ transformed parameters {{
     model_block <- glue::glue("
 model {{
     {if (model_type=='full') paste0('log_s_mean ~ ',prior_s,';') else ''}
-                              {if (model_type=='full') {w_prior} else ''}
+    {if (model_type=='full') {w_prior} else ''}
+    {if (model_type=='full') {f_prior} else ''}
+    {if (model_type=='full') {k_prior} else ''}
     {ILVi_prior}
     {if (model_type=='full') {ILVs_prior} else ''}
     {if (model_type=='full') {ILVm_prior} else ''}
@@ -500,7 +556,8 @@ generated quantities {{
 ")
 
     # combine all blocks
-    stan_model <- glue::glue("{data_block}
+    stan_model <- glue::glue("{functions_block}
+                              {data_block}
                              {parameters_block}
                              {transformed_parameters_block}
                              {model_block}

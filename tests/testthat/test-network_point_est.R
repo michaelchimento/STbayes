@@ -10,7 +10,7 @@ test_that("Network structure is consistent using point estimate edgeweights.", {
     set.seed(42)  # for reproducibility
 
     # Load diffusion data
-    diffusion_data <- STbayes::diffusion_data
+    diffusion_data <- STbayes::event_data
 
     # Create mock edge_list
     edge_list <- STbayes::edge_list

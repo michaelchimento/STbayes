@@ -117,14 +117,15 @@ edge_list$assoc = 1 #assign named edge weight since this is just an edge list
 data_list_user = import_user_STb(event_data, edge_list)
 
 #generate STAN model from input data
-model_obj = generate_STb_model(data_list_user, gq=T, est_acqTime = F, transmission_func = "standard")
-#model_obj_f = generate_STb_model(data_list_user, gq=T, est_acqTime = F, transmission_func = "freq-dep", prior_f="normal(0,2)")
-
+model_obj1 = generate_STb_model(data_list_user, gq=T, est_acqTime = F, transmission_func = "freq-dep1")
+model_obj2 = generate_STb_model(data_list_user, gq=T, est_acqTime = F, transmission_func = "freq-dep2")
+model_obj2
 # Write to file for debugging? uncomment below why not
-#write(model_obj_f, file = "../data/STAN_example_complex_transmission.stan")
+write(model_obj1, file = "../data/STAN_example_complex_f_transmission.stan")
+write(model_obj2, file = "../data/STAN_example_complex_k_transmission.stan")
 
 # fit model
-fit_simple = fit_STb(data_list_user, model_obj, chains = 5, cores = 5, iter=2000, control = list(adapt_delta=0.95))
+fit_complex = fit_STb(data_list_user, model_obj2, chains = 5, cores = 5, iter=2000, control = list(adapt_delta=0.95))
 #fit_complex = fit_STb(data_list_user, model_obj_f, chains = 5, cores = 5, iter=2000, control = list(adapt_delta=0.95))
 fit_complex = fit_STb(data_list_user, model="../data/overhaul_v2.stan", chains = 5, cores = 5, iter=2000, control = list(adapt_delta=0.95))
 STb_summary(fit_complex)

@@ -1,5 +1,5 @@
 test_that("import_user_STb creates datalist with correct dimensions", {
-    data_list_user = import_user_STb(STbayes::diffusion_data, STbayes::edge_list)
+    data_list_user = import_user_STb(STbayes::event_data, STbayes::edge_list)
     expect_equal(dim(data_list_user$K), NULL)
     expect_equal(dim(data_list_user$Z), NULL)
     expect_equal(dim(data_list_user$N), 1)

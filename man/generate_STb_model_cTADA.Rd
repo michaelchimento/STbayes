@@ -11,8 +11,7 @@ generate_STb_model_cTADA(
   veff_ID = c(),
   gq = TRUE,
   est_acqTime = FALSE,
-  priors = list(log_lambda_0 = "uniform(-10, 10)", log_s = "uniform(-10, 10)", log_f =
-    "normal(0,1)")
+  priors = list()
 )
 }
 \arguments{
@@ -20,7 +19,7 @@ generate_STb_model_cTADA(
 
 \item{model_type}{string specifying the model type: "asocial" or "full"}
 
-\item{transmission_func}{string specifying transmission function: "standard", "freq-dep" for frequency dependent complex contagion. Defaults to "standard".}
+\item{transmission_func}{string specifying transmission function: "standard", "freq-dep1" or "freq-dep2" for complex contagion. Defaults to "standard". Complex contagion with multi-network model is not supported.}
 
 \item{veff_ID}{Parameters for which to estimate varying effects by individuals. Default is no varying effects.}
 
@@ -28,7 +27,7 @@ generate_STb_model_cTADA(
 
 \item{est_acqTime}{Boolean to indicate whether gq block includes estimates for acquisition time. At the moment this uses 'one weird trick' to accomplish this and does not support estimates for non-integer learning times.}
 
-\item{priors}{named list with strings containing the prior for log baserate, s or f. defaults to list(log_lambda_0 = "uniform(-10, 10)", log_s = "uniform(-10, 10)", log_f = "normal(0,1)")}
+\item{priors}{named list with strings containing the prior for log baserate, s, f, k.}
 }
 \value{
 A STAN model (character) that is customized to the input data.

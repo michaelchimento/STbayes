@@ -60,12 +60,8 @@
 #'
 import_user_STb <- function(event_data, networks, ILV_c = NULL, ILV_tv = NULL, ILVi = NULL, ILVs = NULL, ILVm = NULL, t_weights = NULL) {
   # warnings
-  if (is.null(ILVi) & is.null(ILVs) & is.null(ILVm) & (!is.null(ILV_c) | !is.null(ILV_tv))) {
-    message("WARNING: You have provided ILV, yet did not specify whether they should be additive or multiplicative (missing arguments ILVi, ILVs, ILVm). STbayes defaults to unconstrained additive (i.e. each variable's effect on both asocial and social learning will be separately estimated). It is recommended to explicitly define this.")
-  }
-
-  if (is.null(ILVm)) {
-    ILVm <- "ILVabsent"
+  if ( all(is.null(ILVi), is.null(ILVs), is.null(ILVm)) & (!is.null(ILV_c) | !is.null(ILV_tv))) {
+    message("WARNING: You have provided ILV, yet did not specify whether they should be additive or multiplicative (missing arguments ILVi, ILVs, ILVm). If not specified, they will not be included in the model.")
   }
 
   # Initialize list
@@ -156,10 +152,10 @@ import_user_STb <- function(event_data, networks, ILV_c = NULL, ILV_tv = NULL, I
   data_list$D_int <- D_data_int # duration data in integer format (experimental)
   dim(data_list$D_int) <- dim(data_list$D) # why is r so annoying
   data_list$ind_id <- id_data # individual id data
-  data_list$C <- create_knowledge_matrix(event_data) # knowledge state matrix
+  data_list$C <- create_C_matrix(event_data) # knowledge state matrix
   if (!is.null(t_weights)) {
     data_list$W <- create_W_matrix(t_weights)
-    if (all(dim(data_list$C) != dim(data_list$W))) stop("Dimensions of event state matrix C do not match dimensions of transmission weight matrix W.")
+    if (!all(dim(data_list$C) == dim(data_list$W))) stop("Dimensions of event state matrix C do not match dimensions of transmission weight matrix W.")
     data_list$C <- data_list$C * data_list$W
   }
 
@@ -216,16 +212,18 @@ import_user_STb <- function(event_data, networks, ILV_c = NULL, ILV_tv = NULL, I
   # write names
   if (!is.null(ILV_c) | !is.null(ILV_tv)) {
     if (is.null(ILVi)) {
-      data_list$ILVi_names <- ILV_names
+      data_list$ILVi_names <- "ILVabsent"
     } else {
       data_list$ILVi_names <- ILVi
     }
     if (is.null(ILVs)) {
-      data_list$ILVs_names <- ILV_names
+      data_list$ILVs_names <- "ILVabsent"
     } else {
       data_list$ILVs_names <- ILVs
     }
-    data_list$ILVm_names <- ILVm
+    if (is.null(ILVm)) {
+      data_list$ILVm_names <- "ILVabsent"
+    }
     # write datatypes
     data_list$ILV_datatypes <- ILV_datatypes
   } else {

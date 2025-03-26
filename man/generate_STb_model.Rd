@@ -8,7 +8,7 @@ generate_STb_model(
   STb_data,
   data_type = c("time", "order"),
   model_type = c("full", "asocial"),
-  transmission_func = c("standard", "freq-dep"),
+  transmission_func = c("standard", "freq-dep1", "freq-dep2"),
   veff_ID = c(),
   gq = TRUE,
   est_acqTime = FALSE,

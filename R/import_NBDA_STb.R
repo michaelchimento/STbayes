@@ -140,7 +140,7 @@ import_NBDA_STb <- function(nbda_object, network_names= c("default"), ILVi = NUL
     data_list$D_int = D_data_int #duration data in integer format (experimental)
     dim(data_list$D_int) <- dim(data_list$D) #why is r so annoying
     data_list$ind_id <- id_data  # Individual IDs matrix
-    data_list$C <- create_knowledge_matrix(event_data) # knowledge state matrix
+    data_list$C <- create_C_matrix(event_data) # knowledge state matrix
     data_list$C <- sweep(data_list$C, MARGIN = 3, STATS = nbda_object@weights, FUN = "*") #mult with weights
 
 

@@ -134,7 +134,7 @@ for (sim in 1:num_simulations) {
 ggplot(final_results, aes(y=median_lambda_0, x=median_s))+
     facet_wrap(~model)+
     geom_point(alpha=0.4)+
-    geom_density_2d()+
+    #geom_density_2d(adjust=.5)+
     geom_hline(yintercept = lambda_0, color="red", linetype="dashed") +
     geom_vline(xintercept = s, color="red", linetype="dashed") +
     labs(
@@ -142,6 +142,7 @@ ggplot(final_results, aes(y=median_lambda_0, x=median_s))+
         x = expression("Estimated " * s )
     ) +
     theme_bw()
+
 ggsave(file="../docs/Fig2_NBDA_STbayes_estimates.png", width=10, height=4, units="cm", scale=2)
 
 final_results_wide <- final_results %>%

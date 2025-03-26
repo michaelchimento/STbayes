@@ -3,55 +3,51 @@ library(igraph)
 library(dplyr)
 library(NBDA)
 library(ggplot2)
-# Parameters
-N <- 100  # Population size
-k <- 7    # Degree of each node in the random regular graph
-lambda_0=0.001 #baseline
-A <- 1  # Individual learning rate
-s <- 3  # Social learning rate per unit connection
-t_steps <- 1000
 
-# create random regular graph
+# Parameters
+N <- 100
+k <- 7
+lambda_0 <- 0.001
+A <- 1
+s <- 3
+t_max <- 1000
+
 g <- sample_k_regular(N, k, directed = FALSE, multiple = FALSE)
 V(g)$name <- 1:N
+df <- data.frame(id=1:N, time=Inf)
 
-# initialize a dataframe to store the time of acquisition data
-df <- data.frame(id=1:N, time=t_steps+1, t_end = t_steps)
+# Optionally seed one demonstrator
+# df[df$id == sample(1:N, 1), "time"] <- 0
 
-# If you want to set a demonstrator, uncomment below
-# seed <- sample(1:N, 1)
-# df[df$id == seed, c("time", "informed_associates")] <- c(0, 0)
+time <- 0
+while (time < t_max) {
+    # determine informed / naive
+    informed <- df[df$time < Inf, "id"]
+    naive <- setdiff(1:N, informed)
+    if (length(naive) == 0) break  # diffusion done
 
-# simulate the diffusion
-for (t in 1:t_steps) {
-    # identify knowledgeable individuals
-    informed <- df[df$time <= t_steps, "id"]
-
-    # identify naive
-    potential_learners <- c(1:N)
-    potential_learners <- potential_learners[!(potential_learners %in% informed)]
-
-    # break the loop if no one left to learn,
-    if (length(potential_learners) == 0) break
-
-    # calc the hazard
-    learning_rates <- sapply(potential_learners, function(x) {
-        neighbors <- neighbors(g, x)
-        C <- sum(neighbors$name %in% informed)
-        lambda <- lambda_0 * (A + s*C)
-        return(lambda)
+    # compute hazard for each naive individual
+    hazards <- sapply(naive, function(x) {
+        neighbors_x <- neighbors(g, x)
+        C <- sum(neighbors_x$name %in% informed)
+        lambda_0 * (A + s * C)
     })
 
-    # convert hazard to probability
-    learning_probs <- 1 - exp(-learning_rates)
+    total_hazard <- sum(hazards)
+    if (total_hazard == 0) break  # no possible learning
 
-    # for each potential learner, determine whether they learn the behavior
-    learners_this_step <- rbinom(n=length(potential_learners), size=1, prob=learning_probs)
+    # draw time until next event
+    wait_time <- rexp(1, rate = total_hazard)
+    time <- time + wait_time
+    if (time > t_max) break
 
-    # update their time of acquisition
-    new_learners <- potential_learners[learners_this_step == 1]
-    df[df$id %in% new_learners, "time"] <- t
+    # choose *who* learns based on hazard-weighted sampling
+    learner_idx <- sample(1:length(naive), size = 1, prob = hazards)
+    learner <- naive[learner_idx]
+    df[df$id == learner, "time"] <- time
 }
+
+df$time[is.infinite(df$time)] <- t_max
 
 event_data <- df %>%
     arrange(time) %>%
@@ -103,11 +99,8 @@ hist(data_list_user$D)
 #generate STAN model from input data
 model_obj = generate_STb_model(data_list_user, gq=T, est_acqTime = T)
 
-# Write to file for debugging? uncomment below why not
-write(model_obj, file = "../inst/extdata/STAN_example_vanilla_ctada.stan")
-
 # fit model
-fit = fit_STb(data_list_user, model_obj, chains = 5, cores = 5, iter=2000, control = list(adapt_delta=0.9))
+fit = fit_STb(data_list_user, "../inst/extdata/STAN_example_vanilla_ctada.stan", chains = 5, cores = 5, iter=2000, control = list(adapt_delta=0.9))
 
 # check estimates
 STb_summary(fit, digits=4)
@@ -150,3 +143,4 @@ data_list_nbda = import_NBDA_STb(d, network_names = c("assoc"))
 model_obj = generate_STb_model(data_list_nbda, gq=T, est_acqTime = T)
 fit = fit_STb(data_list_nbda, model_obj, chains = 5, cores = 5, iter=2000, control = list(adapt_delta=0.99) )
 STb_summary(fit)
+

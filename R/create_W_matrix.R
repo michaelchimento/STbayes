@@ -13,8 +13,19 @@
 #' )
 #' create_tw_matrix(t_weights)
 create_W_matrix <- function(t_weights){
-    t_weights <- t_weights[order(t_weights$trial, t_weights$time), ]
-    W <- unclass(with(t_weights, xtabs(t_weight ~ trial + time + id)))
+
+    t_weights$trial_numeric <- as.numeric(as.factor(t_weights$trial))
+
+    #add discrete time in case user supplied cont. time of events.
+    t_weights$discrete_time <- NA
+    t_weights$discrete_time[t_weights$time != 0] <- with( # assign values only where time != 0
+        t_weights[t_weights$time != 0, ],
+        ave(time, trial_numeric, FUN = function(x) as.numeric(as.factor(x)))
+    )
+    t_weights$discrete_time[event_data$time == 0] <- 0
+
+    t_weights <- t_weights[order(t_weights$trial, t_weights$discrete_time), ]
+    W <- unclass(with(t_weights, xtabs(t_weight ~ trial_numeric + discrete_time + id_numeric)))
     dimnames(W) <- NULL  # remove dimension names
     return(W)
 }

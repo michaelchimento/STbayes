@@ -49,7 +49,7 @@
 generate_STb_model <- function(STb_data,
                                data_type = c("time", "order"),
                                model_type = c("full","asocial"),
-                               transmission_func = c("standard","freq-dep"),
+                               transmission_func = c("standard","freq-dep1","freq-dep2"),
                                veff_ID = c(),
                                gq = TRUE,
                                est_acqTime = FALSE,
@@ -63,9 +63,14 @@ generate_STb_model <- function(STb_data,
         stop('lambda_0 cannot be veff_ID when using OADA.')
     }
 
+    if (transmission_func != "standard" && length(STb_data$network_names)>1) {
+        stop('Complex transmission can only be used with single network models. Please use transmission_func="standard"')
+    }
+
     default_priors <- list(log_lambda_0 = "uniform(-10, 10)",
                            log_s = "uniform(-10, 10)",
-                           log_f = "normal(0,1)")
+                           log_f = "normal(0,1)",
+                           k_raw = "normal(0,1)")
 
     priors <- utils::modifyList(default_priors, priors)
 
