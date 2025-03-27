@@ -189,21 +189,24 @@ generate_STb_model_cTADA <- function(STb_data,
             if (parameter=="lambda_0"){
                 transformed_params = append(transformed_params, paste0("vector<lower=0>[Z] lambda_0 = 1 / exp(log_lambda_0_mean + v_ID[,",count,"]);"))
                 transformed_params = append(transformed_params, paste0("real lambda_0_mean = 1 / exp(log_lambda_0_mean);"))
+                count = count + 1
             }
             else if (parameter=="s" & model_type=="full"){
                 transformed_params = append(transformed_params, paste0("vector<lower=0>[Z] s_prime = 1 / exp(log_s_mean + v_ID[,",count,"]);"))
                 transformed_params = append(transformed_params, paste0("vector<lower=0>[Z] s = s_prime ./ lambda_0;"))
                 transformed_params = append(transformed_params, paste0("real<lower=0> s_mean = (1 / exp(log_s_mean)) / (1 / exp(log_lambda_0_mean));"))
+                count = count + 1
             }
             else if (parameter=="f" & model_type=="full"){
                 transformed_params = append(transformed_params, paste0("vector<lower=0>[Z] f = exp(log_f_mean + v_ID[,",count,"]);"))
                 transformed_params = append(transformed_params, paste0("real<lower=0> f_mean = exp(log_f_mean);"))
+                count = count + 1
             }
             else if (parameter=="k" & model_type=="full"){
                 transformed_params = append(transformed_params, paste0("vector<lower=0>[Z] k_shape = 2 / (1 + exp(-k_raw+ v_ID[,",count,"])) - 1;"))
                 transformed_params = append(transformed_params, paste0("real<lower=-1, upper=1> k_shape_mean = 2 / (1 + exp(-k_raw)) - 1;"))
+                count = count + 1
             }
-            count = count + 1
         }
     }
 
