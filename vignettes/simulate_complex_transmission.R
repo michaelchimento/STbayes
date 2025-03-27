@@ -142,15 +142,19 @@ write(model_obj2, file = "../inst/extdata/STAN_example_complex_k_transmission.st
 
 # fit model
 fit_simple = fit_STb(data_list_user, model_obj, chains = 5, cores = 5, iter=2000, control = list(adapt_delta=0.95))
+STb_summary(fit_simple)
 fit_complex = fit_STb(data_list_user, model_obj2, chains = 5, cores = 5, iter=2000, control = list(adapt_delta=0.95))
-
 STb_summary(fit_complex)
 
-loo_output = STb_compare(fit_simple, fit_complex)
+fit_complex2 = fit_STb(data_list_user, model_obj1, chains = 5, cores = 5, iter=2000, control = list(adapt_delta=0.95))
+STb_summary(fit_complex2)
+
+loo_output = STb_compare(fit_simple, fit_complex, fit_complex2)
 # Extract comparison results for plotting
 comparison_df <- as.data.frame(loo_output$comparison)
 comparison_df$model <- rownames(comparison_df)
-
+comparison_df$model <- as.factor(comparison_df$model)
+levels(comparison_df$model) = c("complex 'k'","complex 'f'","simple")
 # Plot comparison
 # Best predictive model will be at top. If SE of difference crosses zero,
 # you should be less certain that the best fit model actually provides a better fit
@@ -159,9 +163,9 @@ ggplot(comparison_df, aes(x = reorder(model, elpd_diff), y = elpd_diff)) +
     geom_errorbar(aes(ymin = elpd_diff - se_diff, ymax = elpd_diff + se_diff), width = 0.2) + #SE of elpd diff
     coord_flip() +
     theme_minimal() +
-    labs(x = "Model", y = "ELPD Difference", title = "Model Comparison") +
+    labs(x = "Model", y = "ELPD LOO Difference") +
     theme(axis.text = element_text(size = 12))
-
+ggsave("../docs/FigS_complex_model_comparison.png", width=7, height=6, scale=2, units="cm")
 # Plot comparison
 # Best predictive model will be at top. If SE of difference crosses zero,
 # you should be less certain that the best fit model actually provides a better fit

@@ -57,12 +57,21 @@
 #'   ILVs = c("sex"), # Use only 'sex' for social learning
 #'   ILVm = c("weight") # Use weight for multiplicative effect on asocial and social learning
 #' )
-#'
-import_user_STb <- function(event_data, networks, ILV_c = NULL, ILV_tv = NULL, ILVi = NULL, ILVs = NULL, ILVm = NULL, t_weights = NULL) {
+import_user_STb <- function(event_data,
+                            networks,
+                            network_type=c("undirected","directed"),
+                            ILV_c = NULL,
+                            ILV_tv = NULL,
+                            ILVi = NULL,
+                            ILVs = NULL,
+                            ILVm = NULL,
+                            t_weights = NULL) {
   # warnings
   if ( all(is.null(ILVi), is.null(ILVs), is.null(ILVm)) & (!is.null(ILV_c) | !is.null(ILV_tv))) {
     message("WARNING: You have provided ILV, yet did not specify whether they should be additive or multiplicative (missing arguments ILVi, ILVs, ILVm). If not specified, they will not be included in the model.")
   }
+
+  network_type <- match.arg(network_type)
 
   # Initialize list
   data_list <- list()
@@ -108,7 +117,9 @@ import_user_STb <- function(event_data, networks, ILV_c = NULL, ILV_tv = NULL, I
 
   # create matrix of where rows = trial and columns = discrete_time, and values = duration
   # summarize by trial and time
-  D_data <- unique(event_data[order(event_data$trial_numeric, event_data$time), c("trial_numeric", "time", "discrete_time")])
+  temp_data = event_data
+  temp_data$time[temp_data$time > temp_data$t_end] <- temp_data$t_end[temp_data$time > temp_data$t_end]
+  D_data <- unique(temp_data[order(temp_data$trial_numeric, temp_data$time), c("trial_numeric", "time", "discrete_time")])
   D_data <- D_data[D_data$time != 0, ] # remove demos
   # Calculate the duration as time - lag(time) for each group
   D_data$duration <- with(D_data, ave(time, trial_numeric, FUN = function(x) c(x[1], diff(x))))
@@ -253,7 +264,7 @@ import_user_STb <- function(event_data, networks, ILV_c = NULL, ILV_tv = NULL, I
   # check if dynamic networks are supplied
   is_dynamic <- "time" %in% names(networks)
   if (!is_dynamic) {
-    message("User input indicates a static network. If dynamic network, please include 'time' column.")
+    message("User input indicates static network(s). If dynamic network, please include 'time' column.")
     networks$time <- 1
   }
 
@@ -317,10 +328,10 @@ import_user_STb <- function(event_data, networks, ILV_c = NULL, ILV_tv = NULL, I
         # fill in matrix
         if (is_distribution) {
           A_matrix[k, time, draw, from, to] <- value
-          if (!is_symmetric) A_matrix[k, time, draw, to, from] <- value
+          if (!is_symmetric & network_type=="undirected") A_matrix[k, time, draw, to, from] <- value
         } else {
           A_matrix[k, time, from, to] <- value
-          if (!is_symmetric) A_matrix[k, time, to, from] <- value
+          if (!is_symmetric & network_type=="undirected") A_matrix[k, time, to, from] <- value
         }
       }
 
