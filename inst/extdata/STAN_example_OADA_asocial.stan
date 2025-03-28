@@ -1,14 +1,15 @@
-data {
+//stan
+ data {
     int<lower=0> K;                // Number of trials
     int<lower=0> Q;                // Number of individuals in each trial
-    int<lower=1> Z;                // Number of unique individuals
+    int<lower=1> P;                // Number of unique individuals
     array[K] int<lower=0> N;       // Number of individuals that learned during observation period
     array[K] int<lower=0> N_c;     // Number of right-censored individuals
     array[K, Q] int<lower=-1> ind_id; // IDs of individuals
     array[K] int<lower=1> T;       // Maximum time periods
     int<lower=1> T_max;            // Max timesteps reached
-    array[K,Z] int<lower=-1> t;     // Time of acquisition for each individual
-    array[K] matrix[T_max, Z] C;   // Knowledge state slash cue matrix
+    array[K,P] int<lower=-1> t;     // Time of acquisition for each individual
+    array[K] matrix[T_max, P] Z;   // Knowledge state slash cue matrix
     int<lower=0> N_veff;
 }
 parameters {
@@ -28,9 +29,9 @@ model {
                 for (j in 1:Q) {
                     real j_ind = 1.0;
                     real j_lambda = 1.0 * j_ind;
-                    j_rates[j] += j_lambda * (1-C[trial][learn_time, j]); //only include those who haven't learned in denom
+                    j_rates[j] += j_lambda * (1-Z[trial][learn_time, j]); //only include those who haven't learned in denom
                 }
-                target += log(i_lambda) - log(sum(j_rates));;
+                target += log(i_lambda) - log(sum(j_rates));
             }
         }
     }
@@ -49,7 +50,7 @@ generated quantities {
                     for (j in 1:Q) {
                         real j_ind = 1.0;
                         real j_lambda = 1.0 * j_ind;
-                        j_rates[j] += j_lambda * (1-C[trial][learn_time, j]);
+                        j_rates[j] += j_lambda * (1-Z[trial][learn_time, j]);
                     }
                     log_lik_matrix[trial, n] = log(i_lambda) - log(sum(j_rates));
                 }

@@ -6,7 +6,7 @@
 dl_sanity_check <- function(data_list){
     message(paste(
         " !Sanity check! User provided data about:\n",
-        data_list$Z, "individuals across",
+        data_list$P, "individuals across",
         data_list$K, "independent diffusions (trials).\n",
         "There were", data_list$Q, "individuals in each trial.\n",
         "User supplied", length(data_list$network_names), "networks:", paste(data_list$network_names, collapse = ", "), "\n",

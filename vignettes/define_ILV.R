@@ -41,7 +41,7 @@ STb_data <- import_user_STb(
 )
 
 model_obj = generate_STb_model(STb_data)
-write(model_obj, file = "../data/STAN_example_ILV.stan")
+write(model_obj, file = "../inst/extdata/STAN_example_ILV.stan")
 
 fit = fit_STb(STb_data, model_obj)
 

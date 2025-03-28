@@ -1,18 +1,18 @@
+//stan
 data {
     int<lower=0> K;                // Number of trials
     int<lower=0> Q;                // Number of individuals in each trial
-    int<lower=1> Z;                // Number of unique individuals
+    int<lower=1> P;                // Number of unique individuals
     array[K] int<lower=0> N;       // Number of individuals that learned during observation period
     array[K] int<lower=0> N_c;     // Number of right-censored individuals
     array[K, Q] int<lower=-1> ind_id; // IDs of individuals
     array[K] int<lower=1> T;       // Maximum time periods
     int<lower=1> T_max;            // Max timesteps reached
-    array[K,Z] int<lower=-1> t;     // Time of acquisition for each individual
+    array[K,P] int<lower=-1> t;     // Time of acquisition for each individual
     array[K, T_max] real<lower=0> D; // Scaled durations
-    array[K, T_max] matrix[Z, Z] A_assoc; // Network matrices
-    array[K] matrix[T_max, Z] C;   // Knowledge state slash cue matrix
+    array[K, T_max] matrix[P, P] A_assoc; // Network matrices
+    array[K] matrix[T_max, P] Z;   // Knowledge state slash cue matrix
     int<lower=0> N_veff;
-    array[K] real<lower=0> time_max; //Duration of obs period for each trial
 }
 parameters {
     real log_lambda_0_mean;  // Log baseline learning rate
@@ -33,7 +33,7 @@ model {
             if (learn_time > 0) {
                 for (time_step in 1:learn_time) {
                     real ind_term = 1.0;
-                    real soc_term = s_prime * (sum(A_assoc[trial, time_step][id, ] .* C[trial][time_step, ])) ;
+                    real soc_term = s_prime * (sum(A_assoc[trial, time_step][id, ] .* Z[trial][time_step, ])) ;
                     real lambda =  (lambda_0 * ind_term + soc_term) * D[trial, time_step];
                     target += -lambda;
                     if (time_step == learn_time) {
@@ -47,7 +47,7 @@ model {
                 int id = ind_id[trial, N[trial] + c];
                 for (time_step in 1:T[trial]) {
                     real ind_term = 1.0;
-                    real soc_term = s_prime * (sum(A_assoc[trial, time_step][id, ] .* C[trial][time_step, ])) ;
+                    real soc_term = s_prime * (sum(A_assoc[trial, time_step][id, ] .* Z[trial][time_step, ])) ;
                     real lambda =  (lambda_0 * ind_term + soc_term) * D[trial, time_step];
                     target += -lambda;
                 }
@@ -65,7 +65,7 @@ generated quantities {
                 real cum_hazard = 0; //set val before adding
                 for (time_step in 1:T[trial]) {
                     real ind_term = 1.0;
-                    real soc_term = s_prime * (sum(A_assoc[trial, time_step][id, ] .* C[trial][time_step, ])) ;
+                    real soc_term = s_prime * (sum(A_assoc[trial, time_step][id, ] .* Z[trial][time_step, ])) ;
                     real lambda =  (lambda_0 * ind_term + soc_term) * D[trial, time_step];
                     cum_hazard += lambda; // accumulate hazard
                     //if it learn_time, record the ll
@@ -84,7 +84,7 @@ generated quantities {
                 real cum_hazard = 0;
                 for (time_step in 1:censor_time) {
                     real ind_term = 1.0;
-                    real soc_term = s_prime * (sum(A_assoc[trial, time_step][id, ] .* C[trial][time_step, ])) ;
+                    real soc_term = s_prime * (sum(A_assoc[trial, time_step][id, ] .* Z[trial][time_step, ])) ;
                     real lambda =  (lambda_0 * ind_term + soc_term) * D[trial, time_step];
                     cum_hazard += lambda; // accumulate hazard
                 }
@@ -93,71 +93,6 @@ generated quantities {
             }
         }
     }
- matrix[K, Q] acquisition_time;  // predicted acquisition times
-
-for (trial in 1:K) {
-    // initialize everyone naive (unacquired)
-    for (n in 1:Q){
-        int id = ind_id[trial, n];
-        int learn_time = t[trial, id];
-        acquisition_time[trial, n] = time_max[trial];
-        // fix observed innovator at the duration of the first time step
-        if (learn_time == 1) {
-            acquisition_time[trial, n] = D[trial, 1];
-        }
-    } 
-
-    real time = 0;
-    int n_remaining = Q-1;
-
-    while (time < time_max[trial] && n_remaining > 0) {
-        // identify naive individuals
-        array[Q] int naive_flags;
-        for (n in 1:Q) naive_flags[n] = acquisition_time[trial, n] >= time_max[trial];
-
-        // compute hazards for all naive
-        vector[Q] hazards = rep_vector(0, Q);
-        for (n in 1:Q) {
-            if (naive_flags[n] == 1) {
-                int id = ind_id[trial, n];
-                real informed_neighbors = 0;
-                for (z in 1:Z) {
-                    if (acquisition_time[trial, z] < time) {
-                        informed_neighbors += A_assoc[trial, 1][id, z];
-                    }
-                }
-                hazards[n] = lambda_0 * (1.0 + s * informed_neighbors);
-            }
-        }
-
-        real total_hazard = sum(hazards);
-        if (total_hazard <= 0) break; // no more events possible
-
-        // sample time until next learning event
-        real wait_time = exponential_rng(total_hazard);
-        time += wait_time;
-        if (time > time_max[trial]) break;
-
-        // sample who learns, proportional to hazard
-        real target_hazard = uniform_rng(0, total_hazard);
-        real cumulative = 0;
-        int learner = 0;
-        for (n in 1:Q) {
-            cumulative += hazards[n];
-            if (target_hazard <= cumulative) {
-                learner = n;
-                break;
-            }
-        }
-
-        // mark learning event
-        if (learner > 0 && acquisition_time[trial, learner] >= time_max[trial]) {
-            acquisition_time[trial, learner] = time;
-            n_remaining -= 1;
-        }
-    }
-}
-
     // Flatten log_lik_matrix into log_lik
     array[K * Q] real log_lik;
     int idx = 1;

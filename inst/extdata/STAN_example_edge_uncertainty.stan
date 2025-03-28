@@ -1,17 +1,18 @@
+//stan
 data {
     int<lower=0> K;                // Number of trials
     int<lower=0> Q;                // Number of individuals in each trial
-    int<lower=1> Z;                // Number of unique individuals
+    int<lower=1> P;                // Number of unique individuals
     int<lower=1> S;              // number of posterior samples for A edge weights
     array[K] int<lower=0> N;       // Number of individuals that learned during observation period
     array[K] int<lower=0> N_c;     // Number of right-censored individuals
     array[K, Q] int<lower=-1> ind_id; // IDs of individuals
     array[K] int<lower=1> T;       // Maximum time periods
     int<lower=1> T_max;            // Max timesteps reached
-    array[K,Z] int<lower=-1> t;     // Time of acquisition for each individual
+    array[K,P] int<lower=-1> t;     // Time of acquisition for each individual
     array[K, T_max] real<lower=0> D; // Scaled durations
-    array[K, T_max, S] matrix[Z, Z] A_value; // Network matrices
-    array[K] matrix[T_max, Z] C;   // Knowledge state slash cue matrix
+    array[K, T_max, S] matrix[P, P] A_value; // Network matrices
+    array[K] matrix[T_max, P] Z;   // Knowledge state slash cue matrix
     int<lower=0> N_veff;
 }
 parameters {
@@ -36,7 +37,7 @@ model {
             if (learn_time > 0) {
                 for (time_step in 1:learn_time) {
                     real ind_term = 1.0;
-                    real soc_term = s_prime * (sum(A_value[trial, time_step , d][id, ] .* C[trial][time_step, ])) ;
+                    real soc_term = s_prime * (sum(A_value[trial, time_step , d][id, ] .* Z[trial][time_step, ])) ;
                     real lambda =  (lambda_0 * ind_term + soc_term) * D[trial, time_step];
                     log_likelihoods[d] += -lambda;
                     if (time_step == learn_time) {
@@ -50,7 +51,7 @@ model {
                 int id = ind_id[trial, N[trial] + c];
                 for (time_step in 1:T[trial]) {
                     real ind_term = 1.0;
-                    real soc_term = s_prime * (sum(A_value[trial, time_step , d][id, ] .* C[trial][time_step, ])) ;
+                    real soc_term = s_prime * (sum(A_value[trial, time_step , d][id, ] .* Z[trial][time_step, ])) ;
                     real lambda =  (lambda_0 * ind_term + soc_term) * D[trial, time_step];
                     log_likelihoods[d] += -lambda;
                 }
@@ -72,7 +73,7 @@ generated quantities {
                 real cum_hazard = 0; //set val before adding
                 for (time_step in 1:T[trial]) {
                     real ind_term = 1.0;
-                    real soc_term = s_prime * (sum(A_value[trial, time_step , d][id, ] .* C[trial][time_step, ])) ;
+                    real soc_term = s_prime * (sum(A_value[trial, time_step , d][id, ] .* Z[trial][time_step, ])) ;
                     real lambda =  (lambda_0 * ind_term + soc_term) * D[trial, time_step];
                     cum_hazard += lambda; // accumulate hazard
                     //if it learn_time, record the ll
@@ -91,7 +92,7 @@ generated quantities {
                 real cum_hazard = 0;
                 for (time_step in 1:censor_time) {
                     real ind_term = 1.0;
-                    real soc_term = s_prime * (sum(A_value[trial, time_step , d][id, ] .* C[trial][time_step, ])) ;
+                    real soc_term = s_prime * (sum(A_value[trial, time_step , d][id, ] .* Z[trial][time_step, ])) ;
                     real lambda =  (lambda_0 * ind_term + soc_term) * D[trial, time_step];
                     cum_hazard += lambda; // accumulate hazard
                 }

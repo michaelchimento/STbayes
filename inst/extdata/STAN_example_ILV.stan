@@ -1,20 +1,20 @@
+//stan
 data {
     int<lower=0> K;                // Number of trials
     int<lower=0> Q;                // Number of individuals in each trial
-    int<lower=1> Z;                // Number of unique individuals
+    int<lower=1> P;                // Number of unique individuals
     array[K] int<lower=0> N;       // Number of individuals that learned during observation period
     array[K] int<lower=0> N_c;     // Number of right-censored individuals
     array[K, Q] int<lower=-1> ind_id; // IDs of individuals
     array[K] int<lower=1> T;       // Maximum time periods
     int<lower=1> T_max;            // Max timesteps reached
-    array[K,Z] int<lower=-1> t;     // Time of acquisition for each individual
+    array[K,P] int<lower=-1> t;     // Time of acquisition for each individual
     array[K, T_max] real<lower=0> D; // Scaled durations
-    array[K, T_max] matrix[Z, Z] A_kin, A_inverse_distance; // Network matrices
-    array[K] matrix[T_max, Z] C;   // Knowledge state slash cue matrix
-    array[Z] real ILV_age;
-array[K,Q,Z] real ILV_dist_from_resource;
-array[Z] real ILV_sex;
-array[Z] real ILV_weight;
+    array[K, T_max] matrix[P, P] A_kin, A_inverse_distance; // Network matrices
+    array[K] matrix[T_max, P] Z;   // Knowledge state slash cue matrix
+    array[P] real ILV_age;
+array[K,Q,P] real ILV_dist_from_resource;
+array[P] real ILV_sex;
     int<lower=0> N_veff;
 }
 parameters {
@@ -24,7 +24,6 @@ parameters {
     real beta_ILVi_age;
 real beta_ILVi_dist_from_resource;
     real beta_ILVs_sex;
-    real beta_ILVm_weight;
 }
 transformed parameters {
    real<lower=0> lambda_0 = 1 / exp(log_lambda_0_mean);
@@ -38,7 +37,6 @@ model {
     beta_ILVi_age ~ normal(0, 1);
 beta_ILVi_dist_from_resource ~ normal(0, 1);
     beta_ILVs_sex ~ normal(0, 1);
-    beta_ILVm_weight ~ normal(0, 1);
     for (trial in 1:K) {
         for (n in 1:N[trial]) {
             int id = ind_id[trial, n];
@@ -46,11 +44,11 @@ beta_ILVi_dist_from_resource ~ normal(0, 1);
             if (learn_time > 0) {
                 for (time_step in 1:learn_time) {
                     real ind_term = exp(beta_ILVi_age * ILV_age[id] + beta_ILVi_dist_from_resource * ILV_dist_from_resource[trial,time_step,id]);
-                    real soc_term = s_prime * (w[1] * sum(A_kin[trial, time_step][id, ] .* C[trial][time_step, ]) + w[2] * sum(A_inverse_distance[trial, time_step][id, ] .* C[trial][time_step, ])) * exp(beta_ILVs_sex * ILV_sex[id]);
-                    real lambda = exp(beta_ILVm_weight * ILV_weight[id]) * (lambda_0 * ind_term + soc_term) * D[trial, time_step];
+                    real soc_term = s_prime * (w[1] * sum(A_kin[trial, time_step][id, ] .* Z[trial][time_step, ]) + w[2] * sum(A_inverse_distance[trial, time_step][id, ] .* Z[trial][time_step, ])) * exp(beta_ILVs_sex * ILV_sex[id]);
+                    real lambda =  (lambda_0 * ind_term + soc_term) * D[trial, time_step];
                     target += -lambda;
                     if (time_step == learn_time) {
-                        target += log(exp(beta_ILVm_weight * ILV_weight[id]) * (lambda_0 * ind_term + soc_term));
+                        target += log( (lambda_0 * ind_term + soc_term));
                     }
                 }
             }
@@ -60,8 +58,8 @@ beta_ILVi_dist_from_resource ~ normal(0, 1);
                 int id = ind_id[trial, N[trial] + c];
                 for (time_step in 1:T[trial]) {
                     real ind_term = exp(beta_ILVi_age * ILV_age[id] + beta_ILVi_dist_from_resource * ILV_dist_from_resource[trial,time_step,id]);
-                    real soc_term = s_prime * (w[1] * sum(A_kin[trial, time_step][id, ] .* C[trial][time_step, ]) + w[2] * sum(A_inverse_distance[trial, time_step][id, ] .* C[trial][time_step, ])) * exp(beta_ILVs_sex * ILV_sex[id]);
-                    real lambda = exp(beta_ILVm_weight * ILV_weight[id]) * (lambda_0 * ind_term + soc_term) * D[trial, time_step];
+                    real soc_term = s_prime * (w[1] * sum(A_kin[trial, time_step][id, ] .* Z[trial][time_step, ]) + w[2] * sum(A_inverse_distance[trial, time_step][id, ] .* Z[trial][time_step, ])) * exp(beta_ILVs_sex * ILV_sex[id]);
+                    real lambda =  (lambda_0 * ind_term + soc_term) * D[trial, time_step];
                     target += -lambda;
                 }
             }
@@ -78,12 +76,12 @@ generated quantities {
                 real cum_hazard = 0; //set val before adding
                 for (time_step in 1:T[trial]) {
                     real ind_term = exp(beta_ILVi_age * ILV_age[id] + beta_ILVi_dist_from_resource * ILV_dist_from_resource[trial,time_step,id]);
-                    real soc_term = s_prime * (w[1] * sum(A_kin[trial, time_step][id, ] .* C[trial][time_step, ]) + w[2] * sum(A_inverse_distance[trial, time_step][id, ] .* C[trial][time_step, ])) * exp(beta_ILVs_sex * ILV_sex[id]);
-                    real lambda = exp(beta_ILVm_weight * ILV_weight[id]) * (lambda_0 * ind_term + soc_term) * D[trial, time_step];
+                    real soc_term = s_prime * (w[1] * sum(A_kin[trial, time_step][id, ] .* Z[trial][time_step, ]) + w[2] * sum(A_inverse_distance[trial, time_step][id, ] .* Z[trial][time_step, ])) * exp(beta_ILVs_sex * ILV_sex[id]);
+                    real lambda =  (lambda_0 * ind_term + soc_term) * D[trial, time_step];
                     cum_hazard += lambda; // accumulate hazard
                     //if it learn_time, record the ll
                     if (time_step == learn_time){
-                        log_lik_matrix[trial, n] = log(exp(beta_ILVm_weight * ILV_weight[id]) * (lambda_0 * ind_term + soc_term)) - cum_hazard;
+                        log_lik_matrix[trial, n] = log( (lambda_0 * ind_term + soc_term)) - cum_hazard;
                     }
                 }
             }
@@ -97,8 +95,8 @@ generated quantities {
                 real cum_hazard = 0;
                 for (time_step in 1:censor_time) {
                     real ind_term = exp(beta_ILVi_age * ILV_age[id] + beta_ILVi_dist_from_resource * ILV_dist_from_resource[trial,time_step,id]);
-                    real soc_term = s_prime * (w[1] * sum(A_kin[trial, time_step][id, ] .* C[trial][time_step, ]) + w[2] * sum(A_inverse_distance[trial, time_step][id, ] .* C[trial][time_step, ])) * exp(beta_ILVs_sex * ILV_sex[id]);
-                    real lambda = exp(beta_ILVm_weight * ILV_weight[id]) * (lambda_0 * ind_term + soc_term) * D[trial, time_step];
+                    real soc_term = s_prime * (w[1] * sum(A_kin[trial, time_step][id, ] .* Z[trial][time_step, ]) + w[2] * sum(A_inverse_distance[trial, time_step][id, ] .* Z[trial][time_step, ])) * exp(beta_ILVs_sex * ILV_sex[id]);
+                    real lambda =  (lambda_0 * ind_term + soc_term) * D[trial, time_step];
                     cum_hazard += lambda; // accumulate hazard
                 }
                 // Compute per-individual log likelihood

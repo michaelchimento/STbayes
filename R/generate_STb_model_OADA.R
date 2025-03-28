@@ -433,6 +433,8 @@ transformed parameters {{
         i_lambda_statement = glue::glue("real i_lambda = {ILVm_variable_effects} * i_ind;")
         j_social_info_statement = ""
         j_lambda_statement = glue::glue("real j_lambda = {ILVm_variable_effects_j} * j_ind;")
+        target_increment_statement = glue::glue("target += log(i_lambda) - log(sum(j_rates));")
+        log_lik_statement = glue::glue("log_lik_matrix[trial, n] = log(i_lambda) - log(sum(j_rates));")
     }
 
     # Model block

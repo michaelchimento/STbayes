@@ -100,18 +100,6 @@ dim(adj_matrix) = c(N,N,1)
 tie_vec = event_data %>% arrange(time) %>% ungroup() %>% select(tie)
 seed_vec = event_data %>% arrange(id) %>% ungroup() %>% select(seed)
 
-#### Fit NBDA model ####
-d = nbdaData(label="sim_data",
-             assMatrix = adj_matrix,
-             orderAcq = event_data$id,
-             timeAcq = event_data$time,
-             endTime = t_steps+1,
-             ties = tie_vec$tie,
-             demons = seed_vec$seed)
-result = tadaFit(d)
-data.frame(Variable=result@varNames,MLE=result@outputPar,SE=result@se)
-est_rate = 1/result@outputPar[1]
-est_rate
 
 #import into STbayes
 event_data <- event_data  %>%
@@ -137,6 +125,7 @@ model_obj1 = generate_STb_model(data_list_user, gq=T, est_acqTime = F, transmiss
 model_obj2 = generate_STb_model(data_list_user, gq=T, est_acqTime = F, transmission_func = "freq-dep2")
 
 # Write to file for debugging? uncomment below why not
+write(model_obj, file = "../inst/extdata/STAN_example_vanilla_ctada.stan")
 write(model_obj1, file = "../inst/extdata/STAN_example_complex_f_transmission.stan")
 write(model_obj2, file = "../inst/extdata/STAN_example_complex_k_transmission.stan")
 

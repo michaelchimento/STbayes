@@ -27,7 +27,7 @@ data_list = import_user_STb(event_data, networks)
 # it will generate a model wherein each iteration, model will marginalize LL over S=100 draws
 model = generate_STb_model(data_list)
 model_oada = generate_STb_model(data_list, data_type = "order") #distributions can also be used in oada
-write(model, file="../data/STAN_example_edge_uncertainty.stan")
+write(model, file="../inst/extdata/STAN_example_edge_uncertainty.stan")
 
 #the fit will be garbage because it's made up, but works
 fit = fit_STb(data_list, model_oada)

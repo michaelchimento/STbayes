@@ -1,3 +1,4 @@
+//stan
 functions {
   real dini_func(real x, real k) {
     // transform x from [0,1] to [-1,1]
@@ -9,16 +10,16 @@ functions {
 data {
     int<lower=0> K;                // Number of trials
     int<lower=0> Q;                // Number of individuals in each trial
-    int<lower=1> Z;                // Number of unique individuals
+    int<lower=1> P;                // Number of unique individuals
     array[K] int<lower=0> N;       // Number of individuals that learned during observation period
     array[K] int<lower=0> N_c;     // Number of right-censored individuals
     array[K, Q] int<lower=-1> ind_id; // IDs of individuals
     array[K] int<lower=1> T;       // Maximum time periods
     int<lower=1> T_max;            // Max timesteps reached
-    array[K,Z] int<lower=-1> t;     // Time of acquisition for each individual
+    array[K,P] int<lower=-1> t;     // Time of acquisition for each individual
     array[K, T_max] real<lower=0> D; // Scaled durations
-    array[K, T_max] matrix[Z, Z] A_assoc; // Network matrices
-    array[K] matrix[T_max, Z] C;   // Knowledge state slash cue matrix
+    array[K, T_max] matrix[P, P] A_assoc; // Network matrices
+    array[K] matrix[T_max, P] Z;   // Knowledge state slash cue matrix
     int<lower=0> N_veff;
 }
 parameters {
@@ -45,7 +46,7 @@ model {
                     real ind_term = 1.0;
                     real sum_ass = sum(A_assoc[trial, time_step][id, ]);
                                        real prop_know = 0.0;
-                                       if (sum_ass>0) prop_know = sum(A_assoc[trial, time_step][id, ] .* C[trial][time_step, ])/sum_ass;
+                                       if (sum_ass>0) prop_know = sum(A_assoc[trial, time_step][id, ] .* Z[trial][time_step, ])/sum_ass;
                                        real dini_transformed = dini_func(prop_know,k_shape);
 real soc_term = s_prime * (dini_transformed) ;
                     real lambda =  (lambda_0 * ind_term + soc_term) * D[trial, time_step];
@@ -63,7 +64,7 @@ real soc_term = s_prime * (dini_transformed) ;
                     real ind_term = 1.0;
                     real sum_ass = sum(A_assoc[trial, time_step][id, ]);
                                        real prop_know = 0.0;
-                                       if (sum_ass>0) prop_know = sum(A_assoc[trial, time_step][id, ] .* C[trial][time_step, ])/sum_ass;
+                                       if (sum_ass>0) prop_know = sum(A_assoc[trial, time_step][id, ] .* Z[trial][time_step, ])/sum_ass;
                                        real dini_transformed = dini_func(prop_know,k_shape);
 real soc_term = s_prime * (dini_transformed) ;
                     real lambda =  (lambda_0 * ind_term + soc_term) * D[trial, time_step];
@@ -85,7 +86,7 @@ generated quantities {
                     real ind_term = 1.0;
                     real sum_ass = sum(A_assoc[trial, time_step][id, ]);
                                        real prop_know = 0.0;
-                                       if (sum_ass>0) prop_know = sum(A_assoc[trial, time_step][id, ] .* C[trial][time_step, ])/sum_ass;
+                                       if (sum_ass>0) prop_know = sum(A_assoc[trial, time_step][id, ] .* Z[trial][time_step, ])/sum_ass;
                                        real dini_transformed = dini_func(prop_know,k_shape);
 real soc_term = s_prime * (dini_transformed) ;
                     real lambda =  (lambda_0 * ind_term + soc_term) * D[trial, time_step];
@@ -108,7 +109,7 @@ real soc_term = s_prime * (dini_transformed) ;
                     real ind_term = 1.0;
                     real sum_ass = sum(A_assoc[trial, time_step][id, ]);
                                        real prop_know = 0.0;
-                                       if (sum_ass>0) prop_know = sum(A_assoc[trial, time_step][id, ] .* C[trial][time_step, ])/sum_ass;
+                                       if (sum_ass>0) prop_know = sum(A_assoc[trial, time_step][id, ] .* Z[trial][time_step, ])/sum_ass;
                                        real dini_transformed = dini_func(prop_know,k_shape);
 real soc_term = s_prime * (dini_transformed) ;
                     real lambda =  (lambda_0 * ind_term + soc_term) * D[trial, time_step];
