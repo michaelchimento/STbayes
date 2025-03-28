@@ -97,44 +97,44 @@ generate_STb_model_OADA <- function(STb_data,
     # Declare network variables and weight parameter if multi-network (only for social model)
     if (model_type == "full") {
         network_names = STb_data$network_names
-        network_declaration = glue::glue("array[K, T_max] matrix[Z, Z] {paste0('A_', network_names, collapse = ', ')}; // Network matrices")
-        if (is_distribution) network_declaration = glue::glue("array[K, T_max, S] matrix[Z, Z] {paste0('A_', network_names, collapse = ', ')}; // Network matrices")
+        network_declaration = glue::glue("array[K, T_max] matrix[P, P] {paste0('A_', network_names, collapse = ', ')}; // Network matrices")
+        if (is_distribution) network_declaration = glue::glue("array[K, T_max, S] matrix[P, P] {paste0('A_', network_names, collapse = ', ')}; // Network matrices")
         num_networks <- length(network_names)
         if (num_networks == 1) {
             if (transmission_func=="standard"){
-                network_term <- paste0("sum(A_", network_names[1], "[trial, time_step][id, ] .* C[trial][time_step, ])")
+                network_term <- paste0("sum(A_", network_names[1], "[trial, time_step][id, ] .* Z[trial][time_step, ])")
                 if (is_distribution){
-                    network_term <- paste0("sum(A_", network_names[1], "[trial, time_step , d][id, ] .* C[trial][time_step, ])")
+                    network_term <- paste0("sum(A_", network_names[1], "[trial, time_step , d][id, ] .* Z[trial][time_step, ])")
                 }
 
             }
             else if (transmission_func=="freq-dep1"){
-                network_term <- paste0("sum(A_", network_names[1], "[trial, time_step][id, ] .* C[trial][time_step, ])^", f_statement,
-                                       "/ (sum(A_", network_names[1], "[trial, time_step][id, ] .* C[trial][time_step, ])^",f_statement," +",
-                                       "sum(A_", network_names[1], "[trial, time_step][id, ] .* (1-C[trial][time_step, ]))^", f_statement,")")
+                network_term <- paste0("sum(A_", network_names[1], "[trial, time_step][id, ] .* Z[trial][time_step, ])^", f_statement,
+                                       "/ (sum(A_", network_names[1], "[trial, time_step][id, ] .* Z[trial][time_step, ])^",f_statement," +",
+                                       "sum(A_", network_names[1], "[trial, time_step][id, ] .* (1-Z[trial][time_step, ]))^", f_statement,")")
                 if (is_distribution){
-                    network_term <- paste0("sum(A_", network_names[1], "[trial, time_step , d][id, ] .* C[trial][time_step, ])^", f_statement,
-                                           "/ (sum(A_", network_names[1], "[trial, time_step , d][id, ] .* C[trial][time_step, ])^",f_statement,
-                                           "+ sum(A_", network_names[1], "[trial, time_step , d][id, ] .* (1-C[trial][time_step, ]))^", f_statement,")")
+                    network_term <- paste0("sum(A_", network_names[1], "[trial, time_step , d][id, ] .* Z[trial][time_step, ])^", f_statement,
+                                           "/ (sum(A_", network_names[1], "[trial, time_step , d][id, ] .* Z[trial][time_step, ])^",f_statement,
+                                           "+ sum(A_", network_names[1], "[trial, time_step , d][id, ] .* (1-Z[trial][time_step, ]))^", f_statement,")")
                 }
             }
             else if (transmission_func=="freq-dep2"){
                 network_term <- paste0("sum_ass = sum(A_", network_names[1], "[trial, time_step][id, ]);
                                        prop_know = 0.0;
-                                       if (sum_ass>0) prop_know = sum(A_", network_names[1], "[trial, time_step][id, ] .* C[trial][time_step, ])/sum_ass;
+                                       if (sum_ass>0) prop_know = sum(A_", network_names[1], "[trial, time_step][id, ] .* Z[trial][time_step, ])/sum_ass;
                                        real dini_transformed = dini_func(prop_know,", k_statement, ");")
                 if (is_distribution) {
                     network_term <- paste0("sum_ass = sum(A_", network_names[1], "[trial, time_step, d][id, ]);
                                            prop_know = 0.0;
-                                           if (sum_ass>0) prop_know = sum(A_", network_names[1], "[trial, time_step, d][id, ] .* C[trial][time_step, ])/sum_ass;
+                                           if (sum_ass>0) prop_know = sum(A_", network_names[1], "[trial, time_step, d][id, ] .* Z[trial][time_step, ])/sum_ass;
                                            real dini_transformed = dini_func(prop_know", k_statement, ");")
                 }
             }
             w_param <- ""
             w_prior <- ""
         } else {
-            network_term <- paste0("w[", 1:num_networks, "] * sum(A_", network_names, "[trial, time_step][id, ] .* C[trial][time_step, ])", collapse = " + ")
-            if (is_distribution) network_term <- paste0("w[", 1:num_networks, "] * sum(A_", network_names, "[trial, time_step, d][id, ] .* C[trial][time_step, ])", collapse = " + ")
+            network_term <- paste0("w[", 1:num_networks, "] * sum(A_", network_names, "[trial, time_step][id, ] .* Z[trial][time_step, ])", collapse = " + ")
+            if (is_distribution) network_term <- paste0("w[", 1:num_networks, "] * sum(A_", network_names, "[trial, time_step, d][id, ] .* Z[trial][time_step, ])", collapse = " + ")
             #network_term_j = gsub("[id", "[j", network_term, fixed = TRUE)
             w_param <- paste0("simplex[", num_networks, "] w; // Weights for networks")
             w_prior <- paste0("w ~ dirichlet(rep_vector(0.5, ", num_networks, "));")
@@ -163,9 +163,9 @@ generate_STb_model_OADA <- function(STb_data,
         ILV_declaration = paste0(
             sapply(combined_ILV_vars, function(var) {
                 if (!is.null(dim(STb_data[[paste0("ILV_", var)]]))) {
-                    paste0('array[K,Q,Z] real ILV_', var, ';')
+                    paste0('array[K,Q,P] real ILV_', var, ';')
                 } else {
-                    paste0('array[Z] real ILV_', var, ';')
+                    paste0('array[P] real ILV_', var, ';')
                 }
             }),
             collapse = '\n'
@@ -196,15 +196,15 @@ generate_STb_model_OADA <- function(STb_data,
     if (N_veff > 0){
         for (parameter in veff_ID) {
             if (parameter=="s" & model_type=="full"){
-                transformed_params = append(transformed_params, paste0("vector<lower=0>[Z] s = exp(log_s_mean + v_ID[,",count,"]);"))
+                transformed_params = append(transformed_params, paste0("vector<lower=0>[P] s = exp(log_s_mean + v_ID[,",count,"]);"))
                 transformed_params = append(transformed_params, paste0("real<lower=0> s_mean = exp(log_s_mean);"))
             }
             else if (parameter=="f" & model_type=="full"){
-                transformed_params = append(transformed_params, paste0("vector<lower=0>[Z] f = exp(log_f_mean + v_ID[,",count,"]);"))
+                transformed_params = append(transformed_params, paste0("vector<lower=0>[P] f = exp(log_f_mean + v_ID[,",count,"]);"))
                 transformed_params = append(transformed_params, paste0("real<lower=0> f_mean = exp(log_f_mean);"))
             }
             else if (parameter=="k" & model_type=="full"){
-                transformed_params = append(transformed_params, paste0("vector<lower=0>[Z] k_shape = 2 / (1 + exp(-k_raw+ v_ID[,",count,"])) - 1;"))
+                transformed_params = append(transformed_params, paste0("vector<lower=0>[P] k_shape = 2 / (1 + exp(-k_raw+ v_ID[,",count,"])) - 1;"))
                 transformed_params = append(transformed_params, paste0("real<lower=-1, upper=1> k_shape_mean = 2 / (1 + exp(-k_raw)) - 1;"))
             }
             count = count + 1
@@ -223,7 +223,7 @@ generate_STb_model_OADA <- function(STb_data,
             #if user specified this should be include a varying effect for id
             if (is.element(ilv, veff_ID)){
                 #add declaration in transformed parameters
-                transformed_params = append(transformed_params, paste0("vector[Z] ", ilv, " = beta_ILVi_", ilv," + v_ID[,",count,"]);"))
+                transformed_params = append(transformed_params, paste0("vector[P] ", ilv, " = beta_ILVi_", ilv," + v_ID[,",count,"]);"))
                 count = count + 1
                 #rename with [id] so it can be indexed in the main model loop
                 ILVi_vars[ILVi_vars == ilv] <- paste0(ilv, "[id]")
@@ -263,7 +263,7 @@ generate_STb_model_OADA <- function(STb_data,
             #if user specified this should be include a varying effect for id
             if (is.element(ilv, veff_ID)){
                 #add declaration in transformed parameters
-                transformed_params = append(transformed_params, paste0("vector[Z] ", ilv, " = beta_ILVs_", ilv," + v_ID[,",count,"]);"))
+                transformed_params = append(transformed_params, paste0("vector[P] ", ilv, " = beta_ILVs_", ilv," + v_ID[,",count,"]);"))
                 count = count + 1
                 #rename with [id] so it can be indexed in the main model loop
                 ILVs_vars[ILVs_vars == ilv] <- paste0(ilv, "[id]")
@@ -302,7 +302,7 @@ generate_STb_model_OADA <- function(STb_data,
             #if user specified this should be include a varying effect for id
             if (is.element(ilv, veff_ID)){
                 #add declaration in transformed parameters
-                transformed_params = append(transformed_params, paste0("vector[Z] ", ilv, " = beta_ILVm_", ilv," + v_ID[,",count,"]);"))
+                transformed_params = append(transformed_params, paste0("vector[P] ", ilv, " = beta_ILVm_", ilv," + v_ID[,",count,"]);"))
                 count = count + 1
                 #rename with [id] so it can be indexed in the main model loop
                 ILVm_vars[ILVm_vars == ilv] <- paste0(ilv, "[id]")
@@ -364,7 +364,7 @@ functions {{
 data {{
     int<lower=0> K;                // Number of trials
     int<lower=0> Q;                // Number of individuals in each trial
-    int<lower=1> Z;                // Number of unique individuals
+    int<lower=1> P;                // Number of unique individuals
     {if (is_distribution) 'int<lower=1> S;              // number of posterior samples for A edge weights' else ''}
     array[K] int<lower=0> N;       // Number of individuals that learned during observation period
     array[K] int<lower=0> N_c;     // Number of right-censored individuals
@@ -372,9 +372,9 @@ data {{
     array[K] int<lower=1> T;       // Maximum time periods
     int<lower=1> T_max;            // Max timesteps reached
     {if (est_acqTime) 'array[K] int<lower=0> time_max; //Duration of obs period for each trial' else ''}
-    array[K,Z] int<lower=-1> t;     // Time of acquisition for each individual
+    array[K,P] int<lower=-1> t;     // Time of acquisition for each individual
     {if (model_type=='full') {network_declaration} else ''}
-    array[K] matrix[T_max, Z] C;   // Knowledge state slash cue matrix
+    array[K] matrix[T_max, P] Z;   // Knowledge state slash cue matrix
     int<lower=0> N_veff;
     {ILV_declaration}
 }}
@@ -389,7 +389,7 @@ parameters {{
     {if (model_type=='full') {ILVs_param} else ''}
     {if (model_type=='full') {ILVm_param} else ''}
     {if (N_veff > 0) '
-    matrix[N_veff,Z] z_ID;
+    matrix[N_veff,P] z_ID;
     vector<lower=0>[N_veff] sigma_ID;
     cholesky_factor_corr[N_veff] Rho_ID;
     ' else ''}
@@ -400,7 +400,7 @@ parameters {{
     transformed_parameters_block <- glue::glue("
 transformed parameters {{
    {if (N_veff > 0) '
-    matrix[Z,N_veff] v_ID;
+    matrix[P,N_veff] v_ID;
     v_ID = (diag_pre_multiply(sigma_ID, Rho_ID) * z_ID)\\';
    ' else ''}
    {transformed_params_declaration}
@@ -472,7 +472,7 @@ model {{
                     real j_ind = {ILVi_variable_effects_j};
                     {j_social_info_statement}
                     {j_lambda_statement}
-                    j_rates[j] += j_lambda * (1-C[trial][learn_time, j]); //only include those who haven't learned in denom
+                    j_rates[j] += j_lambda * (1-Z[trial][learn_time, j]); //only include those who haven't learned in denom
                 }}
                 {target_increment_statement}
             }}
@@ -482,7 +482,7 @@ model {{
 }}
 ")
 
-#I'll have to come back to this, if it's even possible. as it is, the rng can pick the same ind twice, and C won't match the simulated order
+#I'll have to come back to this, if it's even possible. as it is, the rng can pick the same ind twice, and Z won't match the simulated order
 #if this ever gets uncommented, be sure to add back {est_acqTime_code} into the generated quantities glue.
 # est_acqTime_code <- if (est_acqTime==TRUE) glue::glue("
 #     matrix[K, Q] acquisition_time;         // simulated acquisition times
@@ -498,7 +498,7 @@ model {{
 #                 real j_ind = {ILVi_variable_effects_j};
 #                 {j_social_info_statement}
 #                 {j_lambda_statement}
-#                 j_rates[j] += j_lambda * (1-C[trial][time_step, j]);
+#                 j_rates[j] += j_lambda * (1-Z[trial][time_step, j]);
 #             }}
 #
 #             vector[Q] probs = j_rates / sum(j_rates); // normalize to probabilities
@@ -532,7 +532,7 @@ generated quantities {{
                         real j_ind = {ILVi_variable_effects_j};
                         {j_social_info_statement}
                         {j_lambda_statement}
-                        j_rates[j] += j_lambda * (1-C[trial][learn_time, j]);
+                        j_rates[j] += j_lambda * (1-Z[trial][learn_time, j]);
                     }}
                     {log_lik_statement}
                 }}

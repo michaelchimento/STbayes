@@ -124,7 +124,7 @@ import_NBDA_STb <- function(nbda_object, network_names= c("default"), ILVi = NUL
 
     #### Populate Data List ####
     data_list$K <- length(unique(event_data$trial_numeric))  # Number of trials
-    data_list$Z <- length(unique(event_data$id_numeric))  # Number of individuals
+    data_list$P <- length(unique(event_data$id_numeric))  # Number of individuals
     data_list$N <- N_data$num_uncensored  # Uncensored counts per trial
     dim(data_list$N) = length(data_list$N)
     data_list$N_c <- N_data$num_censored  # Censored counts per trial
@@ -140,8 +140,8 @@ import_NBDA_STb <- function(nbda_object, network_names= c("default"), ILVi = NUL
     data_list$D_int = D_data_int #duration data in integer format (experimental)
     dim(data_list$D_int) <- dim(data_list$D) #why is r so annoying
     data_list$ind_id <- id_data  # Individual IDs matrix
-    data_list$C <- create_C_matrix(event_data) # knowledge state matrix
-    data_list$C <- sweep(data_list$C, MARGIN = 3, STATS = nbda_object@weights, FUN = "*") #mult with weights
+    data_list$Z <- create_Z_matrix(event_data) # knowledge state matrix
+    data_list$Z <- sweep(data_list$Z, MARGIN = 3, STATS = nbda_object@weights, FUN = "*") #mult with weights
 
 
     #### ILV Metadata ####
@@ -161,7 +161,7 @@ import_NBDA_STb <- function(nbda_object, network_names= c("default"), ILVi = NUL
     } else{
         #### Time-varying ILV ####
         message("Time-varying ILV supplied.")
-        ILV_tv <- data.frame(id = rep(nbda_object@idname, times = max(nbda_object@orderAcq)), time = rep(1:max(nbda_object@orderAcq), each = data_list$Z))
+        ILV_tv <- data.frame(id = rep(nbda_object@idname, times = max(nbda_object@orderAcq)), time = rep(1:max(nbda_object@orderAcq), each = data_list$P))
         ILV_tv$trial=1
         if (!"ILVabsent" %in% nbda_object@asoc_ilv){ILV_tv <- cbind(ILV_tv, extract_tv_ILV(nbda_object, "asocILVdata"))}
         if (!"ILVabsent" %in% nbda_object@int_ilv){ILV_tv <- cbind(ILV_tv, extract_tv_ILV(nbda_object, "intILVdata"))}

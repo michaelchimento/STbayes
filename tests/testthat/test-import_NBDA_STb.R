@@ -1,7 +1,7 @@
 test_that("import_NBDA_STb creates datalist with correct dimensions", {
   data_list_user <- import_NBDA_STb(STbayes::tutorial4_1, network_names = c("assoc"))
   expect_equal(dim(data_list_user$K), NULL)
-  expect_equal(dim(data_list_user$Z), NULL)
+  expect_equal(dim(data_list_user$P), NULL)
   expect_equal(dim(data_list_user$N), 1)
   expect_equal(dim(data_list_user$N_c), 1)
   expect_equal(dim(data_list_user$T), 1)
@@ -13,7 +13,7 @@ test_that("import_NBDA_STb creates datalist with correct dimensions", {
   expect_equal(dim(data_list_user$D), c(1, 28))
   expect_equal(dim(data_list_user$D_int), c(1, 28))
   expect_equal(dim(data_list_user$ind_id), c(1, 30))
-  expect_equal(dim(data_list_user$C), c(1, 28, 30))
+  expect_equal(dim(data_list_user$Z), c(1, 28, 30))
   expect_equal(dim(data_list_user$ILVstAge), NULL)
   expect_equal(dim(data_list_user$ILVi_names), NULL)
   expect_equal(dim(data_list_user$ILVs_names), NULL)

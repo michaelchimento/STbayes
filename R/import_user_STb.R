@@ -147,7 +147,7 @@ import_user_STb <- function(event_data,
   }))
 
   data_list$K <- length(unique(event_data$trial_numeric))
-  data_list$Z <- length(unique(event_data$id_numeric)) # number of distinct individuals
+  data_list$P <- length(unique(event_data$id_numeric)) # number of distinct individuals
   data_list$N <- N_data$num_uncensored # Uncensored counts per trial
   dim(data_list$N) <- length(data_list$N)
   data_list$N_c <- N_data$num_censored # Censored counts per trial
@@ -163,11 +163,11 @@ import_user_STb <- function(event_data,
   data_list$D_int <- D_data_int # duration data in integer format (experimental)
   dim(data_list$D_int) <- dim(data_list$D) # why is r so annoying
   data_list$ind_id <- id_data # individual id data
-  data_list$C <- create_C_matrix(event_data) # knowledge state matrix
+  data_list$Z <- create_Z_matrix(event_data) # knowledge state matrix
   if (!is.null(t_weights)) {
     data_list$W <- create_W_matrix(t_weights)
-    if (!all(dim(data_list$C) == dim(data_list$W))) stop("Dimensions of event state matrix C do not match dimensions of transmission weight matrix W.")
-    data_list$C <- data_list$C * data_list$W
+    if (!all(dim(data_list$Z) == dim(data_list$W))) stop("Dimensions of event state matrix C do not match dimensions of transmission weight matrix W.")
+    data_list$Z <- data_list$Z * data_list$W
   }
 
   #### Constant ILV ####
@@ -252,7 +252,7 @@ import_user_STb <- function(event_data,
   # if no time is provided, it will be assumed that this is a static network analysis
 
   # check if the same number of individuals are included in both datasets
-  if (data_list$Z != length(unique(c(networks$from, networks$to)))) {
+  if (data_list$P != length(unique(c(networks$from, networks$to)))) {
     stop("Networks do not contain the same number of unique individuals as the event data.")
   }
 
@@ -297,9 +297,9 @@ import_user_STb <- function(event_data,
   }
 
   if (is_distribution) {
-    is_symmetric <- nrow(networks[networks$trial_numeric == 1 & networks$discrete_time == 1 & networks$draw == 1, ]) == data_list$Z * (data_list$Z - 1)
+    is_symmetric <- nrow(networks[networks$trial_numeric == 1 & networks$discrete_time == 1 & networks$draw == 1, ]) == data_list$P * (data_list$P - 1)
   } else {
-    is_symmetric <- nrow(networks[networks$trial_numeric == 1 & networks$discrete_time == 1, ]) == data_list$Z * (data_list$Z - 1)
+    is_symmetric <- nrow(networks[networks$trial_numeric == 1 & networks$discrete_time == 1, ]) == data_list$P * (data_list$P - 1)
   }
   # precompute constants
   max_timesteps <- max(data_list$T)
@@ -309,9 +309,9 @@ import_user_STb <- function(event_data,
   for (column in network_cols) {
     # initialize + populate matrix
     dims <- if (is_distribution) {
-      c(data_list$K, max_timesteps, max_draw, data_list$Z, data_list$Z)
+      c(data_list$K, max_timesteps, max_draw, data_list$P, data_list$P)
     } else {
-      c(data_list$K, max_timesteps, data_list$Z, data_list$Z)
+      c(data_list$K, max_timesteps, data_list$P, data_list$P)
     }
     A_matrix <- array(0, dim = dims)
 
