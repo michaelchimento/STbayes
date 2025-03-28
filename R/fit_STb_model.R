@@ -20,6 +20,12 @@
 #' fit = fit_STb(data_list_user, "path/to/your/model.stan", chains = 5, cores = 5, iter=2000, control = list(adapt_delta=0.99))
 fit_STb <- function(data_list, model_obj, chains=1, cores=1, iter=1000, control=list(), algorithm="NUTS"){
 
+        # if it's a filename
+        if (substr(model_obj, nchar(model_obj) - 4, nchar(model_obj)) == ".stan") {
+            temp_file = readLines(model_obj, warn = FALSE)
+            model_obj = glue::glue_collapse(temp_file, sep = "\n")
+        }
+
         #calculate nveff numberz
         N_veff = return_N_veff(model_obj)
         message(paste("Detected N_veff =", N_veff))

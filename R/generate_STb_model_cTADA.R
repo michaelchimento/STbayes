@@ -581,7 +581,8 @@ generated quantities {{
 ")
 
     # combine all blocks
-    stan_model <- glue::glue("{functions_block}
+    stan_model <- glue::glue("//stan
+                             {functions_block}
                              {data_block}
                              {parameters_block}
                              {transformed_parameters_block}
