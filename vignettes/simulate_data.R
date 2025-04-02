@@ -144,6 +144,26 @@ ggplot(acqdata, aes(x = observed_time, y = mean_time)) +
     ) +
     theme_minimal()
 
+#plot relationship between informed and lambda
+n_draws <- 200
+n_informed <- seq(0, 30, by = .1)
+post <- rstan::extract(fit)
+lambda_0_draws <- post$lambda_0[1:n_draws]
+s_prime_draws <- post$s_prime[1:n_draws]
+# Define a sequence of informed neighbor counts
+
+lambda_df <- expand.grid(draw = 1:100, n_informed = n_informed) %>%
+    dplyr::mutate(
+        lambda_0 = lambda_0_draws[draw],
+        s_prime = s_prime_draws[draw],
+        lambda = (lambda_0 + s_prime * n_informed)
+    )
+
+ggplot(lambda_df, aes(x = n_informed, y = lambda)) +
+    geom_line(aes(group = draw), color="steelblue", alpha = 0.2) +
+    labs(x = "number of informed connections", y = expression(lambda),
+         title = "Posterior predictive λ as a function of informed neighbors") +
+    theme_minimal()
 
 # why not import from NBDA object? It works the same
 data_list_nbda = import_NBDA_STb(d, network_names = c("assoc"))

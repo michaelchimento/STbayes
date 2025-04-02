@@ -516,13 +516,13 @@ generated quantities {{
     matrix[K, Q] log_lik_matrix = rep_matrix(0.0, K, Q);           // LL for each observation
 
     for (trial in 1:K) {{
-        {if (is_distribution) 'vector[S] log_likelihoods;  // store likelihoods over samples
-        for (d in 1:S) {  // loop over posterior draws
-        log_likelihoods[d] = 0;  // initialize log-likelihood for this draw' else ''}
         for (n in 1:N[trial]) {{
                 int id = ind_id[trial, n];
                 int learn_time = t[trial, id];
                 int time_step = learn_time;
+                {if (is_distribution) 'vector[S] log_likelihoods;  // store likelihoods over samples
+                  for (d in 1:S) {  // loop over posterior draws
+                  log_likelihoods[d] = 0;  // initialize log-likelihood for this draw' else ''}
                 if (learn_time > 0) {{
                     real i_ind = {ILVi_variable_effects};
                     {i_social_info_statement}
@@ -537,12 +537,10 @@ generated quantities {{
                         j_rates[j] += j_lambda * (1-Z[trial][learn_time, j]);
                     }}
                     {log_lik_statement}
+                    {if (is_distribution) '}
+                    log_lik_matrix[trial, N[trial] + c] = log_sum_exp(log_likelihoods) - log(S);' else ''}
                 }}
         }}
-        {if (is_distribution) '}
-        for (n in 1:Q) {
-                log_lik_matrix[trial, n] = log_sum_exp(log_likelihoods) - log(S);
-            }' else ''}
     }}
 
     // Flatten log_lik_matrix into log_lik
@@ -566,5 +564,6 @@ generated quantities {{
                              {model_block}
                              {if (gq==T) {generated_quantities_block} else ''}")
     stan_model = gsub("(?m)^[ \\t]*\\n", "", stan_model, perl = TRUE)
+    stan_model <- paste0(stan_model, "\n")
     return(stan_model)
 }

@@ -14,8 +14,8 @@ extract_bisonr_edgeweights <- function(bisonr_fit, draws=100){
     if (!inherits(bisonr_fit, "bison_model")) stop("Please supply a bisonr fit object.")
 
     #yoinked code from bisonr so as not to depend
-    samples <- matrix(as.numeric(bisonr_fit$edge_samples), ncol=ncol(bisonr_fit$edge_samples))
-    draw_ids <- sample(1:dim(samples)[1], draws, replace = FALSE)
+    samples <- bisonr_fit$edge_samples
+    draw_ids <- sample(1:nrow(samples), draws, replace = FALSE)
     edge_samples <- samples[draw_ids, ]
 
     dyads <- strsplit(bisonr_fit$dyad_names, " <-> ") # split "from-to"

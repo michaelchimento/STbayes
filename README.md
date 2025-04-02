@@ -316,7 +316,7 @@ networks = extract_bisonr_edgeweights(bisonr_fit, draws=100)
 
 # this particular fit was modeling edgeweights centered at 0, but 
 # edgeweights must be positive for STbayes, so rescale between 0 and 1 here
-networks$value = scales::rescale(networks$value) #networks can now be used in import_user_STb following normal workflow
+networks$value = plogis(networks$value) #networks can now be used in import_user_STb following normal workflow
 
 #network has 10 individuals, create mock event data
 event_data <- data.frame(

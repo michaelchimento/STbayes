@@ -27,27 +27,32 @@ real<lower=0> s = s_prime/lambda_0;
 model {
     log_lambda_0_mean ~ uniform(-10, 10);
     log_s_mean ~ uniform(-10, 10);
+    vector[S] log_likelihoods;  // store likelihoods over samples
     for (trial in 1:K) {
-       vector[S] log_likelihoods;  // store likelihoods over samples
-        for (d in 1:S) {  // loop over posterior draws
-        log_likelihoods[d] = 0;  // initialize log-likelihood for this draw
         for (n in 1:N[trial]) {
-            int id = ind_id[trial, n];
-            int learn_time = t[trial, id];
-            if (learn_time > 0) {
-                for (time_step in 1:learn_time) {
-                    real ind_term = 1.0;
-                    real soc_term = s_prime * (sum(A_value[trial, time_step , d][id, ] .* Z[trial][time_step, ])) ;
-                    real lambda =  (lambda_0 * ind_term + soc_term) * D[trial, time_step];
-                    log_likelihoods[d] += -lambda;
-                    if (time_step == learn_time) {
-                        log_likelihoods[d] += log( (lambda_0 * ind_term + soc_term));
+
+            for (d in 1:S) {  // loop over posterior draws
+                log_likelihoods[d] = 0;  // initialize log-likelihood for this draw
+                int id = ind_id[trial, n];
+                int learn_time = t[trial, id];
+                if (learn_time > 0) {
+                    for (time_step in 1:learn_time) {
+                        real ind_term = 1.0;
+                        real soc_term = s_prime * (sum(A_value[trial, time_step , d][id, ] .* Z[trial][time_step, ])) ;
+                        real lambda =  (lambda_0 * ind_term + soc_term) * D[trial, time_step];
+                        log_likelihoods[d] += -lambda;
+                        if (time_step == learn_time) {
+                            log_likelihoods[d] += log( (lambda_0 * ind_term + soc_term));
+                        }
                     }
                 }
-            }
+            } 
+            target += log_sum_exp(log_likelihoods) - log(S);
         }
         if (N_c[trial] > 0) {
             for (c in 1:N_c[trial]) {
+            for (d in 1:S) {  // loop over posterior draws
+                log_likelihoods[d] = 0;  // initialize log-likelihood for this draw
                 int id = ind_id[trial, N[trial] + c];
                 for (time_step in 1:T[trial]) {
                     real ind_term = 1.0;
@@ -56,22 +61,24 @@ model {
                     log_likelihoods[d] += -lambda;
                 }
             }
+            target += log_sum_exp(log_likelihoods) - log(S);
         }
-       } target += log_sum_exp(log_likelihoods) - log(S);
+       } 
     }
 }
+
 generated quantities {
     matrix[K, Q] log_lik_matrix = rep_matrix(0.0, K, Q);           // LL for each observation
     for (trial in 1:K) {
-        vector[S] log_likelihoods;  // store likelihoods over samples
-        for (d in 1:S) {  // loop over posterior draws
-        log_likelihoods[d] = 0;  // initialize log-likelihood for this draw
         for (n in 1:N[trial]) {
             int id = ind_id[trial, n];
             int learn_time = t[trial, id];
+            vector[S] log_likelihoods;  // store likelihoods over samples
+                for (d in 1:S) {  // loop over posterior draws
+                log_likelihoods[d] = 0;  // initialize log-likelihood for this draw
             if (learn_time > 0){
                 real cum_hazard = 0; //set val before adding
-                for (time_step in 1:T[trial]) {
+                for (time_step in 1:learn_time) {
                     real ind_term = 1.0;
                     real soc_term = s_prime * (sum(A_value[trial, time_step , d][id, ] .* Z[trial][time_step, ])) ;
                     real lambda =  (lambda_0 * ind_term + soc_term) * D[trial, time_step];
@@ -83,27 +90,30 @@ generated quantities {
                 }
             }
         }
+           log_lik_matrix[trial, n] = log_sum_exp(log_likelihoods) - log(S);
+        }
         // Contributions of censored individuals
         if (N_c[trial] > 0) {
             for (c in 1:N_c[trial]) {
                 int id = ind_id[trial, N[trial] + c];
                 int censor_time = T[trial]; // Censoring time (end of observation)
-                // compute cumulative hazard up to the censoring time
-                real cum_hazard = 0;
-                for (time_step in 1:censor_time) {
-                    real ind_term = 1.0;
-                    real soc_term = s_prime * (sum(A_value[trial, time_step , d][id, ] .* Z[trial][time_step, ])) ;
-                    real lambda =  (lambda_0 * ind_term + soc_term) * D[trial, time_step];
-                    cum_hazard += lambda; // accumulate hazard
-                }
+                vector[S] log_likelihoods;  // store likelihoods over samples
+                    for (d in 1:S) {  // loop over posterior draws
+                    log_likelihoods[d] = 0;  // initialize log-likelihood for this draw
+                    // compute cumulative hazard up to the censoring time
+                    real cum_hazard = 0;
+                    for (time_step in 1:censor_time) {
+                        real ind_term = 1.0;
+                        real soc_term = s_prime * (sum(A_value[trial, time_step , d][id, ] .* Z[trial][time_step, ])) ;
+                        real lambda =  (lambda_0 * ind_term + soc_term) * D[trial, time_step];
+                        cum_hazard += lambda; // accumulate hazard
+                    }
                 // Compute per-individual log likelihood
                 log_likelihoods[d] += -cum_hazard;
+           }
+           log_lik_matrix[trial, N[trial] + c] = log_sum_exp(log_likelihoods) - log(S);
             }
         }
-        }
-        for (n in 1:Q) {
-                log_lik_matrix[trial, n] = log_sum_exp(log_likelihoods) - log(S);
-            }
     }
     // Flatten log_lik_matrix into log_lik
     array[K * Q] real log_lik;
