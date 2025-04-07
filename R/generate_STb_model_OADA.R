@@ -60,9 +60,61 @@ generate_STb_model_OADA <- function(STb_data,
     prior_f <- priors[["log_f"]]
     prior_k <- priors[["k_raw"]]
 
-    #check if edgeweights are sampled from posterior distribution (import func should have created S variable)
-    if ("S" %in% names(STb_data)) is_distribution=TRUE else is_distribution=FALSE
-    if ("S" %in% names(STb_data)) est_acqTime=FALSE # don't want to deal with that rn
+    # check if edgeweights are sampled from posterior distribution (import func should have created S variable)
+    if ("N_dyad" %in% names(STb_data)) is_distribution <- TRUE else is_distribution <- FALSE
+    if ("N_dyad" %in% names(STb_data)) est_acqTime <- FALSE # don't want to deal with that rn
+
+    network_names <- STb_data$network_names
+    # make custom declarations for distributions:
+    if (is_distribution & model_type=="full") {
+        # data declaration
+        distribution_data_declaration <- glue::glue_collapse(
+            glue::glue("vector[N_dyad] logit_edge_mu_{network_names};  // logit edge values for {network_names}
+                  matrix[N_dyad, N_dyad] logit_edge_cov_{network_names};  // covariance matrix for {network_names}"),
+            sep = "\n\n"
+        )
+        distribution_data_declaration <- glue::glue("int N_dyad;  // number of dyads\n\n{distribution_data_declaration}")
+
+        # param declaration
+        distribution_param_declaration <-
+            glue::glue_collapse(glue::glue("vector[N_dyad] edge_logit_{network_names};"), sep = "\n")
+
+        # transformed param declaration
+        distribution_transformed_declaration <- {
+            # Declare matrices
+            matrix_decls <- glue::glue_collapse(glue::glue("matrix[P, P] {network_names};"), sep = "\n")
+
+            # probably second options is right
+            matrix_assignments <- glue::glue_collapse(glue::glue(
+                "{network_names}[i, j] = inv_logit(edge_logit_{network_names}[edge_idx]);"
+            ), sep = "\n")
+
+            glue::glue("{matrix_decls}
+                      {{
+                        int edge_idx = 1;
+                        for (i in 1:P) {{
+                          for (j in 1:P) {{
+                            if (i != j) {{
+                    {matrix_assignments}
+                              edge_idx += 1;
+                            }} else {{
+                    {glue::glue_collapse(glue::glue('{network_names}[i, j] = 0;'), sep = '\n')}
+                            }}
+                          }}
+                        }}
+                      }}")
+        }
+        # model declaration
+        distribution_model_block <- glue::glue_collapse(
+            glue::glue("  edge_logit_{network_names} ~ multi_normal(logit_edge_mu_{network_names}, logit_edge_cov_{network_names});"),
+            sep = "\n")
+
+    } else {
+        distribution_data_declaration <- ""
+        distribution_param_declaration <- ""
+        distribution_transformed_declaration <- ""
+        distribution_model_block <- ""
+    }
 
     #check if user wants to fit f parameter w complex contagion
     if (transmission_func=="freq-dep1"){
@@ -96,26 +148,28 @@ generate_STb_model_OADA <- function(STb_data,
 
     # Declare network variables and weight parameter if multi-network (only for social model)
     if (model_type == "full") {
-        network_names = STb_data$network_names
-        network_declaration = glue::glue("array[K, T_max] matrix[P, P] {paste0('A_', network_names, collapse = ', ')}; // Network matrices")
-        if (is_distribution) network_declaration = glue::glue("array[K, T_max, S] matrix[P, P] {paste0('A_', network_names, collapse = ', ')}; // Network matrices")
+        if (!is_distribution) {
+            network_declaration <- glue::glue("array[K, T_max] matrix[P, P] {paste0('A_', network_names, collapse = ', ')}; // Network matrices")
+        } else {
+            network_declaration <- ""
+        }
         num_networks <- length(network_names)
         if (num_networks == 1) {
             if (transmission_func=="standard"){
                 network_term <- paste0("sum(A_", network_names[1], "[trial, time_step][id, ] .* Z[trial][time_step, ])")
-                if (is_distribution){
-                    network_term <- paste0("sum(A_", network_names[1], "[trial, time_step , d][id, ] .* Z[trial][time_step, ])")
-                }
+                if (is_distribution) network_term <- paste0("sum(", network_names[1], "[id, ] .* Z[trial][time_step, ])")
 
             }
             else if (transmission_func=="freq-dep1"){
                 network_term <- paste0("sum(A_", network_names[1], "[trial, time_step][id, ] .* Z[trial][time_step, ])^", f_statement,
                                        "/ (sum(A_", network_names[1], "[trial, time_step][id, ] .* Z[trial][time_step, ])^",f_statement," +",
                                        "sum(A_", network_names[1], "[trial, time_step][id, ] .* (1-Z[trial][time_step, ]))^", f_statement,")")
-                if (is_distribution){
-                    network_term <- paste0("sum(A_", network_names[1], "[trial, time_step , d][id, ] .* Z[trial][time_step, ])^", f_statement,
-                                           "/ (sum(A_", network_names[1], "[trial, time_step , d][id, ] .* Z[trial][time_step, ])^",f_statement,
-                                           "+ sum(A_", network_names[1], "[trial, time_step , d][id, ] .* (1-Z[trial][time_step, ]))^", f_statement,")")
+                if (is_distribution) {
+                    network_term <- paste0(
+                        "sum(", network_names[1], "[id, ] .* Z[trial][time_step, ])^", f_statement,
+                        "/ (sum(", network_names[1], "[id, ] .* Z[trial][time_step, ])^", f_statement,
+                        "+ sum(", network_names[1], "[id, ] .* (1-Z[trial][time_step, ]))^", f_statement, ")"
+                    )
                 }
             }
             else if (transmission_func=="freq-dep2"){
@@ -124,9 +178,9 @@ generate_STb_model_OADA <- function(STb_data,
                                        if (sum_ass>0) prop_know = sum(A_", network_names[1], "[trial, time_step][id, ] .* Z[trial][time_step, ])/sum_ass;
                                        real dini_transformed = dini_func(prop_know,", k_statement, ");")
                 if (is_distribution) {
-                    network_term <- paste0("sum_ass = sum(A_", network_names[1], "[trial, time_step, d][id, ]);
-                                           prop_know = 0.0;
-                                           if (sum_ass>0) prop_know = sum(A_", network_names[1], "[trial, time_step, d][id, ] .* Z[trial][time_step, ])/sum_ass;
+                    network_term <- paste0("real sum_ass = sum(", network_names[1], "[id, ]);
+                                           real prop_know = 0.0;
+                                           if (sum_ass>0) prop_know = sum(", network_names[1], "[id, ] .* Z[trial][time_step, ])/sum_ass;
                                            real dini_transformed = dini_func(prop_know", k_statement, ");")
                 }
             }
@@ -134,7 +188,7 @@ generate_STb_model_OADA <- function(STb_data,
             w_prior <- ""
         } else {
             network_term <- paste0("w[", 1:num_networks, "] * sum(A_", network_names, "[trial, time_step][id, ] .* Z[trial][time_step, ])", collapse = " + ")
-            if (is_distribution) network_term <- paste0("w[", 1:num_networks, "] * sum(A_", network_names, "[trial, time_step, d][id, ] .* Z[trial][time_step, ])", collapse = " + ")
+            if (is_distribution) network_term <- paste0("w[", 1:num_networks, "] * sum(", network_names, "[id, ] .* Z[trial][time_step, ])", collapse = " + ")
             #network_term_j = gsub("[id", "[j", network_term, fixed = TRUE)
             w_param <- paste0("simplex[", num_networks, "] w; // Weights for networks")
             w_prior <- paste0("w ~ dirichlet(rep_vector(0.5, ", num_networks, "));")
@@ -365,7 +419,6 @@ data {{
     int<lower=0> K;                // Number of trials
     int<lower=0> Q;                // Number of individuals in each trial
     int<lower=1> P;                // Number of unique individuals
-    {if (is_distribution) 'int<lower=1> S;              // number of posterior samples for A edge weights' else ''}
     array[K] int<lower=0> N;       // Number of individuals that learned during observation period
     array[K] int<lower=0> N_c;     // Number of right-censored individuals
     array[K, Q] int<lower=-1> ind_id; // IDs of individuals
@@ -377,12 +430,14 @@ data {{
     array[K] matrix[T_max, P] Z;   // Knowledge state slash cue matrix
     int<lower=0> N_veff;
     {ILV_declaration}
+    {distribution_data_declaration}
 }}
 ")
 
     # Parameters block
     parameters_block <- glue::glue("
 parameters {{
+    {distribution_param_declaration}
     {if (model_type=='full') 'real log_s_mean; // Overall social transmission rate' else ''}
     {if (model_type=='full') {w_param} else ''}
     {ILVi_param}
@@ -403,7 +458,8 @@ transformed parameters {{
     matrix[P,N_veff] v_ID;
     v_ID = (diag_pre_multiply(sigma_ID, Rho_ID) * z_ID)\\';
    ' else ''}
-   {transformed_params_declaration}
+    {transformed_params_declaration}
+    {distribution_transformed_declaration}
 }}
 ")
 
@@ -424,9 +480,7 @@ transformed parameters {{
         }
 
         target_increment_statement = glue::glue("target += log(i_lambda) - log(sum(j_rates));")
-        if (is_distribution) target_increment_statement = glue::glue("log_likelihoods[d] += log(i_lambda) - log(sum(j_rates));")
         log_lik_statement = glue::glue("log_lik_matrix[trial, n] = log(i_lambda) - log(sum(j_rates));")
-        if (is_distribution) log_lik_statement = gsub("log_lik_matrix[trial, n] =", "log_likelihoods[d] +=", log_lik_statement, fixed = TRUE)
 
     } else if (model_type=='asocial'){
         i_social_info_statement = ""
@@ -447,6 +501,7 @@ model {{
     {ILVi_prior}
     {if (model_type=='full') {ILVs_prior} else ''}
     {if (model_type=='full') {ILVm_prior} else ''}
+    {distribution_model_block}
 
     {if (N_veff > 0) '
     to_vector(z_ID) ~ normal(0,1);
@@ -455,9 +510,6 @@ model {{
     ' else ''}
 
     for (trial in 1:K) {{
-        {if (is_distribution) 'vector[S] log_likelihoods;  // store likelihoods over samples
-        for (d in 1:S) {  // loop over posterior draws
-        log_likelihoods[d] = 0;  // initialize log-likelihood for this draw' else ''}
 
         for (n in 1:N[trial]) {{
             int id = ind_id[trial, n];
@@ -479,7 +531,6 @@ model {{
                 {target_increment_statement}
             }}
         }}
-        {if (is_distribution) '} target += log_sum_exp(log_likelihoods) - log(S);' else ''}
     }}
 }}
 ")
@@ -520,9 +571,6 @@ generated quantities {{
                 int id = ind_id[trial, n];
                 int learn_time = t[trial, id];
                 int time_step = learn_time;
-                {if (is_distribution) 'vector[S] log_likelihoods;  // store likelihoods over samples
-                  for (d in 1:S) {  // loop over posterior draws
-                  log_likelihoods[d] = 0;  // initialize log-likelihood for this draw' else ''}
                 if (learn_time > 0) {{
                     real i_ind = {ILVi_variable_effects};
                     {i_social_info_statement}
@@ -537,8 +585,6 @@ generated quantities {{
                         j_rates[j] += j_lambda * (1-Z[trial][learn_time, j]);
                     }}
                     {log_lik_statement}
-                    {if (is_distribution) '}
-                    log_lik_matrix[trial, N[trial] + c] = log_sum_exp(log_likelihoods) - log(S);' else ''}
                 }}
         }}
     }}
