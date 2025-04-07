@@ -107,10 +107,11 @@ model_obj = generate_STb_model(data_list_user, gq=T, est_acqTime = T)
 write(model_obj, file = "../inst/extdata/STAN_example_vanilla_ctada.stan")
 
 # fit model
-fit = fit_STb(data_list_user, model_obj, chains = 5, cores = 5, iter=2000, control = list(adapt_delta=0.9))
-
+fit = fit_STb_cmdstan(data_list_user, model_obj, chains = 5, parallel_chains=5, cores = 5, iter=1000)
+STb_summary_cmdstan(fit, digits = 4)
+fit_stan = fit_STb(data_list_user, model_obj, chains = 5, cores = 5, iter=2000, control = list(adapt_delta=0.9))
 # check estimates
-STb_summary(fit, digits=4)
+STb_summary(fit_stan, digits=4)
 #get data for estimated times
 acqdata = extract_acqTime(fit, data_list_user)
 

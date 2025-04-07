@@ -9,12 +9,23 @@ data_list_user = import_user_STb(event_data, edge_list)
 
 # generate, fit, and summarize models
 model = generate_STb_model(data_list_user, est_acqTime = TRUE, model_type="full")
-full_fit = fit_STb(data_list_user, model, chains = 5, cores = 5, iter = 2000, control = list(adapt_delta = 0.99))
-
+full_fit = fit_STb(data_list_user,
+                   model,
+                   chains = 5,
+                   cores = 5,
+                   parallel_chains=5,
+                   iter = 2000,
+                   control = list(adapt_delta = 0.99))
 model = generate_STb_model(data_list_user, est_acqTime = TRUE, model_type="asocial")
-asocial_fit = fit_STb(data_list_user, model, chains = 5, cores = 5, iter = 2000, control = list(adapt_delta = 0.99))
+asocial_fit = fit_STb(data_list_user,
+                      model,
+                      chains = 5,
+                      cores = 5,
+                      parallel_chains=5,
+                      iter = 2000,
+                      control = list(adapt_delta = 0.99))
 
-STb_summary(full_fit, digits = 4)
+STb_summary(full_fit, digits = 10)
 STb_summary(asocial_fit, digits = 4)
 
 # convenient workflow for model comparison.
@@ -65,10 +76,10 @@ label_null = paste0("LOO-PSIS=", round(looic_asocial["Estimate"]), "+/-", round(
 # reusable function for plotting
 plot_acq_time <- function(fit, data, title, label) {
     acqdata = extract_acqTime(fit, data)
-    p = ggplot(acqdata, aes(x = observed_time, y = mean_time)) +
+    p = ggplot(acqdata, aes(x = observed_time, y = median_time)) +
         annotate("text", x = 100, y = 350, label = label) +
         geom_segment(
-            aes(x = observed_time, xend = observed_time, y = mean_time, yend = observed_time),
+            aes(x = observed_time, xend = observed_time, y = median_time, yend = observed_time),
             color = "red",
             alpha = 0.2
         ) +

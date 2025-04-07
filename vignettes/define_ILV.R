@@ -45,17 +45,7 @@ write(model_obj, file = "../inst/extdata/STAN_example_ILV.stan")
 
 fit = fit_STb(STb_data, model_obj)
 
-#### if not explicitly set, these variables will be additive unconstrained ####
-STb_data <- import_user_STb(
-    event_data = event_data,
-    networks = networks,
-    ILV_c = ILV_c,
-    ILV_tv = ILV_tv
-)
-model_obj = generate_STb_model(STb_data)
-fit = fit_STb(STb_data, model_obj)
-
-#### set varying effects ####
+#### set varying effects for example ####
 model_obj = generate_STb_model(STb_data, veff_ID = c("weight"))
 fit = fit_STb(STb_data, model_obj)
 
