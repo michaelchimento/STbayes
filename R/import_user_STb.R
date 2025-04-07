@@ -1,7 +1,7 @@
 #' import_user_STb: Create STbayes_data object from user supplied data
 #'
 #' @param event_data dataframe with columns id, trial, time, t_end
-#' @param networks dataframe with columns trial, from, to, and one or more columns of edge weights named descriptively. Optionally an integer time column can be provided for dynamic network analysis, although networks must be provided for each time period between transmission events.
+#' @param networks Either a dataframe, a bisonr fit or STRAND fit, or a list of bisonr or STRAND fits. If dataframe: with columns trial, from, to, and one or more columns of edge weights named descriptively. Optionally an integer time column can be provided for dynamic network analysis, although networks must be provided for each time period between transmission events.
 #' @param ILV_c optional dataframe with columns id, and any constant individual-level variables that might be of interest
 #' @param ILV_tv optional dataframe with columns trial, id, time and any time-varying variables. Variable values should summarize the variable for each inter-acquisition period.
 #' @param ILVi Optional character vector of column names from ILV metadata to be considered when estimating intrinsic rate. If not specified, all ILV are applied to both.
@@ -70,6 +70,28 @@ import_user_STb <- function(event_data,
   if ( all(is.null(ILVi), is.null(ILVs), is.null(ILVm)) & (!is.null(ILV_c) | !is.null(ILV_tv))) {
     message("WARNING: You have provided ILV, yet did not specify whether they should be additive or multiplicative (missing arguments ILVi, ILVs, ILVm). If not specified, they will not be included in the model.")
   }
+
+  if (inherits(networks, "data.frame")) {
+    message("User supplied edge weights as point estimates.")
+    is_distribution <- FALSE
+
+  } else if (inherits(networks, "bison_model") || inherits(networks, "STRAND Results Object")) {
+    message("User supplied a single Bayesian network fit.")
+    networks <- list(networks)
+    is_distribution <- TRUE
+
+  } else if (is.list(networks)) {
+    if (all(sapply(networks, function(x) inherits(x, "bison_model") || inherits(x, "STRAND Results Object")))) {
+      message("User supplied a list of Bayesian network fits (bisonr or STRAND).")
+      is_distribution <- TRUE
+    } else {
+      stop("If supplying a list of networks, all elements must be bison_model or STRAND Results Object.")
+    }
+
+  } else {
+    stop("Please supply a dataframe, a bison_model or STRAND fit object, or a list of them.")
+  }
+
 
   network_type <- match.arg(network_type)
 
@@ -251,117 +273,145 @@ import_user_STb <- function(event_data,
   # as many networks as wanted can be supplied. names of networks will be taken from column name.
   # if no time is provided, it will be assumed that this is a static network analysis
 
-  # check if the same number of individuals are included in both datasets
-  if (data_list$P != length(unique(c(networks$from, networks$to)))) {
-    stop("Networks do not contain the same number of unique individuals as the event data.")
-  }
-
-  # check if the same number of trials are included in both datasets
-  if (data_list$K != length(unique(networks$trial))) {
-    stop("Networks do not contain the same number of trials as the event data.")
-  }
-
-  # check if dynamic networks are supplied
-  is_dynamic <- "time" %in% names(networks)
-  if (!is_dynamic) {
-    message("User input indicates static network(s). If dynamic network, please include 'time' column.")
-    networks$time <- 1
-  }
-
-  # check if dynamic networks are supplied
-  is_distribution <- "draw" %in% names(networks)
   if (is_distribution) {
-    message("User supplied edge weights as distributions. This currently only works when K=1 trials.")
-    if (!is_dynamic) networks$time <- 1
-  } else {
-    message("User supplied edge weights as point estimates.")
-  }
+    # create and add network names
+    network_names <- paste0("A_", seq_along(networks))
+    data_list$network_names <- network_names
 
-  # identify probable networks apart from cols below
-  exclude_cols <- c("trial", "time", "from", "to", "draw")
-  network_cols <- setdiff(names(networks), exclude_cols)
+    for (i in seq_along(networks)) {
+      net_obj <- networks[[i]]
+      net_name <- network_names[i]
 
-  temp_names <- data.frame(
-    name = sort(unique(c(networks$from, networks$to))),
-    numeric = seq_along(sort(unique(c(networks$from, networks$to))))
-  )
-
-  networks$from_numeric <- temp_names$numeric[match(networks$from, temp_names$name)]
-  networks$to_numeric <- temp_names$numeric[match(networks$to, temp_names$name)]
-  networks$trial_numeric <- as.numeric(as.factor(networks$trial))
-  networks$discrete_time <- with(networks, ave(time, trial_numeric, FUN = function(x) as.numeric(as.factor(x))))
-
-  # check if the same number of individuals are included in both datasets
-  if (max(data_list$T) != max(networks$discrete_time) & is_dynamic) {
-    stop("Networks do not contain the same number of inter-event intervals as the event data.")
-  }
-
-  if (is_distribution) {
-    is_symmetric <- nrow(networks[networks$trial_numeric == 1 & networks$discrete_time == 1 & networks$draw == 1, ]) == data_list$P * (data_list$P - 1)
-  } else {
-    is_symmetric <- nrow(networks[networks$trial_numeric == 1 & networks$discrete_time == 1, ]) == data_list$P * (data_list$P - 1)
-  }
-  # precompute constants
-  max_timesteps <- max(data_list$T)
-  max_draw <- if (is_distribution) max(networks$draw) else NULL
-
-  # for each network
-  for (column in network_cols) {
-    # initialize + populate matrix
-    dims <- if (is_distribution) {
-      c(data_list$K, max_timesteps, max_draw, data_list$P, data_list$P)
-    } else {
-      c(data_list$K, max_timesteps, data_list$P, data_list$P)
-    }
-    A_matrix <- array(0, dim = dims)
-
-    for (k in 1:data_list$K) {
-      temp_df <- networks[networks$trial_numeric == k, ]
-
-      for (i in 1:nrow(temp_df)) {
-        from <- as.integer(temp_df[i, "from_numeric"])
-        to <- as.integer(temp_df[i, "to_numeric"])
-        time <- as.integer(temp_df[i, "discrete_time"])
-        draw <- if (is_distribution) as.integer(temp_df[i, "draw"]) else NULL
-        value <- as.numeric(temp_df[i, column])
-
-        # fill in matrix
-        if (is_distribution) {
-          A_matrix[k, time, draw, from, to] <- value
-          if (!is_symmetric & network_type=="undirected") A_matrix[k, time, draw, to, from] <- value
+      if (inherits(net_obj, "bison_model")) {
+        # BISON handling
+        dyads <- if (net_obj$directed) {
+          strsplit(net_obj$dyad_names, " -> ")
         } else {
-          A_matrix[k, time, from, to] <- value
-          if (!is_symmetric & network_type=="undirected") A_matrix[k, time, to, from] <- value
+          strsplit(net_obj$dyad_names, " <-> ")
         }
-      }
 
-      if (!is_dynamic) {
-        if (is_distribution) {
-          A_matrix[k, , , , ] <- rep(A_matrix[k, 1, , , ], each = dim(A_matrix)[2])
-        } else {
-          A_matrix[k, , , ] <- rep(A_matrix[k, 1, , ], each = dim(A_matrix)[2])
-        }
-      }
+        dyad_matrix <- do.call(rbind, dyads)
+        dyad_df <- data.frame(
+          from = as.integer(dyad_matrix[, 1]),
+          to   = as.integer(dyad_matrix[, 2]),
+          stringsAsFactors = FALSE
+        )
 
-      # Zero the diagonal for each time step and draw
-      if (is_distribution) {
-        for (t in 1:max(data_list$T)) {
-          for (d in 1:max(networks$draw)) {
-            diag(A_matrix[k, t, d, , ]) <- 0
+        # Drop self-loops
+        non_self_idx <- which(dyad_df$from != dyad_df$to)
+        edges <- net_obj$edge_samples[, non_self_idx]
+
+      } else if (inherits(net_obj, "STRAND Results Object")) {
+        # STRAND handling
+        ass_matrix <- net_obj$samples$predicted_network_sample  # [draws, from, to]
+        draws <- dim(ass_matrix)[1]
+        P <- dim(ass_matrix)[2]
+
+        # Create edge sample matrix: [draws, dyads]
+        edge_mat <- matrix(NA, nrow = draws, ncol = P * (P - 1))
+        idx <- 1
+        for (i_from in 1:P) {
+          for (i_to in 1:P) {
+            if (i_from != i_to) {
+              edge_mat[, idx] <- ass_matrix[, i_from, i_to]
+              idx <- idx + 1
+            }
           }
         }
-      } else {
-        for (t in 1:max(data_list$T)) {
-          diag(A_matrix[k, t, , ]) <- 0
-        }
-      }
-    }
-    if (min(A_matrix) < 0) stop("Edgeweights below zero detected, not allowed. Rescale such that 0 is no connection.")
-    data_list[[paste0("A_", column)]] <- A_matrix
-  }
 
-  data_list$network_names <- network_cols
-  if (is_distribution) data_list$S <- max(networks$draw)
+        edges <- qlogis(edge_mat)  # convert to logit space
+
+      } else {
+        stop("Unrecognized distributional network object. Expected bison_model or STRAND Results Object.")
+      }
+
+      # Get point estimate and covariance
+      mu <- apply(edges, 2, median)
+      cov_mat <- cov(edges)
+
+      # Add to data list
+      data_list[[paste0("logit_edge_mu_", net_name)]] <- mu
+      data_list[[paste0("logit_edge_cov_", net_name)]] <- cov_mat
+    }
+
+    # Assume same number of dyads for all networks
+    data_list$N_dyad <- length(mu)
+  }
+  else{ #if NOT distribution
+      # check if the same number of individuals are included in both datasets
+      if (data_list$P != length(unique(c(networks$from, networks$to)))) {
+          stop("Networks do not contain the same number of unique individuals as the event data.")
+      }
+
+      # check if the same number of trials are included in both datasets
+      if (data_list$K != length(unique(networks$trial))) {
+          stop("Networks do not contain the same number of trials as the event data.")
+      }
+
+      # check if dynamic networks are supplied
+      is_dynamic <- "time" %in% names(networks)
+      if (!is_dynamic) {
+          message("User input indicates static network(s). If dynamic network, please include 'time' column.")
+          networks$time <- 1
+      }
+
+      # identify probable networks apart from cols below
+      exclude_cols <- c("trial", "time", "from", "to")
+      network_cols <- setdiff(names(networks), exclude_cols)
+
+      temp_names <- data.frame(
+          name = sort(unique(c(networks$from, networks$to))),
+          numeric = seq_along(sort(unique(c(networks$from, networks$to))))
+      )
+
+      networks$from_numeric <- temp_names$numeric[match(networks$from, temp_names$name)]
+      networks$to_numeric <- temp_names$numeric[match(networks$to, temp_names$name)]
+      networks$trial_numeric <- as.numeric(as.factor(networks$trial))
+      networks$discrete_time <- with(networks, ave(time, trial_numeric, FUN = function(x) as.numeric(as.factor(x))))
+
+      # check if the same number of individuals are included in both datasets
+      if (max(data_list$T) != max(networks$discrete_time) & is_dynamic) {
+          stop("Networks do not contain the same number of inter-event intervals as the event data.")
+      }
+
+      is_symmetric <- nrow(networks[networks$trial_numeric == 1 & networks$discrete_time == 1, ]) == data_list$P * (data_list$P - 1)
+      # precompute constants
+      max_timesteps <- max(data_list$T)
+
+      # for each network
+      for (column in network_cols) {
+          # initialize + populate matrix
+          dims <- c(data_list$K, max_timesteps, data_list$P, data_list$P)
+          A_matrix <- array(0, dim = dims)
+
+          for (k in 1:data_list$K) {
+              temp_df <- networks[networks$trial_numeric == k, ]
+
+              for (i in 1:nrow(temp_df)) {
+                  from <- as.integer(temp_df[i, "from_numeric"])
+                  to <- as.integer(temp_df[i, "to_numeric"])
+                  time <- as.integer(temp_df[i, "discrete_time"])
+                  value <- as.numeric(temp_df[i, column])
+
+                  # fill in matrix
+                  A_matrix[k, time, from, to] <- value
+                  if (!is_symmetric & network_type=="undirected") A_matrix[k, time, to, from] <- value
+              }
+
+              if (!is_dynamic) {
+                  A_matrix[k, , , ] <- rep(A_matrix[k, 1, , ], each = dim(A_matrix)[2])
+              }
+
+              # Zero the diagonal for each time step and draw
+              for (t in 1:max(data_list$T)) {
+                  diag(A_matrix[k, t, , ]) <- 0
+              }
+          }
+          if (min(A_matrix) < 0) stop("Edgeweights below zero detected, not allowed. Rescale such that 0 is no connection.")
+          data_list[[paste0("A_", column)]] <- A_matrix
+      }
+      data_list$network_names <- network_cols
+  }
 
   # sanity check
   dl_sanity_check(data_list = data_list)

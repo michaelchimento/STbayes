@@ -2,12 +2,12 @@
 % Please edit documentation in R/STb_compare.R
 \name{STb_compare}
 \alias{STb_compare}
-\title{STb_compare()}
+\title{STb_compare() automates the workflow of loo-psis or waic elpd comparisons. Relies on loo to do this.}
 \usage{
 STb_compare(..., model_names = NULL, method = "loo-psis")
 }
 \arguments{
-\item{...}{model fits for comparison}
+\item{...}{CmdStanMCMC model fits for comparison}
 
 \item{model_names}{an optional list of model names, otherwise taken from object names}
 
@@ -17,5 +17,5 @@ STb_compare(..., model_names = NULL, method = "loo-psis")
 list containing loo_objects, comparison, and pareto_diagnostics if using loo-psis.
 }
 \description{
-A function that automates the workflow of loo-psis or waic elpd comparisons. Relies on loo to do this.
+STb_compare() automates the workflow of loo-psis or waic elpd comparisons. Relies on loo to do this.
 }

@@ -31,11 +31,7 @@ This package is under development and is not guaranteed to work.
 
 ## Installation<a name="Installation"></a>
 
-The functions of this package depend on ```rstan```, ```coda``` and ```loo```. You can install ```rstan``` by following the instructions on the [rstan repository](https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started). Don't forget to take advantage of multiple CPU cores by running after installation:
-
-``` r
-options(mc.cores = parallel::detectCores())
-```
+The functions of this package depend on ```cmdstanr```, ```posterior``` and ```loo```. You can install ```cmdstanr``` by following these [instructions](https://mc-stan.org/cmdstanr/articles/cmdstanr.html).
 
 Vignettes use packages NBDA (install with ```devtools::install_github("whoppitt/NBDA"```), igraph, dplyr, ggplot2, and ggpubr.
 
@@ -67,7 +63,7 @@ data_list_user = import_user_STb(event_data, edge_list)
 model_obj = generate_STb_model(data_list_user, gq=T, est_acqTime = T)
 
 # fit model
-fit = fit_STb(data_list_user, model_obj, chains = 5, cores = 5, iter=2000, control = list(adapt_delta=0.99))
+fit = fit_STb(data_list_user, model_obj, chains = 5, cores = 5, parallel_chains=5, iter=2000, control = list(adapt_delta=0.99))
 
 # check estimates
 STb_summary(fit, digits=4)
@@ -123,7 +119,7 @@ edge_list = STbayes::edge_list
 data_list_user = import_user_STb(event_data, edge_list)
 
 # reusable function to generate and fit a model
-generate_and_fit_model <- function(data, model_type, chains = 5, cores = 5, iter = 2000, control = list(adapt_delta = 0.99)) {
+generate_and_fit_model <- function(data, model_type, chains = 5, cores = 5, parallel_chains=5, iter = 2000, control = list(adapt_delta = 0.99)) {
     model = generate_STb_model(data, model_type=model_type, est_acqTime = TRUE)
     fit = fit_STb(data, model, chains, cores, iter, control)
     return(fit)
@@ -248,7 +244,7 @@ library(STbayes)
  model_obj = generate_STb_model(data_list)
  
  #Obviously this model will not fit, feed it real data in the format above, or simulate data from the vignette
- fit = fit_STb(data_list, model_obj, chains = 5, cores = 5, iter=2000, control = list(adapt_delta=0.99) )
+ fit = fit_STb(data_list, model_obj, chains = 5, cores = 5, parallel_chains=5, iter=2000, control = list(adapt_delta=0.99) )
  
  # You can see a nice summary of the fit here.
  # parameters are fit on the log scale, but transformations are included in the output
@@ -289,7 +285,7 @@ data_list = import_NBDA_STb(nbdaData_cTADA)
 model_obj = generate_STb_model(data_list)
 
 #fit model
-fit = fit_STb(data_list, model_obj, chains = 5, cores = 5, iter=2000, control = list(adapt_delta=0.99) )
+fit = fit_STb(data_list, model_obj, chains = 5, cores = 5, parallel_chains=5, iter=2000, control = list(adapt_delta=0.99) )
 
 STb_summary(fit, depth=2)
 
@@ -302,21 +298,13 @@ data.frame(Variable=model_constant@varNames,MLE=model_constant@outputPar,SE=mode
 
 ### Use posterior distribution of edge weights from bayesian network model<a name="Import-bisonr"></a>
 
-Rather than using point estimates for edge weights, it is possible to import posterior distributions of edge weights from bayesian network models, such as those fit by the [bisonr package](https://github.com/JHart96/bisonR/tree/main) or the [STRAND package](https://github.com/ctross/STRAND/tree/main). This is done using ```extract_bisonr_edgeweights()``` or ```extract_strand_edgeweights```. STbayes uses Monte-Carlo marginalization to model the joint posterior which captures uncertainty in network measures in its own parameter estimates. A convenience function is provided specifically to munge a bisonr fit into an appropriate format for feeding into STbayes:
+Rather than using point estimates for edge weights, it is possible to import posterior distributions of edge weights from bayesian network models, such as those fit by the [bisonr package](https://github.com/JHart96/bisonR/tree/main) or the [STRAND package](https://github.com/ctross/STRAND/tree/main). This is done by providing single fits (or a list of fits) to ```import_user_STb()```:
 
 ```r
 library(STbayes)
 
 # load example bisonr fit object
 bisonr_fit = STbayes::bisonr_fit
-
-# convert to STb networks format (long)
-# draws defines how many samples to take from posterior.
-networks = extract_bisonr_edgeweights(bisonr_fit, draws=100)
-
-# this particular fit was modeling edgeweights centered at 0, but 
-# edgeweights must be positive for STbayes, so rescale between 0 and 1 here
-networks$value = plogis(networks$value) #networks can now be used in import_user_STb following normal workflow
 
 #network has 10 individuals, create mock event data
 event_data <- data.frame(
@@ -327,21 +315,15 @@ event_data <- data.frame(
  )
 
 #create data_list as usual
-data_list = import_user_STb(event_data, networks)
+data_list = import_user_STb(event_data, networks=bisonr_fit)
 
-# STb detects that you've entered posterior distributions as edgeweights automatically
-# it will generate a model wherein each iteration, model will marginalize LL over S=100 draws
+# STb detects that you've entered posterior distributions as edgeweights automatically and creates the appropriate model
 model = generate_STb_model(data_list)
 
 #the fit will be garbage because it's made up, but works
-fit = fit_STb(data_list, model)
+fit = fit_STb(data_list, model, chains = 5, cores = 5, parallel_chains=5, iter=2000, control = list(adapt_delta=0.99))
 STb_summary(fit)
 ```
-If the network has been modeled using another method, users may also simply supply their own networks dataframe to ```import_user_STb()``` that contains columns:
-
-| draw | trial | from | to | value |
-
-where draw is just the index from 1:S of samples. Each row should contain one sampled value for one dyad.
 
 ### Modeling complex contagion/transmission - frequency dependent rules<a name="Complex-transmission"></a>
 

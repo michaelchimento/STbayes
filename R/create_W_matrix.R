@@ -11,7 +11,7 @@
 #' time = c(rep(1:3, times = 3), rep(1:3, times = 3)),
 #' t_weight = exp(rnorm(18))
 #' )
-#' create_tw_matrix(t_weights)
+#' create_W_matrix(t_weights)
 create_W_matrix <- function(t_weights){
 
     t_weights$trial_numeric <- as.numeric(as.factor(t_weights$trial))

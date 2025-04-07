@@ -4,10 +4,10 @@
 \alias{extract_bisonr_edgeweights}
 \title{extract_bisonr_edgeweights}
 \usage{
-extract_bisonr_edgeweights(bisonr_fit, draws = 100)
+extract_bisonr_edgeweights(bison_fit, draws = 100)
 }
 \arguments{
-\item{bisonr_fit}{object of class "bison_model"}
+\item{bison_fit}{object of class "bison_model"}
 
 \item{draws}{number of draws from posterior, defaults to 100}
 }

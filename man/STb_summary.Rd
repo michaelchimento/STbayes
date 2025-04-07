@@ -2,23 +2,23 @@
 % Please edit documentation in R/STb_summary.R
 \name{STb_summary}
 \alias{STb_summary}
-\title{Return summary table}
+\title{Return summary table for CmdStanR fit}
 \usage{
 STb_summary(
   fit,
   depth = 1,
   prob = 0.95,
   ignore_params = c("lp__", "idx", "log_lik", "log_lik_matrix", "acquisition_time",
-    "z_ID", "Rho_ID", "v_ID"),
+    "z_ID", "Rho_ID", "v_ID", ".chain", ".iteration", ".draw"),
   digits = 3
 )
 }
 \arguments{
-\item{fit}{model fit from fit_STb_model}
+\item{fit}{CmdStanMCMC model fit}
 
 \item{depth}{integer depth of multidimensional parameters to extract}
 
-\item{prob}{double limits for HPD of estimates}
+\item{prob}{double limits for HPD of estimates (default = 0.95)}
 
 \item{ignore_params}{character vector of parameters to ignore}
 
@@ -28,8 +28,5 @@ STb_summary(
 Summary table
 }
 \description{
-Return summary table
-}
-\examples{
-summary_table <- STb_summary(fit)
+Return summary table for CmdStanR fit
 }

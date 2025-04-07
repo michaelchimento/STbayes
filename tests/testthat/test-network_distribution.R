@@ -10,8 +10,6 @@ test_that("Network structure is consistent using distribution edgeweights.", {
     set.seed(42)  # for reproducibility
 
     bisonr_fit = STbayes::bisonr_fit
-    networks = extract_bisonr_edgeweights(bisonr_fit, draws=100)
-    networks$value = scales::rescale(networks$value) #networks can now be used in import_user_STb following normal workflow
 
     #network has 10 individuals, create mock diffusion data
     diffusion_data <- data.frame(
@@ -23,23 +21,20 @@ test_that("Network structure is consistent using distribution edgeweights.", {
 
 
     # Import data
-    data_imported <- import_user_STb(diffusion_data, networks)
+    data_imported <- import_user_STb(diffusion_data, bisonr_fit)
 
-    # Extract A_assoc matrix
-    A_assoc <- data_imported$A_value
+    testthat::expect_equal(data_imported$network_names, "A_1")
+    testthat::expect_equal(length(data_imported$logit_edge_mu_A_1), 45)
+    testthat::expect_equal(dim(data_imported$logit_edge_cov_A_1), c(45,45))
 
-    # Verify that the values in A_assoc match the original edge_list associations
-    for (i in seq_len(nrow(networks))) {
-        from <- networks$from[i]
-        to <- networks$to[i]
-        trial <- networks$trial[i]
-        draw <- networks$draw[i]
-        assoc_value <- networks$value[i]
-        testthat::expect_equal(A_assoc[trial, 1, draw, from, to], assoc_value)
-    }
-    # Ensure the network is properly repeated for all timesteps if static
-    for (t in seq_len(data_imported$T_max)) {
-        testthat::expect_equal(A_assoc[trial, t, draw, from, to], assoc_value)
-    }
+    # Import data
+    data_imported <- import_user_STb(diffusion_data, list(bisonr_fit, bisonr_fit))
+    testthat::expect_equal(data_imported$network_names, c("A_1", "A_2"))
+    testthat::expect_equal(data_imported$logit_edge_mu_A_1, data_imported$logit_edge_mu_A_2)
+
+    # Import data
+    data_imported <- import_user_STb(diffusion_data, STbayes::strand_results_obj)
+    testthat::expect_equal(length(data_imported$logit_edge_mu_A_1), 90)
+    testthat::expect_equal(dim(data_imported$logit_edge_cov_A_1), c(90,90))
 })
 

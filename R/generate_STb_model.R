@@ -6,7 +6,7 @@
 #' @param veff_ID Parameters for which to estimate varying effects by individuals. Default is no varying effects.
 #' @param gq Boolean to indicate whether the generated quantities block is added (incl. ll for WAIC)
 #' @param est_acqTime Boolean to indicate whether gq block includes estimates for acquisition time. At the moment this uses 'one weird trick' to accomplish this and does not support estimates for non-integer learning times.
-#' @param priors named list with strings containing the prior for log baserate, s or f. defaults to list(log_lambda_0 = "uniform(-10, 10)", log_s = "uniform(-10, 10)", log_f = "normal(0,1)")
+#' @param priors named list with strings containing the prior for log baserate, s, f, k. defaults to list(log_lambda_0 = "uniform(-4, 3)", log_s = "uniform(-4, 3)", log_f = "normal(0,1)", k_raw = "normal(0,1)")
 #' @export
 #' @return A STAN model (character) that is customized to the input data.
 #'
@@ -67,8 +67,8 @@ generate_STb_model <- function(STb_data,
         stop('Complex transmission can only be used with single network models. Please use transmission_func="standard"')
     }
 
-    default_priors <- list(log_lambda_0 = "uniform(-10, 10)",
-                           log_s = "uniform(-10, 10)",
+    default_priors <- list(log_lambda_0 = "normal(-4, 3)",
+                           log_s = "normal(-4, 3)",
                            log_f = "normal(0,1)",
                            k_raw = "normal(0,1)")
 

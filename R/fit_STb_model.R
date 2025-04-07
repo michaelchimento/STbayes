@@ -1,55 +1,63 @@
-#' Title
+#' Fit STb model using cmdstanr
 #'
 #' @param data_list list object exported from import_user_STb or import_NBDA_STb
-#' @param model_obj Can be either model object exported from generate_STb_model or filename
-#' @param chains Integer Number of chains to run (default=1)
-#' @param cores Integer Number of cores to use (default=1)
-#' @param iter Integer Number of iterations to run for
-#' @param control List of arguments to pass to control.
-#' @param algorithm Defaults to "NUTS". If running asocial OADA, specify "Fixed_param".
+#' @param model_obj Can be either model object exported from generate_STb_model or a filename
+#' @param ... Additional arguments passed to mod$sample (e.g., chains, iter_warmup, iter_sampling, adapt_delta)
 #'
-#' @return rstan fit
-#' @importFrom rstan stan
+#' @return A CmdStanMCMC fit object
 #' @export
-#'
-#' @examples
-#' data_list_user = import_user_STb(event_data, edge_list)
-#' model_obj = generate_STb_model(data_list_user)
-#' fit = fit_STb(data_list_user, model_obj, chains = 5, cores = 5, iter=2000, control = list(adapt_delta=0.99))
-#' #or alternatively
-#' fit = fit_STb(data_list_user, "path/to/your/model.stan", chains = 5, cores = 5, iter=2000, control = list(adapt_delta=0.99))
-fit_STb <- function(data_list, model_obj, chains=1, cores=1, iter=1000, control=list(), algorithm="NUTS"){
+fit_STb <- function(data_list, model_obj, ...) {
+        extra_args <- list(...)
 
-        # if it's a filename ending in .stan, read and collapse it
-        if (is.character(model_obj) && grepl("\\.stan$", model_obj)) {
-                temp_file = readLines(model_obj, warn = FALSE)
-                model_obj = glue::glue_collapse(temp_file, sep = "\n")
-        }
-
-        #calculate nveff numberz
-        N_veff = return_N_veff(model_obj)
-        message(paste("Detected N_veff =", N_veff))
-        data_list$N_veff = N_veff
-
-        # check if the model is a character or a file path
-        if (is.character(model_obj) && grepl("data \\{", model_obj)) {
-            # Write the model code to a temporary file
-            temp_file <- tempfile(fileext = ".stan")
-            writeLines(model_obj, temp_file)
-            model_obj <- temp_file
-        }
-
-        message("Compiling model...")
-        # fit model
-        model <- rstan::stan(
-            file = model_obj,
-            data = data_list,
-            chains = chains,
-            cores = cores,
-            iter = iter,
-            control = control,
-            algorithm = algorithm
+        # valid args for $sample() method in cmdstanr
+        allowed_sample_args <- c(
+                "data", "seed", "chains", "parallel_chains", "threads_per_chain",
+                "iter_warmup", "iter_sampling", "save_warmup", "thin", "max_treedepth",
+                "adapt_engaged", "adapt_delta", "step_size", "metric", "init", "refresh",
+                "sig_figs", "diagnostic_file", "profile_file", "show_messages",
+                "opencl_ids", "algorithm", "fixed_param", "output_dir", "validate_csv"
         )
+        valid_args <- extra_args[names(extra_args) %in% allowed_sample_args]
 
-        return(model)
+        if (!"init" %in% names(valid_args)) valid_args$init = function(chain_id) list(log_lambda_0_mean = -4, log_s_mean = -4)
+
+        if (!"iter_warmup" %in% names(valid_args) && !"iter_sampling" %in% names(valid_args) && "iter" %in% names(extra_args)) {
+                iter <- extra_args$iter
+                valid_args$iter_warmup <- floor(iter / 2)
+                valid_args$iter_sampling <- ceiling(iter / 2)
+        }
+
+        # deal w inline stan code or file
+        if (is.character(model_obj) && grepl("\\.stan$", model_obj)) {
+                model_code <- readLines(model_obj, warn = FALSE)
+                model_code <- glue::glue_collapse(model_code, sep = "\n")
+        } else if (is.character(model_obj) && grepl("data \\{", model_obj)) {
+                model_code <- model_obj
+        } else {
+                stop("model_obj must be a file path to a .stan file or Stan code as a string.")
+        }
+
+        # Write model to temp file
+        temp_file <- tempfile(fileext = ".stan")
+        writeLines(model_code, temp_file)
+
+        # Add N_veff
+        N_veff <- return_N_veff(model_code)
+        message(paste("Detected N_veff =", N_veff))
+        data_list$N_veff <- N_veff
+
+        mod <- cmdstanr::cmdstan_model(temp_file)
+
+        message("Sampling...")
+
+        # remove elements of datalist not used... why cmd stan...
+        data_list_clean <- Filter(function(x) {
+                is.numeric(x) || is.integer(x) || is.logical(x) || is.array(x) || is.matrix(x)
+        }, data_list)
+
+        valid_args$data <- data_list_clean
+
+        fit <- do.call(mod$sample, valid_args)
+
+        return(fit)
 }

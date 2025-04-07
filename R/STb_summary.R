@@ -1,114 +1,55 @@
-#' Return summary table
+#' Return summary table for CmdStanR fit
 #'
-#' @param fit model fit from fit_STb_model
+#' @param fit CmdStanMCMC model fit
 #' @param depth integer depth of multidimensional parameters to extract
-#' @param prob double limits for HPD of estimates
+#' @param prob double limits for HPD of estimates (default = 0.95)
 #' @param ignore_params character vector of parameters to ignore
 #' @param digits integer of digits to round to
 #'
 #' @return Summary table
-#' @importFrom rstan extract Rhat
-#' @importFrom coda as.mcmc HPDinterval effectiveSize
+#' @importFrom posterior as_draws_df summarise_draws rhat ess_bulk
 #' @export
-#'
-#' @examples
-#' summary_table <- STb_summary(fit)
-STb_summary <- function(fit, depth = 1, prob = 0.95, ignore_params = c("lp__", "idx", "log_lik", "log_lik_matrix", "acquisition_time", "z_ID", "Rho_ID","v_ID"), digits = 3) {
-    # extract posterior samples
-    samples <- rstan::extract(fit, permuted = TRUE)
+STb_summary <- function(fit, depth = 1, prob = 0.95,
+                        ignore_params = c("lp__", "idx", "log_lik", "log_lik_matrix",
+                                          "acquisition_time", "z_ID", "Rho_ID", "v_ID", ".chain", ".iteration", ".draw"),
+                        digits = 3) {
 
-    # filter by depth and ignore specific parameters
-    param_names <- names(samples)
-    param_depths <- sapply(samples, function(x) length(dim(x)))
-    selected_params <- param_names[param_depths <= depth & !param_names %in% ignore_params]
+    if (!inherits(fit, c("CmdStanMCMC"))) {
+        stop(sprintf("Model '%s' must be a CmdStanMCMC model fit.", name))
+    }
 
-    transformed_params = list()
+    draws_df <- fit$draws(format = "draws_df")
 
-    summary_table <- data.frame(
-        Parameter = character(),
-        Median = numeric(),
-        HPDI_Lower = numeric(),
-        HPDI_Upper = numeric(),
-        n_eff = numeric(),
-        Rhat = numeric(),
-        stringsAsFactors = FALSE
+    # Get parameter names and filter
+    param_names <- names(draws_df)
+    sigma_ID_params <- grep("^sigma_ID\\[", param_names, value = TRUE)
+    keep_params <- param_names[!param_names %in% c(ignore_params)]
+
+    # Optionally filter by depth (unchanged)
+    depth_filter <- function(param) {
+        parts <- strsplit(param, "\\[")[[1]]
+        return(length(gsub("]", "", parts)) <= depth)
+    }
+    keep_params <- Filter(depth_filter, keep_params)
+    keep_params <- union(keep_params, sigma_ID_params)
+    # Subset
+    draws_df <- posterior::subset_draws(draws_df, variable = keep_params)
+
+    # Summarize draws
+    summary_stats <- posterior::summarise_draws(
+        draws_df,
+        ~ stats::median(.x),
+        ~ posterior::mad(.x),
+        ~ posterior::quantile2(.x, probs = c((1 - prob) / 2, 1 - (1 - prob) / 2)),
+        ~ posterior::ess_bulk(.x),
+        ~ posterior::rhat(.x)
     )
 
-    # process each parameter
-    for (param in selected_params) {
-        if (is.matrix(samples[[param]])) {
-            for (d in 1:dim(samples[[param]])[2]) {
-                param_samples <- samples[[param]][, d]
-                param_samples <- coda::as.mcmc(as.matrix(param_samples))
+    # Clean column names and round
+    names(summary_stats) <- c("Parameter", "Median", "MAD", "HPDI_Lower", "HPDI_Upper", "n_eff", "Rhat")
+    numeric_cols <- sapply(summary_stats, is.numeric)
+    summary_stats = as.data.frame(summary_stats)
+    summary_stats[numeric_cols] <- lapply(summary_stats[numeric_cols], round, digits = digits)
 
-                # compute statistics
-                mean_value <- mean(param_samples)
-                median_value <- stats::median(param_samples)
-                hpdi <- coda::HPDinterval(param_samples, prob = prob)
-                n_eff <- coda::effectiveSize(param_samples)
-                rhat <- rstan::Rhat(as.matrix(param_samples))
-
-                # append
-                summary_table <- rbind(summary_table, data.frame(
-                    Parameter = paste0(param,"[",d,"]"),
-                    Mean = mean_value,
-                    Median = median_value,
-                    HPDI_Lower = hpdi[1, "lower"],
-                    HPDI_Upper = hpdi[1, "upper"],
-                    n_eff = n_eff,
-                    Rhat = rhat,
-                    stringsAsFactors = FALSE
-                ))
-            }
-        } else {
-            param_samples <- samples[[param]]
-            param_samples <- coda::as.mcmc(as.matrix(param_samples))
-
-            # compute statistics
-            mean_value <- mean(param_samples)
-            median_value <- stats::median(param_samples)
-            hpdi <- coda::HPDinterval(param_samples, prob = prob)
-            n_eff <- coda::effectiveSize(param_samples)
-            rhat <- rstan::Rhat(as.matrix(param_samples))
-
-            # append
-            summary_table <- rbind(summary_table, data.frame(
-                Parameter = param,
-                Mean = mean_value,
-                Median = median_value,
-                HPDI_Lower = hpdi[1, "lower"],
-                HPDI_Upper = hpdi[1, "upper"],
-                n_eff = n_eff,
-                Rhat = rhat,
-                stringsAsFactors = FALSE
-            ))
-            }
-        }
-
-        for (param in names(transformed_params)) {
-            param_samples <- transformed_params[[param]]
-            param_samples <- coda::as.mcmc(as.matrix(param_samples))
-
-            mean_value <- mean(param_samples)
-            median_value <- stats::median(param_samples)
-            hpdi <- coda::HPDinterval(param_samples, prob = prob)
-            n_eff <- coda::effectiveSize(param_samples)
-            rhat <- rstan::Rhat(as.matrix(param_samples))
-
-            summary_table <- rbind(summary_table, data.frame(
-                Parameter = param,
-                Mean = mean_value,
-                Median = median_value,
-                HPDI_Lower = hpdi[1, "lower"],
-                HPDI_Upper = hpdi[1, "upper"],
-                n_eff = n_eff,
-                Rhat = rhat,
-                stringsAsFactors = FALSE
-            ))
-    }
-    row.names(summary_table) = NULL
-    numeric_cols <- sapply(summary_table, is.numeric)
-    summary_table[numeric_cols] <- lapply(summary_table[numeric_cols], round, digits = digits)
-    return(summary_table)
+    return(summary_stats)
 }
-

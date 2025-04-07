@@ -4,17 +4,19 @@
 \alias{extract_acqTime}
 \title{Function to extract estimated acquisition times}
 \usage{
-extract_acqTime(fit, data_list, var_name = "acquisition_time")
+extract_acqTime(fit, data_list, prob = 0.95, var_name = "acquisition_time")
 }
 \arguments{
-\item{fit}{rstan fit object}
+\item{fit}{CmdStanMCMC fit object}
 
-\item{data_list}{STb_data object}
+\item{data_list}{STb_data object (must include ind_id and time)}
 
-\item{var_name}{name of where acquisition time is stored in rstan fit}
+\item{prob}{interval for CI. defaults to .95}
+
+\item{var_name}{variable name of acquisition time from GQ block (default = "acquisition_time")}
 }
 \value{
-dataframe of ids, estimated timestep + HPD levels and observed timestep
+Dataframe of trial, individual, id, observed_time, mean/median/HPD of estimated time
 }
 \description{
 Function to extract estimated acquisition times

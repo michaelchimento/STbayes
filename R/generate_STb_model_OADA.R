@@ -417,10 +417,10 @@ transformed parameters {{
         if (transmission_func=="freq_dep2"){
             i_social_info_statement = glue::glue(
                 "{network_term}
-                real i_soc = {if (is.element('s', veff_ID)) 's_prime[id]' else 's_prime'} * (dini_transformed) {ILVs_variable_effects};")
+                real i_soc = {if (is.element('s', veff_ID)) 's[id]' else 's'} * (dini_transformed) {ILVs_variable_effects};")
             j_social_info_statement = glue::glue(
                 "{network_term_j}
-                real j_soc = {if (is.element('s', veff_ID)) 's_prime[j]' else 's_prime'} * (dini_transformed) {ILVs_variable_effects_j};")
+                real j_soc = {if (is.element('s', veff_ID)) 's[j]' else 's'} * (dini_transformed) {ILVs_variable_effects_j};")
         }
 
         target_increment_statement = glue::glue("target += log(i_lambda) - log(sum(j_rates));")
@@ -451,7 +451,7 @@ model {{
     {if (N_veff > 0) '
     to_vector(z_ID) ~ normal(0,1);
     sigma_ID ~ exponential(1);
-    Rho_ID ~ lkj_corr_cholesky(1);
+    Rho_ID ~ lkj_corr_cholesky(3);
     ' else ''}
 
     for (trial in 1:K) {{
