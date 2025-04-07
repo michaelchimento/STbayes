@@ -79,31 +79,6 @@ STb_summary outputs a formatted table of key values for parameters (incl back-tr
 ```
 Estimates are not far off from the parameter values used for simulation, but depend on network density and stochastic processes of each simulation. See vignette ```simulate_data_manytimes.R``` to quench your thirst for model validation.
 
-STbayes also provides easy access to estimated learning times with ```extract_acqTime``` if you have fit the model with generated quantities (gq=T) and acquisition time estimates (est_acqTime=T). Generated quantities also includes log-likelihood of observations for WAIC calulations etc. To plot comparison of estimates versus known values:
-
-```r
-#get data for estimated times
-acqdata = extract_acqTime(fit, data_list_user)
-
-#plot estimated times versus observed times w/ residuals
-ggplot(acqdata, aes(x = observed_time, y = mean_time)) +
-    geom_segment(
-        aes(x = observed_time, xend = observed_time, y = mean_time, yend = observed_time), # connect predicted to slope line
-        color = "red",
-        alpha = 0.2
-    ) +
-    geom_point(alpha = 0.6, size=2) +
-    geom_abline(intercept = 0, slope = 1, color = "black", linetype = "dashed") +
-    facet_wrap(~trial, scales = "free_x") +
-    labs(
-        title = "Estimated acquisition time with residuals",
-        x = "Observed time",
-        y = "Estimated time"
-    ) +
-    theme_minimal()
- ```
- <img src="docs/estimates_residuals.png" width="400">
-
 ### Compare full and asocial models<a name="Compare-full-asocial"></a>
 
 Like NBDA, we can compare a full model with both a social and asocial component, to a model restricted to estimating only an asocial rate. We can compare models using either LOO-PSIS or WAIC with ```STb_compare``` (really a convenient wrapper that automates a workflow using package ```loo```) and compare the estimated learning times from both models. First let's load and fit both models with a convenience function.
