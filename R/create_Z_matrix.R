@@ -24,4 +24,3 @@ create_Z_matrix <- function(event_data) {
     }
     return(Z)
 }
-

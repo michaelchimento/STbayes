@@ -11,7 +11,8 @@ data {
     array[K,P] int<lower=-1> t;     // Time of acquisition for each individual
     array[K, T_max] real<lower=0> D; // Scaled durations
     array[K, T_max] matrix[P, P] A_assoc; // Network matrices
-    array[K] matrix[T_max, P] Z;   // Knowledge state slash cue matrix
+    array[K] matrix[T_max, P] Z;   // Knowledge state * cue matrix
+    array[K] matrix[T_max, P] Zn;   // Knowledge state
     int<lower=0> N_veff;
 }
 parameters {
@@ -20,14 +21,13 @@ parameters {
                                    real log_f_mean;
 }
 transformed parameters {
-   real<lower=0> lambda_0 = 1 / exp(log_lambda_0_mean);
-real<lower=0> s_prime = 1 / exp(log_s_mean);
-real<lower=0> s = s_prime/lambda_0;
+   real<lower=0> lambda_0 = exp(log_lambda_0_mean);
+real<lower=0> s_prime = exp(log_s_mean);
 real<lower=0> f = exp(log_f_mean);
 }
 model {
-    log_lambda_0_mean ~ uniform(-10, 10);
-    log_s_mean ~ uniform(-10, 10);
+    log_lambda_0_mean ~ normal(-4, 3);
+    log_s_mean ~ normal(-4, 3);
                               log_f_mean ~ normal(0,1);
     for (trial in 1:K) {
         for (n in 1:N[trial]) {
@@ -48,17 +48,18 @@ model {
         if (N_c[trial] > 0) {
             for (c in 1:N_c[trial]) {
                 int id = ind_id[trial, N[trial] + c];
-                for (time_step in 1:T[trial]) {
-                    real ind_term = 1.0;
-                    real soc_term = s_prime * (sum(A_assoc[trial, time_step][id, ] .* Z[trial][time_step, ])^f/ (sum(A_assoc[trial, time_step][id, ] .* Z[trial][time_step, ])^f +sum(A_assoc[trial, time_step][id, ] .* (1-Z[trial][time_step, ]))^f)) ;
-                    real lambda =  (lambda_0 * ind_term + soc_term) * D[trial, time_step];
-                    target += -lambda;
-                }
+                    for (time_step in 1:T[trial]) {
+                        real ind_term = 1.0;
+                        real soc_term = s_prime * (sum(A_assoc[trial, time_step][id, ] .* Z[trial][time_step, ])^f/ (sum(A_assoc[trial, time_step][id, ] .* Z[trial][time_step, ])^f +sum(A_assoc[trial, time_step][id, ] .* (1-Z[trial][time_step, ]))^f)) ;
+                        real lambda =  (lambda_0 * ind_term + soc_term) * D[trial, time_step];
+                        target += -lambda;
+                    }
             }
         }
     }
 }
 generated quantities {
+    real<lower=0> s = s_prime/lambda_0;
     matrix[K, Q] log_lik_matrix = rep_matrix(0.0, K, Q);           // LL for each observation
     for (trial in 1:K) {
         for (n in 1:N[trial]) {
@@ -66,7 +67,7 @@ generated quantities {
             int learn_time = t[trial, id];
             if (learn_time > 0){
                 real cum_hazard = 0; //set val before adding
-                for (time_step in 1:T[trial]) {
+                for (time_step in 1:learn_time) {
                     real ind_term = 1.0;
                     real soc_term = s_prime * (sum(A_assoc[trial, time_step][id, ] .* Z[trial][time_step, ])^f/ (sum(A_assoc[trial, time_step][id, ] .* Z[trial][time_step, ])^f +sum(A_assoc[trial, time_step][id, ] .* (1-Z[trial][time_step, ]))^f)) ;
                     real lambda =  (lambda_0 * ind_term + soc_term) * D[trial, time_step];
@@ -83,14 +84,14 @@ generated quantities {
             for (c in 1:N_c[trial]) {
                 int id = ind_id[trial, N[trial] + c];
                 int censor_time = T[trial]; // Censoring time (end of observation)
-                // compute cumulative hazard up to the censoring time
-                real cum_hazard = 0;
-                for (time_step in 1:censor_time) {
-                    real ind_term = 1.0;
-                    real soc_term = s_prime * (sum(A_assoc[trial, time_step][id, ] .* Z[trial][time_step, ])^f/ (sum(A_assoc[trial, time_step][id, ] .* Z[trial][time_step, ])^f +sum(A_assoc[trial, time_step][id, ] .* (1-Z[trial][time_step, ]))^f)) ;
-                    real lambda =  (lambda_0 * ind_term + soc_term) * D[trial, time_step];
-                    cum_hazard += lambda; // accumulate hazard
-                }
+                    // compute cumulative hazard up to the censoring time
+                    real cum_hazard = 0;
+                    for (time_step in 1:censor_time) {
+                        real ind_term = 1.0;
+                        real soc_term = s_prime * (sum(A_assoc[trial, time_step][id, ] .* Z[trial][time_step, ])^f/ (sum(A_assoc[trial, time_step][id, ] .* Z[trial][time_step, ])^f +sum(A_assoc[trial, time_step][id, ] .* (1-Z[trial][time_step, ]))^f)) ;
+                        real lambda =  (lambda_0 * ind_term + soc_term) * D[trial, time_step];
+                        cum_hazard += lambda; // accumulate hazard
+                    }
                 // Compute per-individual log likelihood
                 log_lik_matrix[trial, N[trial] + c] = -cum_hazard;
             }
@@ -106,3 +107,4 @@ generated quantities {
         }
     }
 }
+

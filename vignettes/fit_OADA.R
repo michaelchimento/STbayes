@@ -16,6 +16,8 @@ STb_data=data_list_user
 
 #default uniform prior results in divergences, so set a slightly more informative prior
 model_social = generate_STb_model(data_list_user, data_type="order", gq=T, model_type="full", priors=list(log_s="normal(1,3)"))
+cat(model_social)
+
 write(model_social, file = "../inst/extdata/STAN_example_OADA.stan")
 
 # fit the model
@@ -29,7 +31,7 @@ model_asocial = generate_STb_model(data_list_user, data_type="order", gq=T, mode
 write(model_asocial, file = "../inst/extdata/STAN_example_OADA_asocial.stan")
 
 # fit the model
-fit_asocial = fit_STb(data_list_user, model_asocial, chains = 5, cores = 5, iter=2000, control = list(adapt_delta=0.99), algorithm = "Fixed_param")
+fit_asocial = fit_STb(data_list_user, model_asocial, chains = 5, cores = 5, iter=2000, control = list(adapt_delta=0.99), fixed_param=T)
 
 #there are no parameters in asocial model but we can compare elpd metrics
 loo_output = STb_compare(fit_social, fit_asocial, method="waic")

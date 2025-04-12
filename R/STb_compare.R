@@ -27,13 +27,13 @@ STb_compare <- function(..., model_names = NULL, method = "loo-psis") {
     if (!inherits(model, c("CmdStanMCMC"))) {
       stop(sprintf("Model '%s' must be of class CmdStanMCMC.", name))
     }
+    log_lik <- model$draws("log_lik", format = "draws_matrix")
+    log_lik <- log_lik[, colSums(log_lik) != 0, drop = FALSE] #drop cols that are zero cuz it's just demos
 
     if (method == "loo-psis") {
-        log_lik <- model$draws("log_lik", format = "draws_matrix")
         return(loo::loo(log_lik))
     } else {
-        ll <- model$draws("log_lik", format = "draws_matrix")
-        return(loo::waic(ll))
+        return(loo::waic(log_lik))
     }
   }, models, model_names, SIMPLIFY = FALSE)
 

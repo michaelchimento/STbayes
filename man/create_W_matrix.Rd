@@ -4,7 +4,7 @@
 \alias{create_W_matrix}
 \title{Helper function to transform transmission weights into same size as C}
 \usage{
-create_W_matrix(t_weights)
+create_W_matrix(t_weights, max_time)
 }
 \arguments{
 \item{t_weights}{dataframe with t_weight. all ids across all trials must be present.}

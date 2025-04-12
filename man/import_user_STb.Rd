@@ -13,13 +13,14 @@ import_user_STb(
   ILVi = NULL,
   ILVs = NULL,
   ILVm = NULL,
-  t_weights = NULL
+  t_weights = NULL,
+  high_res = FALSE
 )
 }
 \arguments{
 \item{event_data}{dataframe with columns id, trial, time, t_end}
 
-\item{networks}{dataframe with columns trial, from, to, and one or more columns of edge weights named descriptively. Optionally an integer time column can be provided for dynamic network analysis, although networks must be provided for each time period between transmission events.}
+\item{networks}{Either a dataframe, a bisonr fit or STRAND fit, or a list of bisonr or STRAND fits. If dataframe: with columns trial, from, to, and one or more columns of edge weights named descriptively. Optionally an integer time column can be provided for dynamic network analysis, although networks must be provided for each time period between transmission events.}
 
 \item{ILV_c}{optional dataframe with columns id, and any constant individual-level variables that might be of interest}
 
@@ -32,6 +33,8 @@ import_user_STb(
 \item{ILVm}{Optional character vector of column names from ILV metadata to be considered in a multiplicative model.}
 
 \item{t_weights}{Optional dataframe with columns trial, id, time and t_weight. Transmission rates represent rates of production/relevant cues per inter-event period.}
+
+\item{high_res}{Boolean indicating whether or not user is providing networks and transmission weights per period duration=1}
 }
 \value{
 A list object containing properly formatted data to run social transmission models.

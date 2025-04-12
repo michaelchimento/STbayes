@@ -61,6 +61,9 @@ generate_STb_model_cTADA <- function(STb_data,
   prior_s <- priors[["log_s"]]
   prior_f <- priors[["log_f"]]
   prior_k <- priors[["k_raw"]]
+  prior_z_ID <- priors[["z_ID"]]
+  prior_sigma_id <- priors[["sigma_ID"]]
+  prior_rho_id <- priors[["rho_ID"]]
 
   # check if edgeweights are sampled from posterior distribution (import func should have created S variable)
   if ("N_dyad" %in% names(STb_data)) is_distribution <- TRUE else is_distribution <- FALSE
@@ -166,15 +169,15 @@ generate_STb_model_cTADA <- function(STb_data,
           )
         }
       } else if (transmission_func == "freq-dep2") {
-        network_term <- paste0("real sum_ass = sum(A_", network_names[1], "[trial, time_step][id, ]);
-                                       real prop_know = 0.0;
-                                       if (sum_ass>0) prop_know = sum(A_", network_names[1], "[trial, time_step][id, ] .* Z[trial][time_step, ])/sum_ass;
-                                       real dini_transformed = dini_func(prop_know,", k_statement, ");")
+        network_term <- paste0("real numer = sum(A_", network_names[1], "[trial, time_step][id, ] .* Z[trial][time_step, ]); // sum a_ij z_jt w_jt
+                                real denom = numer + sum(A_", network_names[1], "[trial, time_step][id, ] .* (1 - Zn[trial][time_step, ])); // + sum a_ij (1 - z_jt)
+                                real prop = denom > 0 ? numer / denom : 0.0;
+                                real dini_transformed = dini_func(prop,", k_statement, ");")
         if (is_distribution) {
-          network_term <- paste0("real sum_ass = sum(", network_names[1], "[id, ]);
-                                           real prop_know = 0.0;
-                                           if (sum_ass>0) prop_know = sum(", network_names[1], "[id, ] .* Z[trial][time_step, ])/sum_ass;
-                                           real dini_transformed = dini_func(prop_know", k_statement, ");")
+          network_term <- paste0("real numer = sum(A_", network_names[1], "[id, ] .* Z[trial][time_step, ]); // sum a_ij z_jt w_jt
+                                real denom = numer + sum(A_", network_names[1], "[id, ] .* (1 - Zn[trial][time_step, ])); // + sum a_ij (1 - z_jt)
+                                real prop = denom > 0 ? numer / denom : 0.0;
+                                real dini_transformed = dini_func(prop,", k_statement, ");")
         }
       }
 
@@ -409,7 +412,7 @@ functions {{
   real dini_func(real x, real k) {{
     // transform x from [0,1] to [-1,1]
     real x_transformed = 2 * x - 1;
-    real y = ((x_transformed - k * x_transformed) / (k - 2 * k * fabs(x_transformed) + 1) + 1) / 2;
+    real y = ((x_transformed - k * x_transformed) / (k - 2 * k * abs(x_transformed) + 1) + 1) / 2;
     return y;
   }}
 }}") else ""
@@ -427,7 +430,8 @@ data {{
     array[K,P] int<lower=-1> t;     // Time of acquisition for each individual
     array[K, T_max] real<lower=0> D; // Scaled durations
     {if (model_type=='full') {network_declaration} else ''}
-    array[K] matrix[T_max, P] Z;   // Knowledge state slash cue matrix
+    array[K] matrix[T_max, P] Z;   // Knowledge state * cue matrix
+    array[K] matrix[T_max, P] Zn;   // Knowledge state
     {ILV_declaration}
     int<lower=0> N_veff;
     {if (est_acqTime) 'array[K] int<lower=0> time_max; //Duration of obs period for each trial' else ''}
@@ -501,9 +505,9 @@ model {{
     {distribution_model_block}
 
     {if (N_veff > 0) '
-    to_vector(z_ID) ~ normal(0,1);
-    sigma_ID ~ exponential(1);
-    Rho_ID ~ lkj_corr_cholesky(3);
+    to_vector(z_ID) ~ {prior_z_ID};
+    sigma_ID ~ {prior_sigma_ID};
+    Rho_ID ~ {prior_rho_ID};
     ' else ''}
 
     for (trial in 1:K) {{

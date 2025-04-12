@@ -15,7 +15,7 @@ fit_STb <- function(data_list, model_obj, ...) {
                 "iter_warmup", "iter_sampling", "save_warmup", "thin", "max_treedepth",
                 "adapt_engaged", "adapt_delta", "step_size", "metric", "init", "refresh",
                 "sig_figs", "diagnostic_file", "profile_file", "show_messages",
-                "opencl_ids", "algorithm", "fixed_param", "output_dir", "validate_csv"
+                "opencl_ids", "fixed_param", "output_dir", "validate_csv"
         )
         valid_args <- extra_args[names(extra_args) %in% allowed_sample_args]
 

@@ -56,9 +56,13 @@ generate_STb_model_OADA <- function(STb_data,
         stop("Invalid model_type. Choose 'asocial' or 'full'.")
     }
 
+    prior_baserate <- priors[["log_lambda_0"]]
     prior_s <- priors[["log_s"]]
     prior_f <- priors[["log_f"]]
     prior_k <- priors[["k_raw"]]
+    prior_z_ID <- priors[["z_ID"]]
+    prior_sigma_id <- priors[["sigma_ID"]]
+    prior_rho_id <- priors[["rho_ID"]]
 
     # check if edgeweights are sampled from posterior distribution (import func should have created S variable)
     if ("N_dyad" %in% names(STb_data)) is_distribution <- TRUE else is_distribution <- FALSE
@@ -172,18 +176,18 @@ generate_STb_model_OADA <- function(STb_data,
                     )
                 }
             }
-            else if (transmission_func=="freq-dep2"){
-                network_term <- paste0("sum_ass = sum(A_", network_names[1], "[trial, time_step][id, ]);
-                                       prop_know = 0.0;
-                                       if (sum_ass>0) prop_know = sum(A_", network_names[1], "[trial, time_step][id, ] .* Z[trial][time_step, ])/sum_ass;
-                                       real dini_transformed = dini_func(prop_know,", k_statement, ");")
-                if (is_distribution) {
-                    network_term <- paste0("real sum_ass = sum(", network_names[1], "[id, ]);
-                                           real prop_know = 0.0;
-                                           if (sum_ass>0) prop_know = sum(", network_names[1], "[id, ] .* Z[trial][time_step, ])/sum_ass;
-                                           real dini_transformed = dini_func(prop_know", k_statement, ");")
-                }
-            }
+            else if (transmission_func == "freq-dep2") {
+              network_term <- paste0("real numer = sum(A_", network_names[1], "[trial, time_step][id, ] .* Z[trial][time_step, ]); // sum a_ij z_jt w_jt
+                                  real denom = numer + sum(A_", network_names[1], "[trial, time_step][id, ] .* (1 - Zn[trial][time_step, ])); // + sum a_ij (1 - z_jt)
+                                  real prop = denom > 0 ? numer / denom : 0.0;
+                                  real dini_transformed = dini_func(prop,", k_statement, ");")
+              if (is_distribution) {
+                network_term <- paste0("real numer = sum(A_", network_names[1], "[id, ] .* Z[trial][time_step, ]); // sum a_ij z_jt w_jt
+                                  real denom = numer + sum(A_", network_names[1], "[id, ] .* (1 - Zn[trial][time_step, ])); // + sum a_ij (1 - z_jt)
+                                  real prop = denom > 0 ? numer / denom : 0.0;
+                                  real dini_transformed = dini_func(prop,", k_statement, ");")
+              }
+          }
             w_param <- ""
             w_prior <- ""
         } else {
@@ -230,11 +234,13 @@ generate_STb_model_OADA <- function(STb_data,
 
     N_veff = length(veff_ID)
     #start w empty list
-    transformed_params = c()
+    transformed_params <- c()
+    gq_transformed_params <- c()
 
     #if user didn't specify veff_ID for s
     if (!is.element('s', veff_ID)  & model_type=="full"){
-        transformed_params = append(transformed_params,"real<lower=0> s = exp(log_s_mean);")
+      transformed_params <- append(transformed_params, "real<lower=0> s_prime = exp(log_s_mean);")
+      gq_transformed_params <- append(gq_transformed_params, "real<lower=0> s = s_prime/lambda_0;")
     }
     #if user didn't specify veff_ID for f
     if (!is.element('f', veff_ID) & model_type=="full" & transmission_func=="freq-dep1"){
@@ -250,8 +256,9 @@ generate_STb_model_OADA <- function(STb_data,
     if (N_veff > 0){
         for (parameter in veff_ID) {
             if (parameter=="s" & model_type=="full"){
-                transformed_params = append(transformed_params, paste0("vector<lower=0>[P] s = exp(log_s_mean + v_ID[,",count,"]);"))
-                transformed_params = append(transformed_params, paste0("real<lower=0> s_mean = exp(log_s_mean);"))
+              transformed_params <- append(transformed_params, paste0("vector<lower=0>[P] s_prime = exp(log_s_mean + v_ID[,", count, "]);"))
+              gq_transformed_params <- append(gq_transformed_params, paste0("vector<lower=0>[P] s = s_prime ./ lambda_0;"))
+              gq_transformed_params <- append(gq_transformed_params, paste0("real<lower=0> s_mean = (exp(log_s_mean)) / (exp(log_lambda_0_mean));"))
             }
             else if (parameter=="f" & model_type=="full"){
                 transformed_params = append(transformed_params, paste0("vector<lower=0>[P] f = exp(log_f_mean + v_ID[,",count,"]);"))
@@ -403,6 +410,7 @@ generate_STb_model_OADA <- function(STb_data,
     ILVm_param = paste0(ILVm_param, collapse = "\n")
     ILVm_prior = paste0(ILVm_prior, collapse = "\n")
     transformed_params_declaration = paste0(transformed_params, collapse = "\n")
+    gq_transformed_params_declaration <- paste0(gq_transformed_params, collapse = "\n")
 
     functions_block <- if (transmission_func=="freq-dep2") glue::glue("
 functions {{
@@ -504,9 +512,9 @@ model {{
     {distribution_model_block}
 
     {if (N_veff > 0) '
-    to_vector(z_ID) ~ normal(0,1);
-    sigma_ID ~ exponential(1);
-    Rho_ID ~ lkj_corr_cholesky(3);
+    to_vector(z_ID) ~ {prior_z_ID};
+    sigma_ID ~ {prior_sigma_ID};
+    Rho_ID ~ {prior_rho_ID};
     ' else ''}
 
     for (trial in 1:K) {{
@@ -564,6 +572,7 @@ model {{
 
     generated_quantities_block <- glue::glue("
 generated quantities {{
+    {gq_transformed_params_declaration}
     matrix[K, Q] log_lik_matrix = rep_matrix(0.0, K, Q);           // LL for each observation
 
     for (trial in 1:K) {{

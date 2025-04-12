@@ -3,7 +3,7 @@ functions {
   real dini_func(real x, real k) {
     // transform x from [0,1] to [-1,1]
     real x_transformed = 2 * x - 1;
-    real y = ((x_transformed - k * x_transformed) / (k - 2 * k * fabs(x_transformed) + 1) + 1) / 2;
+    real y = ((x_transformed - k * x_transformed) / (k - 2 * k * abs(x_transformed) + 1) + 1) / 2;
     return y;
   }
 }
@@ -19,7 +19,8 @@ data {
     array[K,P] int<lower=-1> t;     // Time of acquisition for each individual
     array[K, T_max] real<lower=0> D; // Scaled durations
     array[K, T_max] matrix[P, P] A_assoc; // Network matrices
-    array[K] matrix[T_max, P] Z;   // Knowledge state slash cue matrix
+    array[K] matrix[T_max, P] Z;   // Knowledge state * cue matrix
+    array[K] matrix[T_max, P] Zn;   // Knowledge state
     int<lower=0> N_veff;
 }
 parameters {
@@ -28,15 +29,14 @@ parameters {
                                    real k_raw;
 }
 transformed parameters {
-   real<lower=0> lambda_0 = 1 / exp(log_lambda_0_mean);
-real<lower=0> s_prime = 1 / exp(log_s_mean);
-real<lower=0> s = s_prime/lambda_0;
+   real<lower=0> lambda_0 = exp(log_lambda_0_mean);
+real<lower=0> s_prime = exp(log_s_mean);
 real<lower=-1, upper=1> k_shape = 2 / (1 + exp(-k_raw)) - 1;
 }
 model {
-    log_lambda_0_mean ~ uniform(-10, 10);
-    log_s_mean ~ uniform(-10, 10);
-                              k_raw ~ normal(0,1);
+    log_lambda_0_mean ~ normal(-4, 3);
+    log_s_mean ~ normal(-4, 3);
+                              k_raw ~ normal(0,3);
     for (trial in 1:K) {
         for (n in 1:N[trial]) {
             int id = ind_id[trial, n];
@@ -44,10 +44,10 @@ model {
             if (learn_time > 0) {
                 for (time_step in 1:learn_time) {
                     real ind_term = 1.0;
-                    real sum_ass = sum(A_assoc[trial, time_step][id, ]);
-                                       real prop_know = 0.0;
-                                       if (sum_ass>0) prop_know = sum(A_assoc[trial, time_step][id, ] .* Z[trial][time_step, ])/sum_ass;
-                                       real dini_transformed = dini_func(prop_know,k_shape);
+                    real numer = sum(A_assoc[trial, time_step][id, ] .* Z[trial][time_step, ]); // sum a_ij z_jt w_jt
+                                real denom = numer + sum(A_assoc[trial, time_step][id, ] .* (1 - Zn[trial][time_step, ])); // + sum a_ij (1 - z_jt)
+                                real prop = denom > 0 ? numer / denom : 0.0;
+                                real dini_transformed = dini_func(prop,k_shape);
 real soc_term = s_prime * (dini_transformed) ;
                     real lambda =  (lambda_0 * ind_term + soc_term) * D[trial, time_step];
                     target += -lambda;
@@ -60,21 +60,22 @@ real soc_term = s_prime * (dini_transformed) ;
         if (N_c[trial] > 0) {
             for (c in 1:N_c[trial]) {
                 int id = ind_id[trial, N[trial] + c];
-                for (time_step in 1:T[trial]) {
-                    real ind_term = 1.0;
-                    real sum_ass = sum(A_assoc[trial, time_step][id, ]);
-                                       real prop_know = 0.0;
-                                       if (sum_ass>0) prop_know = sum(A_assoc[trial, time_step][id, ] .* Z[trial][time_step, ])/sum_ass;
-                                       real dini_transformed = dini_func(prop_know,k_shape);
+                    for (time_step in 1:T[trial]) {
+                        real ind_term = 1.0;
+                        real numer = sum(A_assoc[trial, time_step][id, ] .* Z[trial][time_step, ]); // sum a_ij z_jt w_jt
+                                real denom = numer + sum(A_assoc[trial, time_step][id, ] .* (1 - Zn[trial][time_step, ])); // + sum a_ij (1 - z_jt)
+                                real prop = denom > 0 ? numer / denom : 0.0;
+                                real dini_transformed = dini_func(prop,k_shape);
 real soc_term = s_prime * (dini_transformed) ;
-                    real lambda =  (lambda_0 * ind_term + soc_term) * D[trial, time_step];
-                    target += -lambda;
-                }
+                        real lambda =  (lambda_0 * ind_term + soc_term) * D[trial, time_step];
+                        target += -lambda;
+                    }
             }
         }
     }
 }
 generated quantities {
+    real<lower=0> s = s_prime/lambda_0;
     matrix[K, Q] log_lik_matrix = rep_matrix(0.0, K, Q);           // LL for each observation
     for (trial in 1:K) {
         for (n in 1:N[trial]) {
@@ -82,12 +83,12 @@ generated quantities {
             int learn_time = t[trial, id];
             if (learn_time > 0){
                 real cum_hazard = 0; //set val before adding
-                for (time_step in 1:T[trial]) {
+                for (time_step in 1:learn_time) {
                     real ind_term = 1.0;
-                    real sum_ass = sum(A_assoc[trial, time_step][id, ]);
-                                       real prop_know = 0.0;
-                                       if (sum_ass>0) prop_know = sum(A_assoc[trial, time_step][id, ] .* Z[trial][time_step, ])/sum_ass;
-                                       real dini_transformed = dini_func(prop_know,k_shape);
+                    real numer = sum(A_assoc[trial, time_step][id, ] .* Z[trial][time_step, ]); // sum a_ij z_jt w_jt
+                                real denom = numer + sum(A_assoc[trial, time_step][id, ] .* (1 - Zn[trial][time_step, ])); // + sum a_ij (1 - z_jt)
+                                real prop = denom > 0 ? numer / denom : 0.0;
+                                real dini_transformed = dini_func(prop,k_shape);
 real soc_term = s_prime * (dini_transformed) ;
                     real lambda =  (lambda_0 * ind_term + soc_term) * D[trial, time_step];
                     cum_hazard += lambda; // accumulate hazard
@@ -103,18 +104,18 @@ real soc_term = s_prime * (dini_transformed) ;
             for (c in 1:N_c[trial]) {
                 int id = ind_id[trial, N[trial] + c];
                 int censor_time = T[trial]; // Censoring time (end of observation)
-                // compute cumulative hazard up to the censoring time
-                real cum_hazard = 0;
-                for (time_step in 1:censor_time) {
-                    real ind_term = 1.0;
-                    real sum_ass = sum(A_assoc[trial, time_step][id, ]);
-                                       real prop_know = 0.0;
-                                       if (sum_ass>0) prop_know = sum(A_assoc[trial, time_step][id, ] .* Z[trial][time_step, ])/sum_ass;
-                                       real dini_transformed = dini_func(prop_know,k_shape);
+                    // compute cumulative hazard up to the censoring time
+                    real cum_hazard = 0;
+                    for (time_step in 1:censor_time) {
+                        real ind_term = 1.0;
+                        real numer = sum(A_assoc[trial, time_step][id, ] .* Z[trial][time_step, ]); // sum a_ij z_jt w_jt
+                                real denom = numer + sum(A_assoc[trial, time_step][id, ] .* (1 - Zn[trial][time_step, ])); // + sum a_ij (1 - z_jt)
+                                real prop = denom > 0 ? numer / denom : 0.0;
+                                real dini_transformed = dini_func(prop,k_shape);
 real soc_term = s_prime * (dini_transformed) ;
-                    real lambda =  (lambda_0 * ind_term + soc_term) * D[trial, time_step];
-                    cum_hazard += lambda; // accumulate hazard
-                }
+                        real lambda =  (lambda_0 * ind_term + soc_term) * D[trial, time_step];
+                        cum_hazard += lambda; // accumulate hazard
+                    }
                 // Compute per-individual log likelihood
                 log_lik_matrix[trial, N[trial] + c] = -cum_hazard;
             }
@@ -130,3 +131,4 @@ real soc_term = s_prime * (dini_transformed) ;
         }
     }
 }
+

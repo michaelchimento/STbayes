@@ -30,7 +30,7 @@ generate_STb_model(
 
 \item{est_acqTime}{Boolean to indicate whether gq block includes estimates for acquisition time. At the moment this uses 'one weird trick' to accomplish this and does not support estimates for non-integer learning times.}
 
-\item{priors}{named list with strings containing the prior for log baserate, s or f. defaults to list(log_lambda_0 = "uniform(-10, 10)", log_s = "uniform(-10, 10)", log_f = "normal(0,1)")}
+\item{priors}{named list with strings containing the prior for log(lambda_0), log(s'), log(f), k, z_id, sigma_id, rho_id.}
 }
 \value{
 A STAN model (character) that is customized to the input data.

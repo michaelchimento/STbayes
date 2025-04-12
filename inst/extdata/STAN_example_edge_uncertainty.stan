@@ -13,44 +13,51 @@ data {
     array[K] matrix[T_max, P] Z;   // Knowledge state slash cue matrix
     int<lower=0> N_veff;
     int N_dyad;  // number of dyads
-vector[N_dyad] logit_edge_mu_A_1;  // logit edge values for A_1
-matrix[N_dyad, N_dyad] logit_edge_cov_A_1;  // covariance matrix for A_1
+    vector[N_dyad] logit_edge_mu_A_1;  // logit edge values for A_1
+    matrix[N_dyad, N_dyad] logit_edge_cov_A_1;  // covariance matrix for A_1
 }
 parameters {
-    vector[N_dyad] edge_logit_A_1;
+    vector[N_dyad] edge_logit_A_1; //edge weights
     real log_lambda_0_mean;  // Log baseline learning rate
     real log_s_mean; // Overall social transmission rate
 }
 transformed parameters {
-   real<lower=0> lambda_0 = exp(log_lambda_0_mean);
-real<lower=0> s_prime = exp(log_s_mean);
-   matrix[P, P] A_1;
-                      {
-                        int edge_idx = 1;
-                        for (i in 1:P) {
-                          for (j in 1:P) {
-                            if (i != j) {
-                    A_1[i, j] = inv_logit(edge_logit_A_1[edge_idx]);
-                              edge_idx += 1;
-                            } else {
-                    A_1[i, j] = 0;
-                            }
-                          }
-                        }
-                      }
+    real<lower=0> lambda_0 = exp(log_lambda_0_mean);
+    real<lower=0> s_prime = exp(log_s_mean);
+    //convert to matrix for dot product l8r
+    matrix[P, P] A_1;
+    {
+      int edge_idx = 1;
+      for (i in 1:P) {
+        for (j in 1:P) {
+          if (i != j) {
+            A_1[i, j] = inv_logit(edge_logit_A_1[edge_idx]);
+            edge_idx += 1;
+          } else {
+            A_1[i, j] = 0;
+          }
+        }
+      }
+    }
 }
 model {
+    //priors
     log_lambda_0_mean ~ normal(-4, 3);
     log_s_mean ~ normal(-4, 3);
-      edge_logit_A_1 ~ multi_normal(logit_edge_mu_A_1, logit_edge_cov_A_1);
+    edge_logit_A_1 ~ multi_normal(logit_edge_mu_A_1, logit_edge_cov_A_1);
+
+    //for each diffusion trial
     for (trial in 1:K) {
+        //for each non-censored ind
         for (n in 1:N[trial]) {
             int id = ind_id[trial, n];
             int learn_time = t[trial, id];
+            //if not tutor/demo
             if (learn_time > 0) {
+                //likelihood for each inter-event interval
                 for (time_step in 1:learn_time) {
                     real ind_term = 1.0;
-                    real soc_term = s_prime * (sum(A_1[id, ] .* Z[trial][time_step, ])) ;
+                    real soc_term = s_prime * (sum(A_1[id, ] .* Z[trial][time_step, ]));
                     real lambda =  (lambda_0 * ind_term + soc_term) * D[trial, time_step];
                     target += -lambda;
                     if (time_step == learn_time) {
@@ -59,6 +66,7 @@ model {
                 }
             }
         }
+        //for each censored individual
         if (N_c[trial] > 0) {
             for (c in 1:N_c[trial]) {
                 int id = ind_id[trial, N[trial] + c];
@@ -121,4 +129,3 @@ generated quantities {
         }
     }
 }
-

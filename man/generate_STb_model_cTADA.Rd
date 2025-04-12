@@ -36,7 +36,7 @@ A STAN model (character) that is customized to the input data.
 Dynamically generate STAN model based on input data
 }
 \examples{
-#very mock data
+# very mock data
 event_data <- data.frame(
   id = c("A", "B", "C", "D", "E", "F"),
   trial = c(1, 1, 1, 2, 2, 2),
@@ -50,12 +50,12 @@ networks <- data.frame(
   kin = c(1, 0, 1, 0, 1, 1),
   inverse_distance = c(0, 1, .5, .25, .1, 0)
 )
- ILV_c<- data.frame(
-    id = LETTERS[1:6],
-    age = c(-1, -2, 0, 1, 2), # continuous variables should be normalized
-    sex = c(0, 1, 1, 0, 1, 0), # Factor ILVs must be input as numeric
-    weight = c(0.5, .25, .3, 0, -.2, -.4)
- )
+ILV_c <- data.frame(
+  id = LETTERS[1:6],
+  age = c(-1, -2, 0, 1, 2), # continuous variables should be normalized
+  sex = c(0, 1, 1, 0, 1, 0), # Factor ILVs must be input as numeric
+  weight = c(0.5, .25, .3, 0, -.2, -.4)
+)
 data_list <- import_user_STb(
   event_data = event_data,
   networks = networks,
@@ -65,7 +65,7 @@ data_list <- import_user_STb(
   ILVm = c("weight") # Use weight for multiplicative effect on asocial and social learning
 )
 
-model = generate_STb_model(data_list) # no varying effects
-model = generate_STb_model(data_list, veff_ID = c("lambda_0", "s")) # estimate varying effects by ID for baseline learning rate and strength of social transmission.
+model <- generate_STb_model(data_list) # no varying effects
+model <- generate_STb_model(data_list, veff_ID = c("lambda_0", "s")) # estimate varying effects by ID for baseline learning rate and strength of social transmission.
 print(model)
 }
