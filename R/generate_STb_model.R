@@ -2,7 +2,7 @@
 #' @param STb_data a list of formatted data returned from the STbayes_data() function
 #' @param model_type string specifying the model type: "asocial" or "full"
 #' @param data_type string specifying the type of data you have ("time" or "order"). "time" will generate cTADA specification, "order" will generate OADA specification.
-#' @param transmission_func string specifying transmission function: "standard", "freq-dep" for frequency dependent complex contagion. Defaults to "standard".
+#' @param transmission_func string specifying transmission function: "standard", "freqdep_f" or "freqdep_k" for frequency dependent complex contagion. Defaults to "standard".
 #' @param veff_ID Parameters for which to estimate varying effects by individuals. Default is no varying effects.
 #' @param gq Boolean to indicate whether the generated quantities block is added (incl. ll for WAIC)
 #' @param est_acqTime Boolean to indicate whether gq block includes estimates for acquisition time. At the moment this uses 'one weird trick' to accomplish this and does not support estimates for non-integer learning times.
@@ -49,7 +49,7 @@
 generate_STb_model <- function(STb_data,
                                data_type = c("time", "order"),
                                model_type = c("full","asocial"),
-                               transmission_func = c("standard","freq-dep1","freq-dep2"),
+                               transmission_func = c("standard","freqdep_f","freqdep_k"),
                                veff_ID = c(),
                                gq = TRUE,
                                est_acqTime = FALSE,

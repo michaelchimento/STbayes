@@ -2,7 +2,7 @@
 #'
 #' @param STb_data a list of formatted data returned from the STbayes_data() function
 #' @param model_type string specifying the model type: "asocial" or "full"
-#' @param transmission_func string specifying transmission function: "standard", "freq-dep1" or "freq-dep2" for frequency dependent complex contagion. Defaults to "standard".
+#' @param transmission_func string specifying transmission function: "standard", "freqdep_f" or "freqdep_k" for frequency dependent complex contagion. Defaults to "standard".
 #' @param veff_ID Parameters for which to estimate varying effects by individuals. Default is no varying effects.
 #' @param gq Boolean to indicate whether the generated quantities block is added (incl. ll for WAIC)
 #' @param priors named list with strings containing the prior for log s or f. defaults to list(log_s = "uniform(-10, 10)", log_f = "normal(0,1)")
@@ -121,7 +121,7 @@ generate_STb_model_OADA <- function(STb_data,
     }
 
     #check if user wants to fit f parameter w complex contagion
-    if (transmission_func=="freq-dep1"){
+    if (transmission_func=="freqdep_f"){
         f_param = "real log_f_mean;"
         f_prior = paste0("log_f_mean ~ ", prior_f, ";")
         if (is.element('f', veff_ID)) {
@@ -136,7 +136,7 @@ generate_STb_model_OADA <- function(STb_data,
     }
 
     #check if user wants to fit k parameter w complex contagion
-    if (transmission_func=="freq-dep2"){
+    if (transmission_func=="freqdep_k"){
         k_param = "real k_raw;"
         k_prior = paste0("k_raw ~ ", prior_k, ";")
         if (is.element('k', veff_ID)){
@@ -164,7 +164,7 @@ generate_STb_model_OADA <- function(STb_data,
                 if (is_distribution) network_term <- paste0("sum(", network_names[1], "[id, ] .* Z[trial][time_step, ])")
 
             }
-            else if (transmission_func=="freq-dep1"){
+            else if (transmission_func=="freqdep_f"){
                 network_term <- paste0("sum(A_", network_names[1], "[trial, time_step][id, ] .* Z[trial][time_step, ])^", f_statement,
                                        "/ (sum(A_", network_names[1], "[trial, time_step][id, ] .* Z[trial][time_step, ])^",f_statement," +",
                                        "sum(A_", network_names[1], "[trial, time_step][id, ] .* (1-Z[trial][time_step, ]))^", f_statement,")")
@@ -176,7 +176,7 @@ generate_STb_model_OADA <- function(STb_data,
                     )
                 }
             }
-            else if (transmission_func == "freq-dep2") {
+            else if (transmission_func == "freqdep_k") {
               network_term <- paste0("real numer = sum(A_", network_names[1], "[trial, time_step][id, ] .* Z[trial][time_step, ]); // sum a_ij z_jt w_jt
                                   real denom = numer + sum(A_", network_names[1], "[trial, time_step][id, ] .* (1 - Zn[trial][time_step, ])); // + sum a_ij (1 - z_jt)
                                   real prop = denom > 0 ? numer / denom : 0.0;
@@ -243,11 +243,11 @@ generate_STb_model_OADA <- function(STb_data,
       gq_transformed_params <- append(gq_transformed_params, "real<lower=0> s = s_prime/lambda_0;")
     }
     #if user didn't specify veff_ID for f
-    if (!is.element('f', veff_ID) & model_type=="full" & transmission_func=="freq-dep1"){
+    if (!is.element('f', veff_ID) & model_type=="full" & transmission_func=="freqdep_f"){
         transformed_params = append(transformed_params,"real<lower=0> f = exp(log_f_mean);")
     }
     #if user didn't specify veff_ID for k
-    if (!is.element('k', veff_ID) & model_type=="full" & transmission_func=="freq-dep2"){
+    if (!is.element('k', veff_ID) & model_type=="full" & transmission_func=="freqdep_k"){
         transformed_params = append(transformed_params,"real<lower=-1, upper=1> k_shape = 2 / (1 + exp(-k_raw)) - 1;")
     }
 
@@ -412,7 +412,7 @@ generate_STb_model_OADA <- function(STb_data,
     transformed_params_declaration = paste0(transformed_params, collapse = "\n")
     gq_transformed_params_declaration <- paste0(gq_transformed_params, collapse = "\n")
 
-    functions_block <- if (transmission_func=="freq-dep2") glue::glue("
+    functions_block <- if (transmission_func=="freqdep_k") glue::glue("
 functions {{
   real dini_func(real x, real k) {{
     // transform x from [0,1] to [-1,1]

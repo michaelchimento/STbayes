@@ -306,7 +306,7 @@ STbayes can be used to fit and create models of complex transmission. As an exam
 
 ```
 data_list = import_user_STb(STbayes::event_data, STbayes::networks)
-generate_STb_model(data_list, transmission_func="freq-dep")
+generate_STb_model(data_list, transmission_func="freqdep_f")
 ```
 
 The package defaults to the model of frequency-dependent bias as:

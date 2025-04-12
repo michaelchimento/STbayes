@@ -1,7 +1,7 @@
 #' Dynamically generate STAN model based on input data
 #' @param STb_data a list of formatted data returned from the STbayes_data() function
 #' @param model_type string specifying the model type: "asocial" or "full"
-#' @param transmission_func string specifying transmission function: "standard", "freq-dep1" or "freq-dep2" for complex contagion. Defaults to "standard". Complex contagion with multi-network model is not supported.
+#' @param transmission_func string specifying transmission function: "standard", "freqdep_f" or "freqdep_k" for complex contagion. Defaults to "standard". Complex contagion with multi-network model is not supported.
 #' @param veff_ID Parameters for which to estimate varying effects by individuals. Default is no varying effects.
 #' @param gq Boolean to indicate whether the generated quantities block is added (incl. ll for WAIC)
 #' @param est_acqTime Boolean to indicate whether gq block includes estimates for acquisition time. At the moment this uses 'one weird trick' to accomplish this and does not support estimates for non-integer learning times.
@@ -123,7 +123,7 @@ generate_STb_model_cTADA <- function(STb_data,
 
 
   # check if user wants to fit f parameter w complex contagion
-  if (transmission_func == "freq-dep1") {
+  if (transmission_func == "freqdep_f") {
     f_param <- "real log_f_mean;"
     f_prior <- paste0("log_f_mean ~ ", prior_f, ";")
     if (is.element("f", veff_ID)) f_statement <- "f[id]" else f_statement <- "f"
@@ -133,7 +133,7 @@ generate_STb_model_cTADA <- function(STb_data,
   }
 
   # check if user wants to fit k parameter w complex contagion
-  if (transmission_func == "freq-dep2") {
+  if (transmission_func == "freqdep_k") {
     k_param <- "real k_raw;"
     k_prior <- paste0("k_raw ~ ", prior_k, ";")
     if (is.element("k", veff_ID)) k_statement <- "k_shape[id]" else k_statement <- "k_shape"
@@ -155,7 +155,7 @@ generate_STb_model_cTADA <- function(STb_data,
       if (transmission_func == "standard") {
         network_term <- paste0("sum(A_", network_names[1], "[trial, time_step][id, ] .* Z[trial][time_step, ])")
         if (is_distribution) network_term <- paste0("sum(", network_names[1], "[id, ] .* Z[trial][time_step, ])")
-      } else if (transmission_func == "freq-dep1") {
+      } else if (transmission_func == "freqdep_f") {
         network_term <- paste0(
           "sum(A_", network_names[1], "[trial, time_step][id, ] .* Z[trial][time_step, ])^", f_statement,
           "/ (sum(A_", network_names[1], "[trial, time_step][id, ] .* Z[trial][time_step, ])^", f_statement, " +",
@@ -168,7 +168,7 @@ generate_STb_model_cTADA <- function(STb_data,
             "+ sum(", network_names[1], "[id, ] .* (1-Z[trial][time_step, ]))^", f_statement, ")"
           )
         }
-      } else if (transmission_func == "freq-dep2") {
+      } else if (transmission_func == "freqdep_k") {
         network_term <- paste0("real numer = sum(A_", network_names[1], "[trial, time_step][id, ] .* Z[trial][time_step, ]); // sum a_ij z_jt w_jt
                                 real denom = numer + sum(A_", network_names[1], "[trial, time_step][id, ] .* (1 - Zn[trial][time_step, ])); // + sum a_ij (1 - z_jt)
                                 real prop = denom > 0 ? numer / denom : 0.0;
@@ -239,11 +239,11 @@ generate_STb_model_cTADA <- function(STb_data,
     gq_transformed_params <- append(gq_transformed_params, "real<lower=0> s = s_prime/lambda_0;")
   }
   # if user didn't specify veff_ID for f
-  if (!is.element("f", veff_ID) & model_type == "full" & transmission_func == "freq-dep1") {
+  if (!is.element("f", veff_ID) & model_type == "full" & transmission_func == "freqdep_f") {
     transformed_params <- append(transformed_params, "real<lower=0> f = exp(log_f_mean);")
   }
   # if user didn't specify veff_ID for k
-  if (!is.element("k", veff_ID) & model_type == "full" & transmission_func == "freq-dep2") {
+  if (!is.element("k", veff_ID) & model_type == "full" & transmission_func == "freqdep_k") {
     transformed_params <- append(transformed_params, "real<lower=-1, upper=1> k_shape = 2 / (1 + exp(-k_raw)) - 1;")
   }
 
@@ -407,7 +407,7 @@ generate_STb_model_cTADA <- function(STb_data,
   transformed_params_declaration <- paste0(transformed_params, collapse = "\n")
   gq_transformed_params_declaration <- paste0(gq_transformed_params, collapse = "\n")
 
-  functions_block <- if (transmission_func == "freq-dep2") glue::glue("
+  functions_block <- if (transmission_func == "freqdep_k") glue::glue("
 functions {{
   real dini_func(real x, real k) {{
     // transform x from [0,1] to [-1,1]
@@ -477,7 +477,7 @@ transformed parameters {{
     lambda_statement_estAcq <- glue::glue("real lambda = {ILVm_variable_effects} ({if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * ind_term + soc_term);")
     target_increment_statement <- glue::glue("target += log({ILVm_variable_effects} ({if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * ind_term + soc_term));")
     log_lik_statement <- glue::glue("log_lik_matrix[trial, n] = log({ILVm_variable_effects} ({if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * ind_term + soc_term)) - cum_hazard;")
-    if (transmission_func == "freq-dep2") {
+    if (transmission_func == "freqdep_k") {
       social_info_statement <- glue::glue(
         "{network_term}
                 real soc_term = {if (is.element('s', veff_ID)) 's_prime[id]' else 's_prime'} * (dini_transformed) {ILVs_variable_effects};"
