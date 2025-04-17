@@ -8,7 +8,8 @@ generate_STb_model(
   STb_data,
   data_type = c("time", "order"),
   model_type = c("full", "asocial"),
-  transmission_func = c("standard", "freq-dep1", "freq-dep2"),
+  transmission_func = c("standard", "freqdep_f", "freqdep_k"),
+  multi_network_s = c("shared", "separate"),
   veff_ID = c(),
   gq = TRUE,
   est_acqTime = FALSE,
@@ -22,7 +23,9 @@ generate_STb_model(
 
 \item{model_type}{string specifying the model type: "asocial" or "full"}
 
-\item{transmission_func}{string specifying transmission function: "standard", "freq-dep" for frequency dependent complex contagion. Defaults to "standard".}
+\item{transmission_func}{string specifying transmission function: "standard", "freqdep_f" or "freqdep_k" for frequency dependent complex contagion. Defaults to "standard".}
+
+\item{multi_network_s}{string specifying how multi-network models are generated. "separate" estimates an s value for each network. "shared" generates model with single s and a vector of weights for each network.}
 
 \item{veff_ID}{Parameters for which to estimate varying effects by individuals. Default is no varying effects.}
 

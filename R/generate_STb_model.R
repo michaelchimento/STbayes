@@ -3,6 +3,7 @@
 #' @param model_type string specifying the model type: "asocial" or "full"
 #' @param data_type string specifying the type of data you have ("time" or "order"). "time" will generate cTADA specification, "order" will generate OADA specification.
 #' @param transmission_func string specifying transmission function: "standard", "freqdep_f" or "freqdep_k" for frequency dependent complex contagion. Defaults to "standard".
+#' @param multi_network_s string specifying how multi-network models are generated. "separate" estimates an s value for each network. "shared" generates model with single s and a vector of weights for each network.
 #' @param veff_ID Parameters for which to estimate varying effects by individuals. Default is no varying effects.
 #' @param gq Boolean to indicate whether the generated quantities block is added (incl. ll for WAIC)
 #' @param est_acqTime Boolean to indicate whether gq block includes estimates for acquisition time. At the moment this uses 'one weird trick' to accomplish this and does not support estimates for non-integer learning times.
@@ -50,6 +51,7 @@ generate_STb_model <- function(STb_data,
                                data_type = c("time", "order"),
                                model_type = c("full","asocial"),
                                transmission_func = c("standard","freqdep_f","freqdep_k"),
+                               multi_network_s = c("shared", "separate"),
                                veff_ID = c(),
                                gq = TRUE,
                                est_acqTime = FALSE,
@@ -58,6 +60,7 @@ generate_STb_model <- function(STb_data,
     data_type <- match.arg(data_type)
     model_type <- match.arg(model_type)
     transmission_func <- match.arg(transmission_func)
+    multi_network_s <- match.arg(multi_network_s)
 
     if (data_type == "order" && "lambda_0" %in% veff_ID) {
         stop('lambda_0 cannot be veff_ID when using OADA.')
@@ -71,16 +74,21 @@ generate_STb_model <- function(STb_data,
                            log_s = "normal(-4, 3)",
                            log_f = "normal(0,1)",
                            k_raw = "normal(0,3)",
-                           z_id = "normal(0,1)",
+                           z_ID = "normal(0,1)",
                            sigma_ID = "exponential(1)",
                            rho_ID = "lkj_corr_cholesky(3)")
 
     priors <- utils::modifyList(default_priors, priors)
+    message("Creating model with the following default priors:")
+    for (p in names(priors)){
+        message(paste(p, "~", priors[[p]]))
+    }
 
     if (data_type == "time") {
         return(generate_STb_model_cTADA(STb_data = STb_data,
                                         model_type = model_type,
                                         transmission_func = transmission_func,
+                                        multi_network_s = multi_network_s,
                                         veff_ID = veff_ID,
                                         gq = gq,
                                         est_acqTime = est_acqTime,
@@ -89,6 +97,7 @@ generate_STb_model <- function(STb_data,
         return(generate_STb_model_OADA(STb_data = STb_data,
                                        model_type = model_type,
                                        transmission_func = transmission_func,
+                                       multi_network_s = multi_network_s,
                                        veff_ID = veff_ID,
                                        gq = gq,
                                        priors = priors))

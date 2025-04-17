@@ -24,7 +24,7 @@ test_that("Network structure is consistent using point estimate edgeweights.", {
     data_imported <- import_user_STb(diffusion_data, networks)
 
     # Extract A_assoc matrix
-    A_assoc <- data_imported$A_assoc
+    A_assoc <- data_imported$A
 
     # Verify that the values in A_assoc match the original edge_list associations
     for (i in seq_len(nrow(edge_list))) {
@@ -32,11 +32,11 @@ test_that("Network structure is consistent using point estimate edgeweights.", {
         to <- edge_list$to[i]
         trial <- edge_list$trial[i]
         assoc_value <- edge_list$assoc[i]
-        testthat::expect_equal(A_assoc[trial, 1, from, to], adj_matrix[from,to])
+        testthat::expect_equal(A_assoc[1, trial, 1, from, to], adj_matrix[from,to])
     }
     # Ensure the network is properly repeated for all timesteps if static
     for (t in seq_len(data_imported$T_max)) {
-        testthat::expect_equal(A_assoc[trial, t, from, to], assoc_value)
+        testthat::expect_equal(A_assoc[1, trial, t, from, to], assoc_value)
     }
 })
 

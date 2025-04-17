@@ -18,6 +18,6 @@ test_that("import_NBDA_STb creates datalist with correct dimensions", {
   expect_equal(dim(data_list_user$ILVi_names), NULL)
   expect_equal(dim(data_list_user$ILVs_names), NULL)
   expect_equal(dim(data_list_user$ILVm_names), NULL)
-  expect_equal(dim(data_list_user$A_assoc), c(1, 28, 30, 30))
+  expect_equal(dim(data_list_user$A), c(1, 1, 28, 30, 30))
   expect_equal(dim(data_list_user$network_names), NULL)
 })

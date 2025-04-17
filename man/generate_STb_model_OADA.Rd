@@ -18,7 +18,7 @@ generate_STb_model_OADA(
 
 \item{model_type}{string specifying the model type: "asocial" or "full"}
 
-\item{transmission_func}{string specifying transmission function: "standard", "freq-dep1" or "freq-dep2" for frequency dependent complex contagion. Defaults to "standard".}
+\item{transmission_func}{string specifying transmission function: "standard", "freqdep_f" or "freqdep_k" for frequency dependent complex contagion. Defaults to "standard".}
 
 \item{veff_ID}{Parameters for which to estimate varying effects by individuals. Default is no varying effects.}
 

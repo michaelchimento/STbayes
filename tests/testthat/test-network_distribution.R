@@ -23,18 +23,18 @@ test_that("Network structure is consistent using distribution edgeweights.", {
     # Import data
     data_imported <- import_user_STb(diffusion_data, bisonr_fit)
 
-    testthat::expect_equal(data_imported$network_names, "A_1")
-    testthat::expect_equal(length(data_imported$logit_edge_mu_A_1), 45)
-    testthat::expect_equal(dim(data_imported$logit_edge_cov_A_1), c(45,45))
+    testthat::expect_equal(data_imported$network_names, "net1")
+    testthat::expect_equal(length(data_imported$logit_edge_mu), 90)
+    testthat::expect_equal(dim(data_imported$logit_edge_cov), c(1,90,90))
 
     # Import data
     data_imported <- import_user_STb(diffusion_data, list(bisonr_fit, bisonr_fit))
-    testthat::expect_equal(data_imported$network_names, c("A_1", "A_2"))
-    testthat::expect_equal(data_imported$logit_edge_mu_A_1, data_imported$logit_edge_mu_A_2)
+    testthat::expect_equal(data_imported$network_names, c("net1", "net2"))
+    testthat::expect_equal(data_imported$logit_edge_mu[1,], data_imported$logit_edge_mu[2,])
 
     # Import data
     data_imported <- import_user_STb(diffusion_data, STbayes::strand_results_obj)
-    testthat::expect_equal(length(data_imported$logit_edge_mu_A_1), 90)
-    testthat::expect_equal(dim(data_imported$logit_edge_cov_A_1), c(90,90))
+    testthat::expect_equal(length(data_imported$logit_edge_mu), 90)
+    testthat::expect_equal(dim(data_imported$logit_edge_cov), c(1,90,90))
 })
 

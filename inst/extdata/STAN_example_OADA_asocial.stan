@@ -1,6 +1,6 @@
 //stan
  data {
-    int<lower=0> K;                // Number of trials
+int<lower=0> K;                // Number of trials
     int<lower=0> Q;                // Number of individuals in each trial
     int<lower=1> P;                // Number of unique individuals
     array[K] int<lower=0> N;       // Number of individuals that learned during observation period
@@ -8,8 +8,11 @@
     array[K, Q] int<lower=-1> ind_id; // IDs of individuals
     array[K] int<lower=1> T;       // Maximum time periods
     int<lower=1> T_max;            // Max timesteps reached
-    array[K,P] int<lower=-1> t;     // Time of acquisition for each individual
-    array[K] matrix[T_max, P] Z;   // Knowledge state slash cue matrix
+    array[K,P] int t;     // Time of acquisition for each individual
+    array[K, T_max] real<lower=0> D; // Scaled durations
+    int<lower=1> N_networks;
+    array[K] matrix[T_max, P] Z;   // Knowledge state * cue matrix
+    array[K] matrix[T_max, P] Zn;   // Knowledge state
     int<lower=0> N_veff;
 }
 parameters {
@@ -66,3 +69,4 @@ generated quantities {
         }
     }
 }
+

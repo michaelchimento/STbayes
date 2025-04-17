@@ -1,0 +1,398 @@
+test_that("get_network_term generates network terms correctly", {
+
+    #### NO DISTRIBUTION ####
+    #standard one
+    network_term <- STbayes::get_network_term(
+        transmission_func = "standard",
+        is_distribution = FALSE,
+        separate_s = TRUE,
+        num_networks = 2,
+        veff_ID = c()
+    )
+    testthat::expect_equal(network_term,
+"real net_effect = 0;
+for (network in 1:N_networks) {
+  net_effect += s_prime[network] * sum(A[network, trial, time_step][id, ] .* Z[trial][time_step, ]);
+}")
+
+    # complex_k one
+    network_term <- STbayes::get_network_term(
+        transmission_func = "freqdep_k",
+        is_distribution = FALSE,
+        separate_s = TRUE,
+        num_networks = 2,
+        veff_ID = c()
+    )
+    testthat::expect_equal(network_term,
+"real net_effect = 0;
+for (network in 1:N_networks) {
+  real numer = sum(A[network, trial, time_step][id, ] .* Z[trial][time_step, ]);
+  real denom = numer + sum(A[network, trial, time_step][id, ] .* (1 - Zn[trial][time_step, ]));
+  real prop = denom > 0 ? numer / denom : 0.0;
+  real dini_transformed = dini_func(prop, k_shape);
+  net_effect += s_prime[network] * dini_transformed;
+}")
+
+    # complex_f one
+    network_term <- STbayes::get_network_term(
+        transmission_func = "freqdep_f",
+        is_distribution = FALSE,
+        separate_s = TRUE,
+        num_networks = 2,
+        veff_ID = c()
+    )
+    testthat::expect_equal(network_term,
+"real net_effect = 0;
+for (network in 1:N_networks) {
+  real active = sum(A[network, trial, time_step][id, ] .* Z[trial][time_step, ]);
+  real inactive = sum(A[network, trial, time_step][id, ] .* (1 - Z[trial][time_step, ]));
+  real frac = pow(active, f) / (pow(active, f) + pow(inactive, f));
+  net_effect += s_prime[network] * frac;
+}")
+    #### IS DISTRIBUTION ####
+    #standard one
+    network_term <- STbayes::get_network_term(
+        transmission_func = "standard",
+        is_distribution = TRUE,
+        separate_s = TRUE,
+        num_networks = 2,
+        veff_ID = c()
+    )
+    testthat::expect_equal(network_term,
+"real net_effect = 0;
+for (network in 1:N_networks) {
+  net_effect += s_prime[network] * sum(A[network][id, ] .* Z[trial][time_step, ]);
+}")
+
+    # complex_k one
+    network_term <- STbayes::get_network_term(
+        transmission_func = "freqdep_k",
+        is_distribution = TRUE,
+        separate_s = TRUE,
+        num_networks = 2,
+        veff_ID = c()
+    )
+    testthat::expect_equal(network_term,
+"real net_effect = 0;
+for (network in 1:N_networks) {
+  real numer = sum(A[network][id, ] .* Z[trial][time_step, ]);
+  real denom = numer + sum(A[network][id, ] .* (1 - Zn[trial][time_step, ]));
+  real prop = denom > 0 ? numer / denom : 0.0;
+  real dini_transformed = dini_func(prop, k_shape);
+  net_effect += s_prime[network] * dini_transformed;
+}")
+
+    # complex_f one
+    network_term <- STbayes::get_network_term(
+        transmission_func = "freqdep_f",
+        is_distribution = TRUE,
+        separate_s = TRUE,
+        num_networks = 2,
+        veff_ID = c()
+    )
+    testthat::expect_equal(network_term,
+"real net_effect = 0;
+for (network in 1:N_networks) {
+  real active = sum(A[network][id, ] .* Z[trial][time_step, ]);
+  real inactive = sum(A[network][id, ] .* (1 - Z[trial][time_step, ]));
+  real frac = pow(active, f) / (pow(active, f) + pow(inactive, f));
+  net_effect += s_prime[network] * frac;
+}")
+
+    #### NO DISTRIBUTION + VEFF ####
+    #standard one
+    network_term <- STbayes::get_network_term(
+        transmission_func = "standard",
+        is_distribution = FALSE,
+        separate_s = TRUE,
+        num_networks = 2,
+        veff_ID = c("s")
+    )
+    testthat::expect_equal(network_term,
+"real net_effect = 0;
+for (network in 1:N_networks) {
+  net_effect += s_prime[network,id] * sum(A[network, trial, time_step][id, ] .* Z[trial][time_step, ]);
+}")
+
+    # complex_k one
+    network_term <- STbayes::get_network_term(
+        transmission_func = "freqdep_k",
+        is_distribution = FALSE,
+        separate_s = TRUE,
+        num_networks = 2,
+        veff_ID = c("s")
+    )
+    testthat::expect_equal(network_term,
+                           "real net_effect = 0;
+for (network in 1:N_networks) {
+  real numer = sum(A[network, trial, time_step][id, ] .* Z[trial][time_step, ]);
+  real denom = numer + sum(A[network, trial, time_step][id, ] .* (1 - Zn[trial][time_step, ]));
+  real prop = denom > 0 ? numer / denom : 0.0;
+  real dini_transformed = dini_func(prop, k_shape);
+  net_effect += s_prime[network,id] * dini_transformed;
+}")
+
+    # complex_f one
+    network_term <- STbayes::get_network_term(
+        transmission_func = "freqdep_f",
+        is_distribution = FALSE,
+        separate_s = TRUE,
+        num_networks = 2,
+        veff_ID = c("s")
+    )
+    testthat::expect_equal(network_term,
+                           "real net_effect = 0;
+for (network in 1:N_networks) {
+  real active = sum(A[network, trial, time_step][id, ] .* Z[trial][time_step, ]);
+  real inactive = sum(A[network, trial, time_step][id, ] .* (1 - Z[trial][time_step, ]));
+  real frac = pow(active, f) / (pow(active, f) + pow(inactive, f));
+  net_effect += s_prime[network,id] * frac;
+}")
+    #### IS DISTRIBUTION + VEFF ####
+    #standard one
+    network_term <- STbayes::get_network_term(
+        transmission_func = "standard",
+        is_distribution = TRUE,
+        separate_s = TRUE,
+        num_networks = 2,
+        veff_ID = c("s")
+    )
+    testthat::expect_equal(network_term,
+                           "real net_effect = 0;
+for (network in 1:N_networks) {
+  net_effect += s_prime[network,id] * sum(A[network][id, ] .* Z[trial][time_step, ]);
+}")
+
+    # complex_k one
+    network_term <- STbayes::get_network_term(
+        transmission_func = "freqdep_k",
+        is_distribution = TRUE,
+        separate_s = TRUE,
+        num_networks = 2,
+        veff_ID = c("s")
+    )
+    testthat::expect_equal(network_term,
+                           "real net_effect = 0;
+for (network in 1:N_networks) {
+  real numer = sum(A[network][id, ] .* Z[trial][time_step, ]);
+  real denom = numer + sum(A[network][id, ] .* (1 - Zn[trial][time_step, ]));
+  real prop = denom > 0 ? numer / denom : 0.0;
+  real dini_transformed = dini_func(prop, k_shape);
+  net_effect += s_prime[network,id] * dini_transformed;
+}")
+
+    # complex_f one
+    network_term <- STbayes::get_network_term(
+        transmission_func = "freqdep_f",
+        is_distribution = TRUE,
+        separate_s = TRUE,
+        num_networks = 2,
+        veff_ID = c("s")
+    )
+    testthat::expect_equal(network_term,
+                           "real net_effect = 0;
+for (network in 1:N_networks) {
+  real active = sum(A[network][id, ] .* Z[trial][time_step, ]);
+  real inactive = sum(A[network][id, ] .* (1 - Z[trial][time_step, ]));
+  real frac = pow(active, f) / (pow(active, f) + pow(inactive, f));
+  net_effect += s_prime[network,id] * frac;
+}")
+
+    #### NO DISTRIBUTION + w[n] ####
+    #standard one
+    network_term <- STbayes::get_network_term(
+        transmission_func = "standard",
+        is_distribution = FALSE,
+        separate_s = FALSE,
+        num_networks = 1,
+        veff_ID = c()
+    )
+    testthat::expect_equal(network_term,
+                           "real net_effect = 0;
+for (network in 1:N_networks) {
+  net_effect += 1.0 * sum(A[network, trial, time_step][id, ] .* Z[trial][time_step, ]);
+}")
+
+    # complex_k one
+    network_term <- STbayes::get_network_term(
+        transmission_func = "freqdep_k",
+        is_distribution = FALSE,
+        separate_s = FALSE,
+        num_networks = 2,
+        veff_ID = c()
+    )
+    testthat::expect_equal(network_term,
+                           "real net_effect = 0;
+for (network in 1:N_networks) {
+  real numer = sum(A[network, trial, time_step][id, ] .* Z[trial][time_step, ]);
+  real denom = numer + sum(A[network, trial, time_step][id, ] .* (1 - Zn[trial][time_step, ]));
+  real prop = denom > 0 ? numer / denom : 0.0;
+  real dini_transformed = dini_func(prop, k_shape);
+  net_effect += w[network] * dini_transformed;
+}")
+
+    # complex_f one
+    network_term <- STbayes::get_network_term(
+        transmission_func = "freqdep_f",
+        is_distribution = FALSE,
+        separate_s = FALSE,
+        num_networks = 2,
+        veff_ID = c()
+    )
+    testthat::expect_equal(network_term,
+                           "real net_effect = 0;
+for (network in 1:N_networks) {
+  real active = sum(A[network, trial, time_step][id, ] .* Z[trial][time_step, ]);
+  real inactive = sum(A[network, trial, time_step][id, ] .* (1 - Z[trial][time_step, ]));
+  real frac = pow(active, f) / (pow(active, f) + pow(inactive, f));
+  net_effect += w[network] * frac;
+}")
+    #### IS DISTRIBUTION ####
+    #standard one
+    network_term <- STbayes::get_network_term(
+        transmission_func = "standard",
+        is_distribution = TRUE,
+        separate_s = FALSE,
+        num_networks = 2,
+        veff_ID = c()
+    )
+    testthat::expect_equal(network_term,
+                           "real net_effect = 0;
+for (network in 1:N_networks) {
+  net_effect += w[network] * sum(A[network][id, ] .* Z[trial][time_step, ]);
+}")
+
+    # complex_k one
+    network_term <- STbayes::get_network_term(
+        transmission_func = "freqdep_k",
+        is_distribution = TRUE,
+        separate_s = FALSE,
+        num_networks = 2,
+        veff_ID = c()
+    )
+    testthat::expect_equal(network_term,
+                           "real net_effect = 0;
+for (network in 1:N_networks) {
+  real numer = sum(A[network][id, ] .* Z[trial][time_step, ]);
+  real denom = numer + sum(A[network][id, ] .* (1 - Zn[trial][time_step, ]));
+  real prop = denom > 0 ? numer / denom : 0.0;
+  real dini_transformed = dini_func(prop, k_shape);
+  net_effect += w[network] * dini_transformed;
+}")
+
+    # complex_f one
+    network_term <- STbayes::get_network_term(
+        transmission_func = "freqdep_f",
+        is_distribution = TRUE,
+        separate_s = FALSE,
+        num_networks = 2,
+        veff_ID = c()
+    )
+    testthat::expect_equal(network_term,
+                           "real net_effect = 0;
+for (network in 1:N_networks) {
+  real active = sum(A[network][id, ] .* Z[trial][time_step, ]);
+  real inactive = sum(A[network][id, ] .* (1 - Z[trial][time_step, ]));
+  real frac = pow(active, f) / (pow(active, f) + pow(inactive, f));
+  net_effect += w[network] * frac;
+}")
+
+    #### NO DISTRIBUTION + VEFF ####
+    #standard one
+    network_term <- STbayes::get_network_term(
+        transmission_func = "standard",
+        is_distribution = FALSE,
+        separate_s = FALSE,
+        num_networks = 2,
+        veff_ID = c("w")
+    )
+    testthat::expect_equal(network_term,
+"real net_effect = 0;
+for (network in 1:N_networks) {
+  net_effect += w[network,id] * sum(A[network, trial, time_step][id, ] .* Z[trial][time_step, ]);
+}")
+
+    # complex_k one
+    network_term <- STbayes::get_network_term(
+        transmission_func = "freqdep_k",
+        is_distribution = FALSE,
+        separate_s = FALSE,
+        num_networks = 2,
+        veff_ID = c("k")
+    )
+    testthat::expect_equal(network_term,
+                           "real net_effect = 0;
+for (network in 1:N_networks) {
+  real numer = sum(A[network, trial, time_step][id, ] .* Z[trial][time_step, ]);
+  real denom = numer + sum(A[network, trial, time_step][id, ] .* (1 - Zn[trial][time_step, ]));
+  real prop = denom > 0 ? numer / denom : 0.0;
+  real dini_transformed = dini_func(prop, k_shape[id]);
+  net_effect += w[network] * dini_transformed;
+}")
+
+    # complex_f one
+    network_term <- STbayes::get_network_term(
+        transmission_func = "freqdep_f",
+        is_distribution = FALSE,
+        separate_s = FALSE,
+        num_networks = 2,
+        veff_ID = c("f")
+    )
+    testthat::expect_equal(network_term,
+                           "real net_effect = 0;
+for (network in 1:N_networks) {
+  real active = sum(A[network, trial, time_step][id, ] .* Z[trial][time_step, ]);
+  real inactive = sum(A[network, trial, time_step][id, ] .* (1 - Z[trial][time_step, ]));
+  real frac = pow(active, f[id]) / (pow(active, f[id]) + pow(inactive, f[id]));
+  net_effect += w[network] * frac;
+}")
+    #### IS DISTRIBUTION + VEFF ####
+    #standard one
+    network_term <- STbayes::get_network_term(
+        transmission_func = "standard",
+        is_distribution = TRUE,
+        separate_s = FALSE,
+        num_networks = 2,
+        veff_ID = c("w")
+    )
+    testthat::expect_equal(network_term,
+                           "real net_effect = 0;
+for (network in 1:N_networks) {
+  net_effect += w[network,id] * sum(A[network][id, ] .* Z[trial][time_step, ]);
+}")
+
+    # complex_k one
+    network_term <- STbayes::get_network_term(
+        transmission_func = "freqdep_k",
+        is_distribution = TRUE,
+        separate_s = FALSE,
+        num_networks = 2,
+        veff_ID = c("k")
+    )
+    testthat::expect_equal(network_term,
+                           "real net_effect = 0;
+for (network in 1:N_networks) {
+  real numer = sum(A[network][id, ] .* Z[trial][time_step, ]);
+  real denom = numer + sum(A[network][id, ] .* (1 - Zn[trial][time_step, ]));
+  real prop = denom > 0 ? numer / denom : 0.0;
+  real dini_transformed = dini_func(prop, k_shape[id]);
+  net_effect += w[network] * dini_transformed;
+}")
+
+    # complex_f one
+    network_term <- STbayes::get_network_term(
+        transmission_func = "freqdep_f",
+        is_distribution = TRUE,
+        separate_s = FALSE,
+        num_networks = 2,
+        veff_ID = c("f")
+    )
+    testthat::expect_equal(network_term,
+                           "real net_effect = 0;
+for (network in 1:N_networks) {
+  real active = sum(A[network][id, ] .* Z[trial][time_step, ]);
+  real inactive = sum(A[network][id, ] .* (1 - Z[trial][time_step, ]));
+  real frac = pow(active, f[id]) / (pow(active, f[id]) + pow(inactive, f[id]));
+  net_effect += w[network] * frac;
+}")
+})

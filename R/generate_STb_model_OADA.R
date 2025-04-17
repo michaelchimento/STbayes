@@ -46,6 +46,7 @@
 generate_STb_model_OADA <- function(STb_data,
                                     model_type="full",
                                     transmission_func="standard",
+                                    multi_network_s = c("shared", "separate"),
                                     veff_ID = c(),
                                     gq = TRUE,
                                     priors = list()) {
@@ -61,143 +62,149 @@ generate_STb_model_OADA <- function(STb_data,
     prior_f <- priors[["log_f"]]
     prior_k <- priors[["k_raw"]]
     prior_z_ID <- priors[["z_ID"]]
-    prior_sigma_id <- priors[["sigma_ID"]]
-    prior_rho_id <- priors[["rho_ID"]]
+    prior_sigma_ID <- priors[["sigma_ID"]]
+    prior_rho_ID <- priors[["rho_ID"]]
 
     # check if edgeweights are sampled from posterior distribution (import func should have created S variable)
     if ("N_dyad" %in% names(STb_data)) is_distribution <- TRUE else is_distribution <- FALSE
     if ("N_dyad" %in% names(STb_data)) est_acqTime <- FALSE # don't want to deal with that rn
 
     network_names <- STb_data$network_names
+    num_networks <- length(network_names)
+    multi_network_s <- match.arg(multi_network_s)
+    separate_s <- (multi_network_s == "separate" & num_networks > 1)
+
+    if (multi_network_s == "separate" & num_networks == 1) {
+      stop("multi_network_s = 'separate' requires more than one network.")
+    }
+
     # make custom declarations for distributions:
     if (is_distribution & model_type=="full") {
-        # data declaration
-        distribution_data_declaration <- glue::glue_collapse(
-            glue::glue("vector[N_dyad] logit_edge_mu_{network_names};  // logit edge values for {network_names}
-                  matrix[N_dyad, N_dyad] logit_edge_cov_{network_names};  // covariance matrix for {network_names}"),
-            sep = "\n\n"
-        )
-        distribution_data_declaration <- glue::glue("int N_dyad;  // number of dyads\n\n{distribution_data_declaration}")
+      # data declaration
+      distribution_data_declaration <- glue::glue("    matrix[N_networks, N_dyad] logit_edge_mu;  // logit edge values
+                      array[N_networks] matrix[N_dyad, N_dyad] logit_edge_cov;  // covariance matrix")
+      distribution_data_declaration <- glue::glue("int N_dyad;  // number of dyads\n\n{distribution_data_declaration}")
 
-        # param declaration
-        distribution_param_declaration <-
-            glue::glue_collapse(glue::glue("vector[N_dyad] edge_logit_{network_names};"), sep = "\n")
+      # param declaration
+      distribution_param_declaration <-
+        glue::glue_collapse(glue::glue("matrix[N_networks, N_dyad] edge_logit;"), sep = "\n")
 
-        # transformed param declaration
-        distribution_transformed_declaration <- {
-            # Declare matrices
-            matrix_decls <- glue::glue_collapse(glue::glue("matrix[P, P] {network_names};"), sep = "\n")
+      # transformed param declaration
+      distribution_transformed_declaration <- {
+        # Declare matrices
+        matrix_decls <- glue::glue_collapse(glue::glue("array[N_networks] matrix[P, P] A;"), sep = "\n")
 
-            # probably second options is right
-            matrix_assignments <- glue::glue_collapse(glue::glue(
-                "{network_names}[i, j] = inv_logit(edge_logit_{network_names}[edge_idx]);"
-            ), sep = "\n")
-
-            glue::glue("{matrix_decls}
+        glue::glue("{matrix_decls}
                       {{
+                        for (network in 1:N_networks){{
                         int edge_idx = 1;
-                        for (i in 1:P) {{
-                          for (j in 1:P) {{
-                            if (i != j) {{
-                    {matrix_assignments}
-                              edge_idx += 1;
-                            }} else {{
-                    {glue::glue_collapse(glue::glue('{network_names}[i, j] = 0;'), sep = '\n')}
+                            for (i in 1:P) {{
+                              for (j in 1:P) {{
+                                if (i != j) {{
+                                    A[network, i, j] = inv_logit(edge_logit[network, edge_idx]);
+                                  edge_idx += 1;
+                                }} else {{
+                                    A[network, i, j]  = 0;
+                                }}
+                              }}
                             }}
-                          }}
                         }}
+
                       }}")
-        }
-        # model declaration
-        distribution_model_block <- glue::glue_collapse(
-            glue::glue("  edge_logit_{network_names} ~ multi_normal(logit_edge_mu_{network_names}, logit_edge_cov_{network_names});"),
-            sep = "\n")
+      }
+      # model declaration
+      distribution_model_block <- "
+        for (n in 1:N_networks) {
+            edge_logit[n] ~ multi_normal(logit_edge_mu[n], logit_edge_cov[n]);
+        }"
 
     } else {
-        distribution_data_declaration <- ""
-        distribution_param_declaration <- ""
-        distribution_transformed_declaration <- ""
-        distribution_model_block <- ""
+      distribution_data_declaration <- ""
+      distribution_param_declaration <- ""
+      distribution_transformed_declaration <- ""
+      distribution_model_block <- ""
     }
 
-    #check if user wants to fit f parameter w complex contagion
-    if (transmission_func=="freqdep_f"){
-        f_param = "real log_f_mean;"
-        f_prior = paste0("log_f_mean ~ ", prior_f, ";")
-        if (is.element('f', veff_ID)) {
-            f_statement ='f[id]'
-            f_statement_j = gsub("[id]", "[j]", f_statement, fixed = TRUE)
+    if (model_type == "full") {
+      if (separate_s) {
+        if ("s" %in% veff_ID) {
+          # Varying s per network and individual
+          s_param <- paste0("matrix[N_networks, P] log_s_mean;")
         } else {
-            f_statement='f'
+          # Static s per network
+          s_param <- "vector[N_networks] log_s_mean;"
         }
+      } else {
+        if ("s" %in% veff_ID) {
+          # Varying s per individual, shared network weights
+          s_param <- "real log_s_mean;"
+        } else {
+          # Static global s
+          s_param <- "real log_s_mean;"
+        }
+      }
     } else {
-        f_param = ""
-        f_prior = ""
+      s_param <- ""
     }
 
-    #check if user wants to fit k parameter w complex contagion
-    if (transmission_func=="freqdep_k"){
-        k_param = "real k_raw;"
-        k_prior = paste0("k_raw ~ ", prior_k, ";")
-        if (is.element('k', veff_ID)){
-            k_statement='k_shape[id]'
-            k_statement_j = gsub("[id]", "[j]", f_statement, fixed = TRUE)
-        } else {
-            k_statement='k_shape'
-        }
+
+    # check if user wants to fit f parameter w complex contagion
+    if (transmission_func == "freqdep_f") {
+      f_param <- "real log_f_mean;"
+      f_prior <- paste0("log_f_mean ~ ", prior_f, ";")
+      if (is.element("f", veff_ID)) f_statement <- "f[id]" else f_statement <- "f"
     } else {
-        k_param = ""
-        k_prior = ""
+      f_param <- ""
+      f_prior <- ""
+    }
+
+    # check if user wants to fit k parameter w complex contagion
+    if (transmission_func == "freqdep_k") {
+      k_param <- "real k_raw;"
+      k_prior <- paste0("k_raw ~ ", prior_k, ";")
+      if (is.element("k", veff_ID)) k_statement <- "k_shape[id]" else k_statement <- "k_shape"
+    } else {
+      k_param <- ""
+      k_prior <- ""
     }
 
     # Declare network variables and weight parameter if multi-network (only for social model)
     if (model_type == "full") {
-        if (!is_distribution) {
-            network_declaration <- glue::glue("array[K, T_max] matrix[P, P] {paste0('A_', network_names, collapse = ', ')}; // Network matrices")
-        } else {
-            network_declaration <- ""
-        }
-        num_networks <- length(network_names)
-        if (num_networks == 1) {
-            if (transmission_func=="standard"){
-                network_term <- paste0("sum(A_", network_names[1], "[trial, time_step][id, ] .* Z[trial][time_step, ])")
-                if (is_distribution) network_term <- paste0("sum(", network_names[1], "[id, ] .* Z[trial][time_step, ])")
+      if (!is_distribution) {
+        network_declaration <- "array[N_networks, K, T_max] matrix[P, P] A;  // network matrices"
+      } else {
+        network_declaration <- ""
+      }
 
-            }
-            else if (transmission_func=="freqdep_f"){
-                network_term <- paste0("sum(A_", network_names[1], "[trial, time_step][id, ] .* Z[trial][time_step, ])^", f_statement,
-                                       "/ (sum(A_", network_names[1], "[trial, time_step][id, ] .* Z[trial][time_step, ])^",f_statement," +",
-                                       "sum(A_", network_names[1], "[trial, time_step][id, ] .* (1-Z[trial][time_step, ]))^", f_statement,")")
-                if (is_distribution) {
-                    network_term <- paste0(
-                        "sum(", network_names[1], "[id, ] .* Z[trial][time_step, ])^", f_statement,
-                        "/ (sum(", network_names[1], "[id, ] .* Z[trial][time_step, ])^", f_statement,
-                        "+ sum(", network_names[1], "[id, ] .* (1-Z[trial][time_step, ]))^", f_statement, ")"
-                    )
-                }
-            }
-            else if (transmission_func == "freqdep_k") {
-              network_term <- paste0("real numer = sum(A_", network_names[1], "[trial, time_step][id, ] .* Z[trial][time_step, ]); // sum a_ij z_jt w_jt
-                                  real denom = numer + sum(A_", network_names[1], "[trial, time_step][id, ] .* (1 - Zn[trial][time_step, ])); // + sum a_ij (1 - z_jt)
-                                  real prop = denom > 0 ? numer / denom : 0.0;
-                                  real dini_transformed = dini_func(prop,", k_statement, ");")
-              if (is_distribution) {
-                network_term <- paste0("real numer = sum(A_", network_names[1], "[id, ] .* Z[trial][time_step, ]); // sum a_ij z_jt w_jt
-                                  real denom = numer + sum(A_", network_names[1], "[id, ] .* (1 - Zn[trial][time_step, ])); // + sum a_ij (1 - z_jt)
-                                  real prop = denom > 0 ? numer / denom : 0.0;
-                                  real dini_transformed = dini_func(prop,", k_statement, ");")
-              }
-          }
-            w_param <- ""
-            w_prior <- ""
-        } else {
-            network_term <- paste0("w[", 1:num_networks, "] * sum(A_", network_names, "[trial, time_step][id, ] .* Z[trial][time_step, ])", collapse = " + ")
-            if (is_distribution) network_term <- paste0("w[", 1:num_networks, "] * sum(", network_names, "[id, ] .* Z[trial][time_step, ])", collapse = " + ")
-            #network_term_j = gsub("[id", "[j", network_term, fixed = TRUE)
-            w_param <- paste0("simplex[", num_networks, "] w; // Weights for networks")
-            w_prior <- paste0("w ~ dirichlet(rep_vector(0.5, ", num_networks, "));")
-        }
-        network_term_j <- gsub("[id", "[j", network_term, fixed = TRUE)
+      network_term <- get_network_term(
+        transmission_func = transmission_func,
+        is_distribution = is_distribution,
+        num_networks = num_networks,
+        separate_s = separate_s,
+        veff_ID = veff_ID,
+        id_var = "id"
+      )
+
+      network_term_j <- get_network_term(
+        transmission_func = transmission_func,
+        is_distribution = is_distribution,
+        num_networks = num_networks,
+        separate_s = separate_s,
+        veff_ID = veff_ID,
+        id_var = "j"
+      )
+
+      # If shared s (i.e., use w[] weights), declare w
+      if (!separate_s & num_networks>1) {
+        w_param <- paste0("simplex[", num_networks, "] w; // Weights for networks")
+        w_prior <- paste0("w ~ dirichlet(rep_vector(0.5, ", num_networks, "));")
+      } else {
+        w_param <- ""
+        w_prior <- ""
+      }
+    } else{
+      network_term=""
+      network_term_j =""
     }
 
     # Declare variables that will be used for ILVs
@@ -239,8 +246,15 @@ generate_STb_model_OADA <- function(STb_data,
 
     #if user didn't specify veff_ID for s
     if (!is.element('s', veff_ID)  & model_type=="full"){
-      transformed_params <- append(transformed_params, "real<lower=0> s_prime = exp(log_s_mean);")
-      gq_transformed_params <- append(gq_transformed_params, "real<lower=0> s = s_prime/lambda_0;")
+      if (separate_s) {
+        # static s[n]
+        transformed_params <- append(transformed_params, "vector<lower=0>[N_networks] s_prime = exp(log_s_mean);")
+        #gq_transformed_params <- append(gq_transformed_params, "vector<lower=0> s = s_prime ./ lambda_0;")
+      } else {
+        # static scalar s
+        transformed_params <- append(transformed_params, "real<lower=0> s_prime = exp(log_s_mean);")
+        #gq_transformed_params <- append(gq_transformed_params, "real<lower=0> s = s_prime/lambda_0;")
+      }
     }
     #if user didn't specify veff_ID for f
     if (!is.element('f', veff_ID) & model_type=="full" & transmission_func=="freqdep_f"){
@@ -255,11 +269,28 @@ generate_STb_model_OADA <- function(STb_data,
 
     if (N_veff > 0){
         for (parameter in veff_ID) {
-            if (parameter=="s" & model_type=="full"){
+          if (parameter == "s" & model_type == "full") {
+            #this is still a bit weird, adding single varying effect for all networks..
+            if (separate_s) {
+              # s[n, id] as exp(log_s_mean[n, id] + v_ID[,i])
+              transformed_params <- append(transformed_params, glue::glue(
+                "matrix<lower=0>[N_networks, P] s_prime;
+for (n in 1:N_networks) {{
+  for (id in 1:P) {{
+    s_prime[n, id] = exp(log_s_mean[n] + v_ID[id, {count}]);
+  }}
+}}"
+              ))
+              gq_transformed_params <- append(gq_transformed_params, "real s_mean = mean(to_vector(s_prime));")
+            } else {
+              # s[id] = exp(log_s_mean + v_ID[,i])
               transformed_params <- append(transformed_params, paste0("vector<lower=0>[P] s_prime = exp(log_s_mean + v_ID[,", count, "]);"))
-              gq_transformed_params <- append(gq_transformed_params, paste0("vector<lower=0>[P] s = s_prime ./ lambda_0;"))
-              gq_transformed_params <- append(gq_transformed_params, paste0("real<lower=0> s_mean = (exp(log_s_mean)) / (exp(log_lambda_0_mean));"))
+              #gq_transformed_params <- append(gq_transformed_params, paste0("vector<lower=0>[P] s = s_prime ./ lambda_0;"))
+              gq_transformed_params <- append(gq_transformed_params, paste0("real sprime_mean = exp(log_s_mean);"))
+              #gq_transformed_params <- append(gq_transformed_params, paste0("real<lower=0> s_mean = (exp(log_s_mean)) / (exp(log_lambda_0_mean));"))
             }
+            count <- count + 1
+          }
             else if (parameter=="f" & model_type=="full"){
                 transformed_params = append(transformed_params, paste0("vector<lower=0>[P] f = exp(log_f_mean + v_ID[,",count,"]);"))
                 transformed_params = append(transformed_params, paste0("real<lower=0> f_mean = exp(log_f_mean);"))
@@ -412,6 +443,11 @@ generate_STb_model_OADA <- function(STb_data,
     transformed_params_declaration = paste0(transformed_params, collapse = "\n")
     gq_transformed_params_declaration <- paste0(gq_transformed_params, collapse = "\n")
 
+    N_veff_priors = if (N_veff > 0) glue::glue("
+    to_vector(z_ID) ~ {prior_z_ID};
+    sigma_ID ~ {prior_sigma_ID};
+    Rho_ID ~ {prior_rho_ID};") else ''
+
     functions_block <- if (transmission_func=="freqdep_k") glue::glue("
 functions {{
   real dini_func(real x, real k) {{
@@ -424,7 +460,7 @@ functions {{
 
     data_block <- glue::glue("
 data {{
-    int<lower=0> K;                // Number of trials
+int<lower=0> K;                // Number of trials
     int<lower=0> Q;                // Number of individuals in each trial
     int<lower=1> P;                // Number of unique individuals
     array[K] int<lower=0> N;       // Number of individuals that learned during observation period
@@ -432,13 +468,18 @@ data {{
     array[K, Q] int<lower=-1> ind_id; // IDs of individuals
     array[K] int<lower=1> T;       // Maximum time periods
     int<lower=1> T_max;            // Max timesteps reached
-    {if (est_acqTime) 'array[K] int<lower=0> time_max; //Duration of obs period for each trial' else ''}
-    array[K,P] int<lower=-1> t;     // Time of acquisition for each individual
+    array[K,P] int t;     // Time of acquisition for each individual
+    array[K, T_max] real<lower=0> D; // Scaled durations
+    int<lower=1> N_networks;
     {if (model_type=='full') {network_declaration} else ''}
-    array[K] matrix[T_max, P] Z;   // Knowledge state slash cue matrix
-    int<lower=0> N_veff;
+    array[K] matrix[T_max, P] Z;   // Knowledge state * cue matrix
+    array[K] matrix[T_max, P] Zn;   // Knowledge state
     {ILV_declaration}
+    int<lower=0> N_veff;
+    {if (est_acqTime) 'array[K] int<lower=0> time_max; //Duration of obs period for each trial' else ''}
+    {if (est_acqTime) 'array[K, T_max] int<lower=0> D_int; // integer durations' else ''}
     {distribution_data_declaration}
+
 }}
 ")
 
@@ -473,19 +514,10 @@ transformed parameters {{
 
     #create string inputs cuz recursion don't work 2 levels down in glue
     if (model_type=='full'){
-        i_social_info_statement = glue::glue("real i_soc = {if (is.element('s', veff_ID)) 's[id]' else 's'} * ({network_term}) {ILVs_variable_effects};")
+        i_social_info_statement = glue::glue("real i_soc = {if (is.element('s', veff_ID) & !separate_s) 's_prime[id]' else if (!is.element('s', veff_ID) & !separate_s) 's_prime' else '1.0'} * (net_effect{ILVs_variable_effects});")
         i_lambda_statement = glue::glue("real i_lambda = {ILVm_variable_effects} * (i_ind + i_soc);")
-        j_social_info_statement = glue::glue("real j_soc = {if (is.element('s', veff_ID)) 's[j]' else 's'} * ({network_term_j}) {ILVs_variable_effects_j};")
+        j_social_info_statement = glue::glue("real j_soc = {if (is.element('s', veff_ID) & !separate_s) 's_prime[j]' else if (!is.element('s', veff_ID) & !separate_s) 's_prime' else '1.0'} * (net_effect_j{ILVs_variable_effects_j});")
         j_lambda_statement = glue::glue("real j_lambda = {ILVm_variable_effects_j} * (j_ind + j_soc);")
-
-        if (transmission_func=="freq_dep2"){
-            i_social_info_statement = glue::glue(
-                "{network_term}
-                real i_soc = {if (is.element('s', veff_ID)) 's[id]' else 's'} * (dini_transformed) {ILVs_variable_effects};")
-            j_social_info_statement = glue::glue(
-                "{network_term_j}
-                real j_soc = {if (is.element('s', veff_ID)) 's[j]' else 's'} * (dini_transformed) {ILVs_variable_effects_j};")
-        }
 
         target_increment_statement = glue::glue("target += log(i_lambda) - log(sum(j_rates));")
         log_lik_statement = glue::glue("log_lik_matrix[trial, n] = log(i_lambda) - log(sum(j_rates));")
@@ -511,11 +543,7 @@ model {{
     {if (model_type=='full') {ILVm_prior} else ''}
     {distribution_model_block}
 
-    {if (N_veff > 0) '
-    to_vector(z_ID) ~ {prior_z_ID};
-    sigma_ID ~ {prior_sigma_ID};
-    Rho_ID ~ {prior_rho_ID};
-    ' else ''}
+    {N_veff_priors}
 
     for (trial in 1:K) {{
 
@@ -525,6 +553,7 @@ model {{
             int time_step = learn_time;
             if (learn_time > 0) {{
                 real i_ind = {ILVi_variable_effects};
+                {network_term}
                 {i_social_info_statement}
                 {i_lambda_statement}
 
@@ -532,6 +561,7 @@ model {{
 
                 for (j in 1:Q) {{
                     real j_ind = {ILVi_variable_effects_j};
+                    {network_term_j}
                     {j_social_info_statement}
                     {j_lambda_statement}
                     j_rates[j] += j_lambda * (1-Z[trial][learn_time, j]); //only include those who haven't learned in denom
@@ -582,6 +612,7 @@ generated quantities {{
                 int time_step = learn_time;
                 if (learn_time > 0) {{
                     real i_ind = {ILVi_variable_effects};
+                    {network_term}
                     {i_social_info_statement}
                     {i_lambda_statement}
 
@@ -589,6 +620,7 @@ generated quantities {{
 
                     for (j in 1:Q) {{
                         real j_ind = {ILVi_variable_effects_j};
+                        {network_term_j}
                         {j_social_info_statement}
                         {j_lambda_statement}
                         j_rates[j] += j_lambda * (1-Z[trial][learn_time, j]);

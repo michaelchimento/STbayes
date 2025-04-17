@@ -41,7 +41,7 @@
 #' model <- generate_STb_model(data_list) # no varying effects
 #' model <- generate_STb_model(data_list, veff_ID = c("lambda_0", "s")) # estimate varying effects by ID for baseline learning rate and strength of social transmission.
 #' print(model)
-generate_STb_model_cTADA <- function(STb_data,
+generate_STb_model_cTADA_2 <- function(STb_data,
                                      model_type = "full",
                                      transmission_func = "standard",
                                      veff_ID = c(),
@@ -62,14 +62,16 @@ generate_STb_model_cTADA <- function(STb_data,
   prior_f <- priors[["log_f"]]
   prior_k <- priors[["k_raw"]]
   prior_z_ID <- priors[["z_ID"]]
-  prior_sigma_id <- priors[["sigma_ID"]]
-  prior_rho_id <- priors[["rho_ID"]]
+  prior_sigma_ID <- priors[["sigma_ID"]]
+  prior_rho_ID <- priors[["rho_ID"]]
 
   # check if edgeweights are sampled from posterior distribution (import func should have created S variable)
   if ("N_dyad" %in% names(STb_data)) is_distribution <- TRUE else is_distribution <- FALSE
   if ("N_dyad" %in% names(STb_data)) est_acqTime <- FALSE # don't want to deal with that rn
 
   network_names <- STb_data$network_names
+  num_networks <- length(network_names)
+
   # make custom declarations for distributions:
   if (is_distribution & model_type=="full") {
     # data declaration
@@ -150,7 +152,7 @@ generate_STb_model_cTADA <- function(STb_data,
     } else {
       network_declaration <- ""
     }
-    num_networks <- length(network_names)
+
     if (num_networks == 1) {
       if (transmission_func == "standard") {
         network_term <- paste0("sum(A_", network_names[1], "[trial, time_step][id, ] .* Z[trial][time_step, ])")
@@ -407,6 +409,11 @@ generate_STb_model_cTADA <- function(STb_data,
   transformed_params_declaration <- paste0(transformed_params, collapse = "\n")
   gq_transformed_params_declaration <- paste0(gq_transformed_params, collapse = "\n")
 
+  N_veff_priors = if (N_veff > 0) glue::glue("
+    to_vector(z_ID) ~ {prior_z_ID};
+    sigma_ID ~ {prior_sigma_ID};
+    Rho_ID ~ {prior_rho_ID};") else ''
+
   functions_block <- if (transmission_func == "freqdep_k") glue::glue("
 functions {{
   real dini_func(real x, real k) {{
@@ -504,11 +511,7 @@ model {{
                             {if (model_type=='full') {ILVm_prior} else ''}
     {distribution_model_block}
 
-    {if (N_veff > 0) '
-    to_vector(z_ID) ~ {prior_z_ID};
-    sigma_ID ~ {prior_sigma_ID};
-    Rho_ID ~ {prior_rho_ID};
-    ' else ''}
+    {N_veff_priors}
 
     for (trial in 1:K) {{
 

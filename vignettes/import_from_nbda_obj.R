@@ -13,12 +13,13 @@ data_list = import_NBDA_STb(nbdaData_cTADA)
 model_obj = generate_STb_model(data_list,
                                gq=T, #create a generated quantities block (for model comparison)
                                est_acqTime = F) #prior for s
-
+cat(model_obj)
 #fit model
 fit_social = fit_STb(data_list,
                      model_obj,
-                     chains = 2,
-                     cores = 2,
+                     chains = 5,
+                     cores = 5,
+                     parallel_chains=5,
                      iter=5000,
                      control = list(adapt_delta=0.99))
 
@@ -30,7 +31,13 @@ model_obj = generate_STb_model(data_list,
                                model_type="asocial",
                                gq=T, #create a generated quantities block (for model comparison)
                                est_acqTime = F) #prior for s
-fit_asocial = fit_STb(data_list, model_obj, chains = 2, cores = 2, iter=5000, control = list(adapt_delta=0.99) )
+
+fit_asocial = fit_STb(data_list, model_obj,
+                      chains = 5,
+                      cores = 5,
+                      parallel_chains=5,
+                      iter=5000,
+                      control = list(adapt_delta=0.99) )
 
 loo_output = STb_compare(fit_asocial, fit_social)
 loo_output$comparison

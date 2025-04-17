@@ -102,6 +102,8 @@ import_NBDA_STb <- function(nbda_object, network_names= c("default"), ILVi = NUL
     # pivot wider
     D_data_real <- with(D_data, tapply(duration, list(trial_numeric, discrete_time), FUN = max, default = 0))
     D_data_int <- with(D_data, tapply(as.integer(duration), list(trial_numeric, discrete_time), FUN = max, default = 0))
+    dimnames(D_data_real) <- NULL
+    dimnames(D_data_int) <- NULL
 
     #### Discrete Time Matrix ####
     # create a matrix where rows are trial_numeric, columns are id_numeric, and values are discrete_time
@@ -137,11 +139,11 @@ import_NBDA_STb <- function(nbda_object, network_names= c("default"), ILVi = NUL
     data_list$time_max <- time_max
     data_list$Q <- max(event_data$index)  # Max individuals per trial
     data_list$D <- D_data_real # duration data
-    data_list$D_int = D_data_int #duration data in integer format (experimental)
+    data_list$D_int <- D_data_int #duration data in integer format (experimental)
     dim(data_list$D_int) <- dim(data_list$D) #why is r so annoying
     data_list$ind_id <- id_data  # Individual IDs matrix
-    data_list$Z <- create_Z_matrix(event_data) # knowledge state matrix
-    data_list$Z <- sweep(data_list$Z, MARGIN = 3, STATS = nbda_object@weights, FUN = "*") #mult with weights
+    data_list$Zn <- create_Z_matrix(event_data, high_res=F) # knowledge state matrix
+    data_list$Z <- sweep(data_list$Zn, MARGIN = 3, STATS = nbda_object@weights, FUN = "*") #mult with weights
 
 
     #### ILV Metadata ####
@@ -239,6 +241,28 @@ import_NBDA_STb <- function(nbda_object, network_names= c("default"), ILVi = NUL
     }
 
     data_list$network_names <- network_names
+
+    #convert to new user_STb format, don't really want to touch the code above
+    # After your current network processing loop
+    network_arrays <- lapply(network_names, function(nm) data_list[[paste0("A_", nm)]])
+    num_networks <- length(network_arrays)
+    num_trials <- dim(network_arrays[[1]])[1]
+    num_timesteps <- dim(network_arrays[[1]])[2]
+    num_individuals <- dim(network_arrays[[1]])[3]
+
+    # Create unified A array: [network, trial, time, n, n]
+    data_list$A <- array(0, dim = c(num_networks, num_trials, num_timesteps, num_individuals, num_individuals))
+
+    for (i in seq_along(network_arrays)) {
+        data_list$A[i, , , , ] <- network_arrays[[i]]
+    }
+
+    for (nm in network_names) {
+        data_list[[paste0("A_", nm)]] <- NULL
+    }
+
+    data_list$high_res = F
+    data_list$N_networks = num_networks
 
     #### Output Messages ####
     dl_sanity_check(data_list=data_list)

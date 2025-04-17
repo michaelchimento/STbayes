@@ -22,6 +22,18 @@ test_that("import_user and import_nbda result in element-wise equivalent data li
                  demons = seed_vec)
     data_list_nbda = import_NBDA_STb(nbdaData_object, network_names = c("assoc"))
     data_list_user = import_user_STb(STbayes::event_data, STbayes::edge_list)
-    mismatches <- which(sapply(seq_along(data_list_user), function(i) !identical(data_list_nbda[[i]], data_list_user[[i]])))
-    expect(length(mismatches) == 0, paste("Mismatches found at indices:", paste(mismatches, collapse = ", ")))
+    # Get the intersection of names that exist in both lists
+    shared_names <- intersect(names(data_list_user), names(data_list_nbda))
+    testthat::expect_equal(length(shared_names), length(names(data_list_user)))
+
+    # check by name
+    mismatches <- vapply(
+        shared_names,
+        function(nm) !identical(data_list_user[[nm]], data_list_nbda[[nm]]),
+        logical(1)
+    )
+    expect(
+        all(!mismatches),
+        paste("Mismatches found for keys:", paste(names(mismatches)[mismatches], collapse = ", "))
+    )
 })

@@ -13,6 +13,7 @@ model_tada <- generate_STb_model(STb_data = data_list)
 model_tada
 STb_fit_tada <- fit_STb(data_list,
   model_tada,
+  parallel_chains=5,
   chains = 5,
   cores = 5,
   iter = 2000,
@@ -37,9 +38,10 @@ nbda_object <- STbayes::tutorial2_2
 data_list <- import_NBDA_STb(nbda_object = nbda_object)
 
 model_oada <- generate_STb_model(STb_data = data_list, data_type="order", priors=list(log_s = "normal(0,2)"))
-model_oada
+cat(model_oada)
 STb_fit_oada <- fit_STb(data_list,
   model_oada,
+  parallel_chains=5,
   chains = 5,
   cores = 5,
   iter = 2000,

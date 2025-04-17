@@ -3,11 +3,11 @@
 #' @param event_data dataframe (event_data) in import_NBDA_STb.R / import_user_STb.R
 #'
 #' @return matrix [k,t,n] where value=0 if naive at t, otherwise 1
-create_Z_matrix <- function(event_data) {
+create_Z_matrix <- function(event_data, high_res) {
     trials = unique(event_data$trial_numeric)
     # extract unique IDs and acquisition times
     ids <- unique(event_data$id_numeric)
-    times <- unique(event_data$discrete_time) #0 = seed, max_time = censored
+    times <- if(high_res) unique(event_data$t_end) else unique(event_data$discrete_time) #0 = seed, max_time = censored
     Z <- array(0, dim = c(length(trials), max(times), length(ids))) #create C matrix
     for (k in trials) {
         temp_df = event_data[event_data$trial_numeric==k,]

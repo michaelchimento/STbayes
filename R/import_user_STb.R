@@ -58,7 +58,7 @@
 #'   ILVs = c("sex"), # Use only 'sex' for social learning
 #'   ILVm = c("weight") # Use weight for multiplicative effect on asocial and social learning
 #' )
-import_user_STb <- function(event_data,
+import_user_STb_2 <- function(event_data,
                             networks,
                             network_type = c("undirected", "directed"),
                             ILV_c = NULL,
