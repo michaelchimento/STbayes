@@ -4,14 +4,14 @@
 \alias{STb_save}
 \title{Save STbayes objects easily}
 \usage{
-STb_save(fit, name = NULL, path = "cmdstan_saves")
+STb_save(fit, output_dir = "cmdstan_saves", name = NULL)
 }
 \arguments{
 \item{fit}{model fitted by STbayes}
 
-\item{name}{optional name to use for model}
+\item{output_dir}{where do you want to save it???}
 
-\item{path}{where do you want to save it???}
+\item{name}{optional name to use for model}
 }
 \description{
 Save STbayes objects easily
