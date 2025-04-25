@@ -64,6 +64,7 @@ generate_STb_model_OADA <- function(STb_data,
     prior_z_ID <- priors[["z_ID"]]
     prior_sigma_ID <- priors[["sigma_ID"]]
     prior_rho_ID <- priors[["rho_ID"]]
+    prior_beta <- priors[["beta_ILV"]]
 
     # check if edgeweights are sampled from posterior distribution (import func should have created S variable)
     if ("N_dyad" %in% names(STb_data)) is_distribution <- TRUE else is_distribution <- FALSE
@@ -228,7 +229,7 @@ generate_STb_model_OADA <- function(STb_data,
         ILV_declaration = paste0(
             sapply(combined_ILV_vars, function(var) {
                 if (!is.null(dim(STb_data[[paste0("ILV_", var)]]))) {
-                    paste0('array[K,Q,P] real ILV_', var, ';')
+                    paste0('array[K,T_max,P] real ILV_', var, ';')
                 } else {
                     paste0('array[P] real ILV_', var, ';')
                 }
@@ -326,7 +327,7 @@ for (n in 1:N_networks) {{
         }
         #creates the line to insert into likelihood calculation
         ILVi_param <- paste0("real beta_ILVi_", ILVi_vars_clean, ";", sep = "\n")
-        ILVi_prior <- paste0("beta_ILVi_", ILVi_vars_clean, " ~ normal(0, 1);", sep = "\n")
+        ILVi_prior <- paste0("beta_ILVi_", ILVi_vars_clean, " ~ ",prior_beta,";", sep = "\n")
         ILVi_variable_effects <- paste0(
             "exp(",
             paste0(
@@ -366,7 +367,7 @@ for (n in 1:N_networks) {{
         }
         #creates the line to insert into likelihood calculation
         ILVs_param <- paste0("real beta_ILVs_", ILVs_vars_clean, ";", sep = "\n")
-        ILVs_prior <- paste0("beta_ILVs_", ILVs_vars_clean, " ~ normal(0, 1);", sep = "\n")
+        ILVs_prior <- paste0("beta_ILVs_", ILVs_vars_clean, " ~ ",prior_beta,";", sep = "\n")
         ILVs_variable_effects <- paste0(
             "* exp(",
             paste0(
@@ -404,7 +405,7 @@ for (n in 1:N_networks) {{
             }
         }
         ILVm_param <- paste0("real beta_ILVm_", ILVm_vars_clean, ";", sep = "\n")
-        ILVm_prior <- paste0("beta_ILVm_", ILVm_vars_clean, " ~ normal(0, 1);", sep = "\n")
+        ILVm_prior <- paste0("beta_ILVm_", ILVm_vars_clean, " ~ ",prior_beta,";", sep = "\n")
         ILVm_variable_effects <- paste0(
             "exp(",
             paste0(
@@ -494,7 +495,7 @@ parameters {{
     {if (model_type=='full') {ILVm_param} else ''}
     {if (N_veff > 0) '
     matrix[N_veff,P] z_ID;
-    vector<lower=0>[N_veff] sigma_ID;
+    vector<lower=0, upper=2>[N_veff] sigma_ID;
     cholesky_factor_corr[N_veff] Rho_ID;
     ' else ''}
 }}

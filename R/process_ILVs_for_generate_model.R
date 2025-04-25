@@ -11,7 +11,7 @@
 #' @export
 #'
 #' @examples
-process_ILVs <- function(ilv_vars, ilv_vars_clean, veff_ID, suffix, STb_data, count_start) {
+process_ILVs <- function(ilv_vars, ilv_vars_clean, veff_ID, suffix, STb_data, count_start, prior_beta) {
     transformed <- c()
     modified_vars <- ilv_vars
     param_lines <- c()
@@ -41,7 +41,7 @@ process_ILVs <- function(ilv_vars, ilv_vars_clean, veff_ID, suffix, STb_data, co
     }
 
     param_lines <- paste0("real beta_ILV", suffix, "_", ilv_vars_clean, ";")
-    prior_lines <- paste0("beta_ILV", suffix, "_", ilv_vars_clean, " ~ normal(0, 1);")
+    prior_lines <- paste0("beta_ILV", suffix, "_", ilv_vars_clean, " ~ ", prior_beta, ";")
 
     term <- paste0(
         if (suffix == "m") "exp(" else if (suffix == "s") "* exp(" else "exp(",

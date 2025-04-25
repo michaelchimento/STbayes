@@ -1,11 +1,3 @@
-
-# Function to convert edge_list to networks dataframe
-edge_list_to_networks <- function(edge_list) {
-    networks <- edge_list
-    names(networks) <- c("from", "to", "trial", "assoc")
-    return(networks)
-}
-
 test_that("Network structure is consistent using distribution edgeweights.", {
     set.seed(42)  # for reproducibility
 

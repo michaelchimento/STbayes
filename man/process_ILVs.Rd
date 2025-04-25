@@ -4,7 +4,15 @@
 \alias{process_ILVs}
 \title{Helper function for generating ctada}
 \usage{
-process_ILVs(ilv_vars, ilv_vars_clean, veff_ID, suffix, STb_data, count_start)
+process_ILVs(
+  ilv_vars,
+  ilv_vars_clean,
+  veff_ID,
+  suffix,
+  STb_data,
+  count_start,
+  prior_beta
+)
 }
 \arguments{
 \item{count_start}{}

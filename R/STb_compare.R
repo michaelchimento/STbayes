@@ -51,7 +51,7 @@ STb_compare <- function(..., model_names = NULL, method = "loo-psis") {
       problem_indices <- which(k_values > 0.7)
 
       if (length(problem_indices) > 0) {
-        warning(sprintf("Model '%s' has %d problematic Pareto k values (k > 0.7).",
+        cat(sprintf("Model '%s' has %d problematic Pareto k values (k > 0.7).",
                         model_names[i], length(problem_indices)))
         if (any(k_values > 1)) {
           cat(sprintf("  - WARNING: %d observations have k > 1 (LOO is unreliable).\n",

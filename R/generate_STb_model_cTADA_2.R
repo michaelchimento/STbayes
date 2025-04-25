@@ -65,6 +65,7 @@ generate_STb_model_cTADA <- function(STb_data,
     prior_z_ID <- priors[["z_ID"]]
     prior_sigma_ID <- priors[["sigma_ID"]]
     prior_rho_ID <- priors[["rho_ID"]]
+    prior_beta <- priors[["beta_ILV"]]
 
     # check if edgeweights are sampled from posterior distribution (import func should have created S variable)
     if ("N_dyad" %in% names(STb_data)) is_distribution <- TRUE else is_distribution <- FALSE
@@ -130,7 +131,7 @@ generate_STb_model_cTADA <- function(STb_data,
         if (separate_s) {
             if ("s" %in% veff_ID) {
                 # Varying s per network and individual
-                s_param <- paste0("matrix[N_networks, P] log_s_mean;")
+                s_param <- paste0("vector[N_networks] log_s_mean;")
             } else {
                 # Static s per network
                 s_param <- "vector[N_networks] log_s_mean;"
@@ -219,7 +220,7 @@ generate_STb_model_cTADA <- function(STb_data,
         ILV_declaration <- paste0(
             sapply(combined_ILV_vars, function(var) {
                 if (!is.null(dim(STb_data[[paste0("ILV_", var)]]))) {
-                    if (STb_data$high_res) paste0("array[K,T_max,P] real ILV_", var, ";") else paste0("array[K,Q,P] real ILV_", var, ";")
+                    if (STb_data$high_res) paste0("array[K,T_max,P] real ILV_", var, ";") else paste0("array[K,T_max,P] real ILV_", var, ";")
                 } else {
                     paste0("array[P] real ILV_", var, ";")
                 }
@@ -308,7 +309,7 @@ for (n in 1:N_networks) {{
     }
 
     # Handle asocial ILV (ILVi)
-    ilvi_result <- process_ILVs(ILVi_vars, ILVi_vars_clean, veff_ID, "i", STb_data, count)
+    ilvi_result <- process_ILVs(ILVi_vars, ILVi_vars_clean, veff_ID, "i", STb_data, count, prior_beta)
     ILVi_param <- ilvi_result$param
     ILVi_prior <- ilvi_result$prior
     ILVi_variable_effects <- ilvi_result$term
@@ -317,7 +318,7 @@ for (n in 1:N_networks) {{
 
 
     # Handle social ILV (ILVs)
-    ilvs_result <- process_ILVs(ILVs_vars, ILVs_vars_clean, veff_ID, "s", STb_data, count)
+    ilvs_result <- process_ILVs(ILVs_vars, ILVs_vars_clean, veff_ID, "s", STb_data, count, prior_beta)
     ILVs_param <- ilvs_result$param
     ILVs_prior <- ilvs_result$prior
     ILVs_variable_effects <- ilvs_result$term
@@ -326,7 +327,7 @@ for (n in 1:N_networks) {{
 
 
     # Handle multiplicative ILV
-    ilvm_result <- process_ILVs(ILVm_vars, ILVm_vars_clean, veff_ID, "m", STb_data, count)
+    ilvm_result <- process_ILVs(ILVm_vars, ILVm_vars_clean, veff_ID, "m", STb_data, count, prior_beta)
     ILVm_param <- ilvm_result$param
     ILVm_prior <- ilvm_result$prior
     ILVm_variable_effects <- ilvm_result$term
@@ -389,7 +390,7 @@ parameters {{
     {if (model_type=='full') {ILVm_param} else ''}
     {if (N_veff > 0) '
     matrix[N_veff,P] z_ID;
-    vector<lower=0>[N_veff] sigma_ID;
+    vector<lower=0, upper=2>[N_veff] sigma_ID;
     cholesky_factor_corr[N_veff] Rho_ID;
     ' else ''}
 }}

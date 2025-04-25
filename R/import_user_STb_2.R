@@ -196,6 +196,7 @@ import_user_STb <- function(event_data,
         data_list$W <- create_W_matrix(t_weights, data_list$T_max)
         if (!all(dim(data_list$Z) == dim(data_list$W))) stop("Dimensions of Z do not match W.")
         data_list$Z <- data_list$Z * data_list$W
+        #data_list$Z <- data_list$W
     }
 
     #### Constant ILV ####

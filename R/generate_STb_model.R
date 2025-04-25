@@ -72,10 +72,11 @@ generate_STb_model <- function(STb_data,
 
     default_priors <- list(log_lambda_0 = "normal(-4, 3)",
                            log_s = "normal(-4, 3)",
+                           beta_ILV = "normal(0,1)",
                            log_f = "normal(0,1)",
                            k_raw = "normal(0,3)",
                            z_ID = "normal(0,1)",
-                           sigma_ID = "exponential(1)",
+                           sigma_ID = "normal(0,1)",
                            rho_ID = "lkj_corr_cholesky(3)")
 
     priors <- utils::modifyList(default_priors, priors)

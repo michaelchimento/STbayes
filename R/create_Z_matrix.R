@@ -18,7 +18,11 @@ create_Z_matrix <- function(event_data, high_res) {
             temp_id <- temp_df$id_numeric[i]
             time <- temp_df$discrete_time[i]
             if (time != trial_max_time) {
-                Z[k,(time+1):max(times), temp_id] <- 1 #add time +1 to account for demos/censored.
+                if (!high_res){
+                    Z[k,(time+1):max(times), temp_id] <- 1 #add time +1 to account for demos/censored.
+                } else{
+                    Z[k,(time):max(times), temp_id] <- 1
+                }
             }
         }
     }
