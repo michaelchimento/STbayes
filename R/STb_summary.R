@@ -24,6 +24,7 @@ STb_summary <- function(fit, depth = 1, prob = 0.95,
     param_names <- names(draws_df)
     sigma_ID_params <- grep("^sigma_ID\\[", param_names, value = TRUE)
     w_params <- grep("^w\\[", param_names, value = TRUE)
+    s_mean_params <- grep("^s_mean\\[", param_names, value = TRUE)
     keep_params <- param_names[!param_names %in% c(ignore_params)]
 
     # Optionally filter by depth (unchanged)
@@ -32,8 +33,9 @@ STb_summary <- function(fit, depth = 1, prob = 0.95,
         return(length(gsub("]", "", parts)) <= depth)
     }
     keep_params <- Filter(depth_filter, keep_params)
-    keep_params <- union(keep_params, sigma_ID_params)
+    keep_params <- union(keep_params, s_mean_params)
     keep_params <- union(keep_params, w_params)
+    keep_params <- union(keep_params, sigma_ID_params)
     # Subset
     draws_df <- posterior::subset_draws(draws_df, variable = keep_params)
 

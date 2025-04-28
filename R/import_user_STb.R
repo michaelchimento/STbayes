@@ -2,6 +2,8 @@
 #'
 #' @param event_data dataframe with columns id, trial, time, t_end
 #' @param networks Either a dataframe, a bisonr fit or STRAND fit, or a list of bisonr or STRAND fits. If dataframe: with columns trial, from, to, and one or more columns of edge weights named descriptively. Optionally an integer time column can be provided for dynamic network analysis, although networks must be provided for each time period between transmission events.
+#' @param network_type "undirected" or "directed".
+#' @param multinetwork_s "shared" or "separate". If supplying more than one network, specify whether each network receives it's own s parameter, or if a single s parameter is estimated with an additional a simplex w[n_networks] vector.
 #' @param ILV_c optional dataframe with columns id, and any constant individual-level variables that might be of interest
 #' @param ILV_tv optional dataframe with columns trial, id, time and any time-varying variables. Variable values should summarize the variable for each inter-acquisition period.
 #' @param ILVi Optional character vector of column names from ILV metadata to be considered when estimating intrinsic rate. If not specified, all ILV are applied to both.
@@ -58,9 +60,10 @@
 #'   ILVs = c("sex"), # Use only 'sex' for social learning
 #'   ILVm = c("weight") # Use weight for multiplicative effect on asocial and social learning
 #' )
-import_user_STb_2 <- function(event_data,
+import_user_STb <- function(event_data,
                             networks,
                             network_type = c("undirected", "directed"),
+                            multinetwork_s = c("shared", "separate"),
                             ILV_c = NULL,
                             ILV_tv = NULL,
                             ILVi = NULL,
@@ -90,6 +93,7 @@ import_user_STb_2 <- function(event_data,
     }
 
     network_type <- match.arg(network_type)
+    multinetwork_s <- match.arg(multinetwork_s)
 
     #### event_data ####
     # event_data should be in format id, trial, time, t_end
@@ -124,7 +128,7 @@ import_user_STb_2 <- function(event_data,
             trial_numeric = unique(df$trial_numeric),
             num_uncensored = nrow(df) - sum(df$censored),
             num_censored = sum(df$censored),
-            max_periods = max(df$discrete_time)
+            max_periods = if (high_res) max(df$t_end) else max(df$discrete_time)
         )
     }))
 
@@ -138,12 +142,11 @@ import_user_STb_2 <- function(event_data,
     if (high_res) {
         # Expand to full grid of [trial x time] from 1 to max time observed
         max_times <- aggregate(discrete_time ~ trial_numeric, data = D_data, FUN = max)
-        full_grid <- do.call(rbind, lapply(1:nrow(max_times), function(i) {
+        D_data <- do.call(rbind, lapply(1:nrow(max_times), function(i) {
             data.frame(trial_numeric = max_times$trial_numeric[i],
                        discrete_time = seq(1, max_times$discrete_time[i]),
                        duration = 1)
         }))
-        D_data <- full_grid
     } else {
         # Calculate the duration as time - lag(time) for each grouping
         D_data$duration <- with(D_data, ave(time, trial_numeric, FUN = function(x) c(x[1], diff(x))))
@@ -155,6 +158,8 @@ import_user_STb_2 <- function(event_data,
     D_data_real <- with(D_data, tapply(duration, list(trial_numeric, discrete_time), FUN = max, default = 0))
     D_data_int <- with(D_data, tapply(duration, list(trial_numeric, as.integer(discrete_time)), FUN = max, default = 0))
     dim(D_data_int) <- dim(D_data_real)
+    dimnames(D_data_real) <- NULL
+    dimnames(D_data_int) <- NULL
 
     # create a matrix where rows are trial_numeric, columns are id_numeric, and values are discrete_time
     t_data <- with(event_data, tapply(discrete_time, list(trial_numeric, id_numeric), FUN = max, default = -1))
@@ -180,17 +185,23 @@ import_user_STb_2 <- function(event_data,
         time = time_data,
         time_max = time_max,
         Q = max(event_data$index),
-        D = D_data_real,
-        D_int = D_data_int,
+        D = if (high_res) D_data_real[,1:max(N_data$max_periods)] else D_data_real,
+        D_int = if (high_res) D_data_int[,1:max(N_data$max_periods)] else D_data_int,
         ind_id = id_data,
-        Zn = create_Z_matrix(event_data),
-        Z = create_Z_matrix(event_data)
+        Zn = create_Z_matrix(event_data, high_res),
+        Z = create_Z_matrix(event_data, high_res),
+        high_res = high_res,
+        multinetwork_s = multinetwork_s
     )
+
+    dim(data_list$D) = c(data_list$K, data_list$T_max)
+    dim(data_list$D_int) = c(data_list$K, data_list$T_max)
 
     if (!is.null(t_weights)) {
         data_list$W <- create_W_matrix(t_weights, data_list$T_max)
-        if (!all(dim(data_list$Z) == dim(data_list$W))) stop("Dimensions of Z do not match W.")
+        if (!all(dim(data_list$Z) == dim(data_list$W))) stop(paste0("Dimensions of Z (", dim(data_list$Z), ") do not match W (", dim(data_list$W), ")."))
         data_list$Z <- data_list$Z * data_list$W
+        #data_list$Z <- data_list$W
     }
 
     #### Constant ILV ####
@@ -296,11 +307,13 @@ import_user_STb_2 <- function(event_data,
             networks$discrete_time <- networks$time
         }
         is_symmetric <- nrow(networks[networks$trial_numeric == 1 & networks$discrete_time == min(networks$discrete_time), ]) == data_list$P * (data_list$P - 1)
-        max_timesteps <- max(data_list$T)
+        max_timesteps <- if (high_res) max(event_data$t_end) else max(data_list$T)
 
-        for (column in network_cols) {
-            dims <- c(data_list$K, max_timesteps, data_list$P, data_list$P)
-            A_matrix <- array(0, dim = dims)
+        dims <- c(length(network_cols), data_list$K, max_timesteps, data_list$P, data_list$P)
+        A_array <- array(0, dim = dims)
+
+        for (n in seq_along(network_cols)) {
+            column <- network_cols[n]
             for (k in 1:data_list$K) {
                 temp_df <- networks[networks$trial_numeric == k, ]
                 for (i in 1:nrow(temp_df)) {
@@ -308,30 +321,28 @@ import_user_STb_2 <- function(event_data,
                     to <- as.integer(temp_df[i, "to_numeric"])
                     time <- as.integer(temp_df[i, "discrete_time"])
                     value <- as.numeric(temp_df[i, column])
-                    A_matrix[k, time, from, to] <- value
-                    if (!is_symmetric & network_type == "undirected") A_matrix[k, time, to, from] <- value
+                    A_array[n, k, time, from, to] <- value
+                    if (!is_symmetric & network_type == "undirected") A_array[n, k, time, to, from] <- value
                 }
                 if (!is_dynamic) {
-                    A_matrix[k, , , ] <- rep(A_matrix[k, 1, , ], each = dim(A_matrix)[2])
+                    A_array[n, k, , , ] <- rep(A_array[n, k, 1, , ], each = dim(A_array)[3])
                 }
                 for (t in 1:max(data_list$T)) {
-                    diag(A_matrix[k, t, , ]) <- 0
+                    diag(A_array[n, k, t, , ]) <- 0
                 }
             }
-            if (min(A_matrix) < 0) stop("Edgeweights below zero detected. Rescale so that 0 = no connection.")
-            data_list[[paste0("A_", column)]] <- A_matrix
         }
+        if (min(A_array) < 0) stop("Edgeweights below zero detected. Rescale so that 0 = no connection.")
+        data_list$A <- A_array
         data_list$network_names <- network_cols
+        data_list$N_networks = length(network_cols)
     }
     #IF DISTRIBUTION
     else {
-        # create and add network names
-        network_names <- paste0("A_", seq_along(networks))
-        data_list$network_names <- network_names
+        N_networks <- length(networks)
 
         for (i in seq_along(networks)) {
             net_obj <- networks[[i]]
-            net_name <- network_names[i]
 
             if (inherits(net_obj, "bison_model")) {
                 # BISON handling
@@ -349,8 +360,20 @@ import_user_STb_2 <- function(event_data,
                 )
 
                 # Drop self-loops
-                non_self_idx <- which(dyad_df$from != dyad_df$to)
-                edges <- net_obj$edge_samples[, non_self_idx]
+                dyad_df <- dyad_df[dyad_df$from != dyad_df$to, ]
+                edge_samples <- net_obj$edge_samples[, dyad_df$from != dyad_df$to, drop = FALSE]
+
+                if (net_obj$directed) {
+                    # Use samples as-is
+                    edges <- edge_samples
+
+                } else {
+                    # Duplicate edges to simulate directed version
+                    from_ids <- c(dyad_df$from, dyad_df$to)
+                    to_ids   <- c(dyad_df$to, dyad_df$from)
+                    dyad_df <- data.frame(from = from_ids, to = to_ids)
+                    edges <- cbind(edge_samples, edge_samples)
+                }
 
             } else if (inherits(net_obj, "STRAND Results Object")) {
                 # STRAND handling
@@ -376,17 +399,27 @@ import_user_STb_2 <- function(event_data,
                 stop("Unrecognized distributional network object. Expected bison_model or STRAND Results Object.")
             }
 
-            # Get point estimate and covariance
-            mu <- apply(edges, 2, median)
-            cov_mat <- cov(edges)
+            if (i == 1) {
+                N_dyad <- ncol(edges)
+                logit_edge_mu <- matrix(NA, nrow = N_networks, ncol = N_dyad)
+                logit_edge_cov <- array(NA, dim = c(N_networks, N_dyad, N_dyad))
+            }
 
-            # Add to data list
-            data_list[[paste0("logit_edge_mu_", net_name)]] <- mu
-            data_list[[paste0("logit_edge_cov_", net_name)]] <- cov_mat
+            # Get point estimate and covariance
+            logit_edge_mu[i, ] <- apply(edges, 2, median)
+            logit_edge_cov[i, , ] <- cov(edges)
         }
 
         # Assume same number of dyads for all networks
-        data_list$N_dyad <- length(mu)
+        data_list$logit_edge_mu <- logit_edge_mu
+        data_list$logit_edge_cov <- logit_edge_cov
+        data_list$N_dyad <- N_dyad
+        data_list$network_names <- paste0("net", seq_len(N_networks))
+        data_list$N_networks = N_networks
+    }
+
+    if (data_list$multinetwork_s == "separate" & data_list$N_networks == 1) {
+        stop("multinetwork_s = 'separate' requires more than one network.")
     }
 
     ## Final sanity check and return ##

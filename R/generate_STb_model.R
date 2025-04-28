@@ -51,7 +51,6 @@ generate_STb_model <- function(STb_data,
                                data_type = c("time", "order"),
                                model_type = c("full","asocial"),
                                transmission_func = c("standard","freqdep_f","freqdep_k"),
-                               multi_network_s = c("shared", "separate"),
                                veff_ID = c(),
                                gq = TRUE,
                                est_acqTime = FALSE,
@@ -60,7 +59,7 @@ generate_STb_model <- function(STb_data,
     data_type <- match.arg(data_type)
     model_type <- match.arg(model_type)
     transmission_func <- match.arg(transmission_func)
-    multi_network_s <- match.arg(multi_network_s)
+    multinetwork_s <- STb_data$multinetwork_s
 
     if (data_type == "order" && "lambda_0" %in% veff_ID) {
         stop('lambda_0 cannot be veff_ID when using OADA.')
@@ -89,7 +88,6 @@ generate_STb_model <- function(STb_data,
         return(generate_STb_model_cTADA(STb_data = STb_data,
                                         model_type = model_type,
                                         transmission_func = transmission_func,
-                                        multi_network_s = multi_network_s,
                                         veff_ID = veff_ID,
                                         gq = gq,
                                         est_acqTime = est_acqTime,
@@ -98,7 +96,6 @@ generate_STb_model <- function(STb_data,
         return(generate_STb_model_OADA(STb_data = STb_data,
                                        model_type = model_type,
                                        transmission_func = transmission_func,
-                                       multi_network_s = multi_network_s,
                                        veff_ID = veff_ID,
                                        gq = gq,
                                        priors = priors))

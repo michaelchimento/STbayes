@@ -9,7 +9,6 @@ generate_STb_model(
   data_type = c("time", "order"),
   model_type = c("full", "asocial"),
   transmission_func = c("standard", "freqdep_f", "freqdep_k"),
-  multi_network_s = c("shared", "separate"),
   veff_ID = c(),
   gq = TRUE,
   est_acqTime = FALSE,
@@ -25,8 +24,6 @@ generate_STb_model(
 
 \item{transmission_func}{string specifying transmission function: "standard", "freqdep_f" or "freqdep_k" for frequency dependent complex contagion. Defaults to "standard".}
 
-\item{multi_network_s}{string specifying how multi-network models are generated. "separate" estimates an s value for each network. "shared" generates model with single s and a vector of weights for each network.}
-
 \item{veff_ID}{Parameters for which to estimate varying effects by individuals. Default is no varying effects.}
 
 \item{gq}{Boolean to indicate whether the generated quantities block is added (incl. ll for WAIC)}
@@ -34,6 +31,8 @@ generate_STb_model(
 \item{est_acqTime}{Boolean to indicate whether gq block includes estimates for acquisition time. At the moment this uses 'one weird trick' to accomplish this and does not support estimates for non-integer learning times.}
 
 \item{priors}{named list with strings containing the prior for log(lambda_0), log(s'), log(f), k, z_id, sigma_id, rho_id.}
+
+\item{multi_network_s}{string specifying how multi-network models are generated. "separate" estimates an s value for each network. "shared" generates model with single s and a vector of weights for each network.}
 }
 \value{
 A STAN model (character) that is customized to the input data.

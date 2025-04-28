@@ -46,7 +46,6 @@
 generate_STb_model_OADA <- function(STb_data,
                                     model_type="full",
                                     transmission_func="standard",
-                                    multi_network_s = c("shared", "separate"),
                                     veff_ID = c(),
                                     gq = TRUE,
                                     priors = list()) {
@@ -72,11 +71,10 @@ generate_STb_model_OADA <- function(STb_data,
 
     network_names <- STb_data$network_names
     num_networks <- length(network_names)
-    multi_network_s <- match.arg(multi_network_s)
-    separate_s <- (multi_network_s == "separate" & num_networks > 1)
+    separate_s <- (STb_data$multinetwork_s == "separate" & num_networks > 1)
 
-    if (multi_network_s == "separate" & num_networks == 1) {
-      stop("multi_network_s = 'separate' requires more than one network.")
+    if (STb_data$multinetwork_s == "separate" & num_networks == 1) {
+      stop("multinetwork_s = 'separate' requires more than one network.")
     }
 
     # make custom declarations for distributions:

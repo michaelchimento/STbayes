@@ -8,7 +8,6 @@ generate_STb_model_OADA(
   STb_data,
   model_type = "full",
   transmission_func = "standard",
-  multi_network_s = c("shared", "separate"),
   veff_ID = c(),
   gq = TRUE,
   priors = list()
