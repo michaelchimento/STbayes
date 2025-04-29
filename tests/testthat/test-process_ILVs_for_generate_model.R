@@ -15,21 +15,24 @@ test_that("process_ILVs produces identical output to original ILV handling", {
                                 veff_ID = veff_ID,
                                 suffix = "i",
                                 STb_data = STb_data,
-                                count_start = count_start)
+                                count_start = count_start,
+                                prior_beta = "normal(0,1)")
 
     result_ILVs <- process_ILVs(ilv_vars = c("sex"),
                                 ilv_vars_clean = c("sex"),
                                 veff_ID = veff_ID,
                                 suffix = "s",
                                 STb_data = STb_data,
-                                count_start = result_ILVi$count)
+                                count_start = result_ILVi$count,
+                                prior_beta = "normal(0,1)")
 
     result_ILVm <- process_ILVs(ilv_vars = c("weight"),
                                 ilv_vars_clean = c("weight"),
                                 veff_ID = veff_ID,
                                 suffix = "m",
                                 STb_data = STb_data,
-                                count_start = result_ILVs$count)
+                                count_start = result_ILVs$count,
+                                prior_beta = "normal(0,1)")
 
     # Hardcoded expected outputs
     expect_equal(result_ILVi$param, "real beta_ILVi_age;")

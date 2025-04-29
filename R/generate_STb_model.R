@@ -1,6 +1,7 @@
 #' generate_STb_model: Dynamically generate STAN model based on input data
 #' @param STb_data a list of formatted data returned from the STbayes_data() function
 #' @param model_type string specifying the model type: "asocial" or "full"
+#' @param intrinsic_rate Define shape of intrinsic rate (either "constant" or "weibull"). Weibull fits extra parameter gamma that allows for time-varying event rates.
 #' @param data_type string specifying the type of data you have ("time" or "order"). "time" will generate cTADA specification, "order" will generate OADA specification.
 #' @param transmission_func string specifying transmission function: "standard", "freqdep_f" or "freqdep_k" for frequency dependent complex contagion. Defaults to "standard".
 #' @param multi_network_s string specifying how multi-network models are generated. "separate" estimates an s value for each network. "shared" generates model with single s and a vector of weights for each network.
@@ -50,6 +51,7 @@
 generate_STb_model <- function(STb_data,
                                data_type = c("time", "order"),
                                model_type = c("full","asocial"),
+                               intrinsic_rate = c("constant", "weibull"),
                                transmission_func = c("standard","freqdep_f","freqdep_k"),
                                veff_ID = c(),
                                gq = TRUE,
@@ -58,6 +60,7 @@ generate_STb_model <- function(STb_data,
 
     data_type <- match.arg(data_type)
     model_type <- match.arg(model_type)
+    intrinsic_rate <- match.arg(intrinsic_rate)
     transmission_func <- match.arg(transmission_func)
     multinetwork_s <- STb_data$multinetwork_s
 
@@ -76,7 +79,8 @@ generate_STb_model <- function(STb_data,
                            k_raw = "normal(0,3)",
                            z_ID = "normal(0,1)",
                            sigma_ID = "normal(0,1)",
-                           rho_ID = "lkj_corr_cholesky(3)")
+                           rho_ID = "lkj_corr_cholesky(3)",
+                           gamma = "normal(0,1)")
 
     priors <- utils::modifyList(default_priors, priors)
     message("Creating model with the following default priors:")
@@ -87,6 +91,7 @@ generate_STb_model <- function(STb_data,
     if (data_type == "time") {
         return(generate_STb_model_cTADA(STb_data = STb_data,
                                         model_type = model_type,
+                                        intrinsic_rate = intrinsic_rate,
                                         transmission_func = transmission_func,
                                         veff_ID = veff_ID,
                                         gq = gq,

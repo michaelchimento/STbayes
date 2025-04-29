@@ -199,7 +199,10 @@ import_user_STb <- function(event_data,
 
     if (!is.null(t_weights)) {
         data_list$W <- create_W_matrix(t_weights, data_list$T_max)
-        if (!all(dim(data_list$Z) == dim(data_list$W))) stop(paste0("Dimensions of Z (", dim(data_list$Z), ") do not match W (", dim(data_list$W), ")."))
+        if (!all(dim(data_list$Z) == dim(data_list$W))) stop(paste0("Dimensions of Z (",
+                                                                    paste(dim(data_list$Z), collapse = ","),
+                                                                    ") do not match W (",
+                                                                    paste(dim(data_list$W), collapse = ","), ")."))
         data_list$Z <- data_list$Z * data_list$W
         #data_list$Z <- data_list$W
     }

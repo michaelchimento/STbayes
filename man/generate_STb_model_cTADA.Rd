@@ -7,6 +7,7 @@
 generate_STb_model_cTADA(
   STb_data,
   model_type = "full",
+  intrinsic_rate = "constant",
   transmission_func = "standard",
   veff_ID = c(),
   gq = TRUE,

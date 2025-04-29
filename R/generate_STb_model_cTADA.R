@@ -43,6 +43,7 @@
 #' print(model)
 generate_STb_model_cTADA <- function(STb_data,
                                      model_type = "full",
+                                     intrinsic_rate = "constant",
                                      transmission_func = "standard",
                                      veff_ID = c(),
                                      gq = TRUE,
@@ -65,6 +66,7 @@ generate_STb_model_cTADA <- function(STb_data,
     prior_sigma_ID <- priors[["sigma_ID"]]
     prior_rho_ID <- priors[["rho_ID"]]
     prior_beta <- priors[["beta_ILV"]]
+    prior_gamma <- priors[["gamma"]]
 
     # check if edgeweights are sampled from posterior distribution (import func should have created S variable)
     if ("N_dyad" %in% names(STb_data)) is_distribution <- TRUE else is_distribution <- FALSE
@@ -169,6 +171,17 @@ generate_STb_model_cTADA <- function(STb_data,
         k_prior <- ""
     }
 
+    # check if user wants to fit f parameter w complex contagion
+    if (intrinsic_rate == "weibull") {
+      gamma_param <- "real log_gamma;"
+      gamma_prior <- paste0("log_gamma ~ ", prior_gamma, ";")
+      if (is.element("gamma", veff_ID)) gamma_term <- "gamma[id]" else gamma_term <- "gamma"
+    } else {
+      gamma_param <- ""
+      gamma_prior <- ""
+    }
+
+
     # Declare network variables and weight parameter if multi-network (only for social model)
     if (model_type == "full") {
         if (!is_distribution) {
@@ -258,6 +271,10 @@ generate_STb_model_cTADA <- function(STb_data,
         transformed_params <- append(transformed_params, "real<lower=-1, upper=1> k_shape = 2 / (1 + exp(-k_raw)) - 1;")
     }
 
+    if (!is.element("gamma", veff_ID) & intrinsic_rate == "weibull") {
+      transformed_params <- append(transformed_params, "real<lower=0> gamma = exp(log_gamma);")
+    }
+
     count <- 1
 
     if (N_veff > 0) {
@@ -304,6 +321,10 @@ for (n in 1:N_networks) {{
                 transformed_params <- append(transformed_params, paste0("vector<lower=0>[P] k_shape = 2 / (1 + exp(-k_raw+ v_ID[,", count, "])) - 1;"))
                 transformed_params <- append(transformed_params, paste0("real<lower=-1, upper=1> k_shape_mean = 2 / (1 + exp(-k_raw)) - 1;"))
                 count <- count + 1
+            } else if (parameter == "gamma") {
+              transformed_params <- append(transformed_params, paste0("vector<lower=0>[P] gamma = exp(log_gamma + v_ID[,", count, "]);"))
+              transformed_params <- append(transformed_params, paste0("real<lower=0> gamma = exp(log_gamma);"))
+              count <- count + 1
             }
         }
     }
@@ -385,6 +406,7 @@ parameters {{
     {if (model_type=='full') {w_param} else ''}
     {if (model_type=='full') {f_param} else ''}
     {if (model_type=='full') {k_param} else ''}
+    {gamma_param}
     {ILVi_param}
     {if (model_type=='full') {ILVs_param} else ''}
     {if (model_type=='full') {ILVm_param} else ''}
@@ -408,18 +430,20 @@ transformed parameters {{
 }}
 ")
     # create string inputs cuz recursion don't work 2 levels down in glue
+    gamma_statement = if (intrinsic_rate=="weibull") glue::glue('* pow(elapsed_time, {gamma_term} - 1)') else ''
+    eA_gamma_statement = if (intrinsic_rate=="weibull") glue::glue('* pow(global_time, {gamma_term} - 1)') else ''
     if (model_type == "full") {
         social_info_statement <- glue::glue("real soc_term = {if (is.element('s', veff_ID) & !separate_s) 's_prime[id]' else if (!is.element('s', veff_ID) & !separate_s) 's_prime' else '1.0'} * (net_effect{ILVs_variable_effects});")
-        lambda_statement <- glue::glue("real lambda = {ILVm_variable_effects} ({if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * ind_term + soc_term) * D[trial, time_step];")
-        lambda_statement_estAcq <- glue::glue("real lambda = {ILVm_variable_effects} ({if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * ind_term + soc_term);")
-        target_increment_statement <- glue::glue("target += log({ILVm_variable_effects} ({if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * ind_term + soc_term));")
-        log_lik_statement <- glue::glue("log_lik_matrix[trial, n] = log({ILVm_variable_effects} ({if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * ind_term + soc_term)) - cum_hazard;")
+        lambda_statement <- glue::glue("real lambda = {ILVm_variable_effects} ({if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * ind_term + soc_term) * D[trial, time_step] {gamma_statement};")
+        lambda_statement_estAcq <- glue::glue("real lambda = {ILVm_variable_effects} ({if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * ind_term + soc_term) {eA_gamma_statement};")
+        target_increment_statement <- glue::glue("target += log({ILVm_variable_effects} ({if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * ind_term + soc_term){gamma_statement});")
+        log_lik_statement <- glue::glue("log_lik_matrix[trial, n] = log({ILVm_variable_effects} ({if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * ind_term + soc_term){gamma_statement}) - cum_hazard;")
     } else if (model_type == "asocial") {
         social_info_statement <- ""
-        lambda_statement <- glue::glue("real lambda =  {if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * ind_term * D[trial, time_step];")
-        lambda_statement_estAcq <- glue::glue("real lambda =  {if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * ind_term;")
-        target_increment_statement <- glue::glue("target += log( {if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * ind_term);")
-        log_lik_statement <- glue::glue("log_lik_matrix[trial, n] = log({if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * ind_term) - cum_hazard;")
+        lambda_statement <- glue::glue("real lambda =  {if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * ind_term * D[trial, time_step]{gamma_statement};")
+        lambda_statement_estAcq <- glue::glue("real lambda =  {if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * ind_term{eA_gamma_statement};")
+        target_increment_statement <- glue::glue("target += log( {if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * ind_term{gamma_statement});")
+        log_lik_statement <- glue::glue("log_lik_matrix[trial, n] = log({if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * ind_term{gamma_statement}) - cum_hazard;")
     }
 
     # Model block
@@ -430,6 +454,7 @@ model {{
     {if (model_type=='full') {w_prior} else ''}
     {if (model_type=='full') {f_prior} else ''}
     {if (model_type=='full') {k_prior} else ''}
+    {gamma_prior}
     {ILVi_prior}
     {if (model_type=='full') {ILVs_prior} else ''}
     {if (model_type=='full') {ILVm_prior} else ''}
@@ -446,6 +471,7 @@ model {{
 
             if (learn_time > 0) {{
                 for (time_step in 1:learn_time) {{
+                    {if (intrinsic_rate=='weibull') 'real elapsed_time = sum(D[trial, 1:time_step]);' else ''}
                     real ind_term = {ILVi_variable_effects};
                     {network_term}
                     {social_info_statement}
@@ -462,6 +488,7 @@ model {{
             for (c in 1:N_c[trial]) {{
                 int id = ind_id[trial, N[trial] + c];
                     for (time_step in 1:T[trial]) {{
+                        {if (intrinsic_rate=='weibull') 'real elapsed_time = sum(D[trial, 1:time_step]);' else ''}
                         real ind_term = {ILVi_variable_effects};
                         {network_term}
                         {social_info_statement}
@@ -519,6 +546,7 @@ generated quantities {{
             if (learn_time > 0){{
                 real cum_hazard = 0; //set val before adding
                 for (time_step in 1:learn_time) {{
+                    {if (intrinsic_rate=='weibull') 'real elapsed_time = sum(D[trial, 1:time_step]);' else ''}
                     real ind_term = {ILVi_variable_effects};
                     {network_term}
                     {social_info_statement}
@@ -540,6 +568,7 @@ generated quantities {{
                     // compute cumulative hazard up to the censoring time
                     real cum_hazard = 0;
                     for (time_step in 1:censor_time) {{
+                        {if (intrinsic_rate=='weibull') 'real elapsed_time = sum(D[trial, 1:time_step]);' else ''}
                         real ind_term = {ILVi_variable_effects};
                         {network_term}
                         {social_info_statement}

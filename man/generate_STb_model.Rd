@@ -8,6 +8,7 @@ generate_STb_model(
   STb_data,
   data_type = c("time", "order"),
   model_type = c("full", "asocial"),
+  intrinsic_rate = c("constant", "weibull"),
   transmission_func = c("standard", "freqdep_f", "freqdep_k"),
   veff_ID = c(),
   gq = TRUE,
