@@ -10,7 +10,7 @@ extract_WAIC(fit)
 \item{fit}{A STb model fit}
 }
 \value{
-Table with WAIC estimates
+WAIC estimate
 }
 \description{
 Convenience to extract WAIC scores

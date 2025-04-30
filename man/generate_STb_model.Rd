@@ -23,6 +23,8 @@ generate_STb_model(
 
 \item{model_type}{string specifying the model type: "asocial" or "full"}
 
+\item{intrinsic_rate}{Define shape of intrinsic rate (either "constant" or "weibull"). Weibull fits extra parameter gamma that allows for time-varying event rates.}
+
 \item{transmission_func}{string specifying transmission function: "standard", "freqdep_f" or "freqdep_k" for frequency dependent complex contagion. Defaults to "standard".}
 
 \item{veff_ID}{Parameters for which to estimate varying effects by individuals. Default is no varying effects.}

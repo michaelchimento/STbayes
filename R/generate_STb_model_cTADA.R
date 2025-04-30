@@ -323,7 +323,7 @@ for (n in 1:N_networks) {{
                 count <- count + 1
             } else if (parameter == "gamma") {
               transformed_params <- append(transformed_params, paste0("vector<lower=0>[P] gamma = exp(log_gamma + v_ID[,", count, "]);"))
-              transformed_params <- append(transformed_params, paste0("real<lower=0> gamma = exp(log_gamma);"))
+              transformed_params <- append(transformed_params, paste0("real<lower=0> mean_gamma = exp(log_gamma);"))
               count <- count + 1
             }
         }

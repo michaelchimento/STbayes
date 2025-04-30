@@ -3,6 +3,7 @@
 export(STb_compare)
 export(STb_save)
 export(STb_summary)
+export(extract_LOOIC)
 export(extract_WAIC)
 export(extract_acqTime)
 export(extract_bisonr_edgeweights)
