@@ -8,7 +8,7 @@ import_user_STb(
   event_data,
   networks,
   network_type = c("undirected", "directed"),
-  multinetwork_s = c("shared", "separate"),
+  multinetwork_s = c("separate", "shared"),
   ILV_c = NULL,
   ILV_tv = NULL,
   ILVi = NULL,
@@ -25,7 +25,7 @@ import_user_STb(
 
 \item{network_type}{"undirected" or "directed".}
 
-\item{multinetwork_s}{"shared" or "separate". If supplying more than one network, specify whether each network receives it's own s parameter, or if a single s parameter is estimated with an additional a simplex w\link{n_networks} vector.}
+\item{multinetwork_s}{"separate" or "shared". If supplying more than one network, specify whether each network receives it's own s parameter, or shares a single parameter.}
 
 \item{ILV_c}{optional dataframe with columns id, and any constant individual-level variables that might be of interest}
 

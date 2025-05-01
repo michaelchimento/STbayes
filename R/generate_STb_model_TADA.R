@@ -2,6 +2,7 @@
 #' @param STb_data a list of formatted data returned from the STbayes_data() function
 #' @param model_type string specifying the model type: "asocial" or "full"
 #' @param transmission_func string specifying transmission function: "standard", "freqdep_f" or "freqdep_k" for complex contagion. Defaults to "standard". Complex contagion with multi-network model is not supported.
+#' @param dTADA boolean indicating whether dTADA should be used.
 #' @param veff_ID Parameters for which to estimate varying effects by individuals. Default is no varying effects.
 #' @param gq Boolean to indicate whether the generated quantities block is added (incl. ll for WAIC)
 #' @param est_acqTime Boolean to indicate whether gq block includes estimates for acquisition time. At the moment this uses 'one weird trick' to accomplish this and does not support estimates for non-integer learning times.
@@ -41,10 +42,11 @@
 #' model <- generate_STb_model(data_list) # no varying effects
 #' model <- generate_STb_model(data_list, veff_ID = c("lambda_0", "s")) # estimate varying effects by ID for baseline learning rate and strength of social transmission.
 #' print(model)
-generate_STb_model_cTADA <- function(STb_data,
+generate_STb_model_TADA <- function(STb_data,
                                      model_type = "full",
                                      intrinsic_rate = "constant",
                                      transmission_func = "standard",
+                                     dTADA = F,
                                      veff_ID = c(),
                                      gq = TRUE,
                                      est_acqTime = FALSE,
@@ -76,10 +78,6 @@ generate_STb_model_cTADA <- function(STb_data,
     num_networks <- length(network_names)
 
     separate_s <- (STb_data$multinetwork_s == "separate" & num_networks > 1)
-
-    if (STb_data$multinetwork_s == "separate" & num_networks == 1) {
-      stop("multinetwork_s = 'separate' requires more than one network.")
-    }
 
     # make custom declarations for distributions:
     if (is_distribution & model_type=="full") {
@@ -130,21 +128,9 @@ generate_STb_model_cTADA <- function(STb_data,
 
     if (model_type == "full") {
         if (separate_s) {
-            if ("s" %in% veff_ID) {
-                # Varying s per network and individual
-                s_param <- paste0("vector[N_networks] log_s_mean;")
-            } else {
-                # Static s per network
-                s_param <- "vector[N_networks] log_s_mean;"
-            }
+          s_param <- "vector[N_networks] log_s_mean;"
         } else {
-            if ("s" %in% veff_ID) {
-                # Varying s per individual, shared network weights
-                s_param <- "real log_s_mean;"
-            } else {
-                # Static global s
-                s_param <- "real log_s_mean;"
-            }
+          s_param <- "real log_s_mean;"
         }
     } else {
         s_param <- ""
@@ -199,13 +185,13 @@ generate_STb_model_cTADA <- function(STb_data,
         )
 
         # If shared s (i.e., use w[] weights), declare w
-        if (!separate_s & num_networks>1) {
-            w_param <- paste0("simplex[", num_networks, "] w; // Weights for networks")
-            w_prior <- paste0("w ~ dirichlet(rep_vector(0.5, ", num_networks, "));")
-        } else {
-            w_param <- ""
-            w_prior <- ""
-        }
+        # if (!separate_s & num_networks>1) {
+        #     w_param <- paste0("simplex[", num_networks, "] w; // Weights for networks")
+        #     w_prior <- paste0("w ~ dirichlet(rep_vector(0.5, ", num_networks, "));")
+        # } else {
+        #     w_param <- ""
+        #     w_prior <- ""
+        # }
     } else{
       network_term=""
     }
@@ -359,6 +345,16 @@ for (n in 1:N_networks) {{
     transformed_params_declaration <- paste0(transformed_params, collapse = "\n")
     gq_transformed_params_declaration <- paste0(gq_transformed_params, collapse = "\n")
 
+    #get %ST term
+    psoc_code <- get_ST_prob_term(
+      transmission_func = transmission_func,
+      is_distribution = is_distribution,
+      separate_s = separate_s,
+      veff_ID = veff_ID,
+      num_networks = num_networks,
+      ILVs_variable_effects = ILVs_variable_effects
+    )
+
     N_veff_priors = if (N_veff > 0) glue::glue("
     to_vector(z_ID) ~ {prior_z_ID};
     sigma_ID ~ {prior_sigma_ID};
@@ -403,7 +399,6 @@ parameters {{
     {distribution_param_declaration}
     real log_lambda_0_mean;  // Log baseline learning rate
     {s_param}
-    {if (model_type=='full') {w_param} else ''}
     {if (model_type=='full') {f_param} else ''}
     {if (model_type=='full') {k_param} else ''}
     {gamma_param}
@@ -433,12 +428,38 @@ transformed parameters {{
     gamma_statement = if (intrinsic_rate=="weibull") glue::glue('* pow(elapsed_time, {gamma_term} - 1)') else ''
     eA_gamma_statement = if (intrinsic_rate=="weibull") glue::glue('* pow(global_time, {gamma_term} - 1)') else ''
     if (model_type == "full") {
-        social_info_statement <- glue::glue("real soc_term = {if (is.element('s', veff_ID) & !separate_s) 's_prime[id]' else if (!is.element('s', veff_ID) & !separate_s) 's_prime' else '1.0'} * (net_effect{ILVs_variable_effects});")
-        lambda_statement <- glue::glue("real lambda = {ILVm_variable_effects} ({if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * ind_term + soc_term) * D[trial, time_step] {gamma_statement};")
-        lambda_statement_estAcq <- glue::glue("real lambda = {ILVm_variable_effects} ({if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * ind_term + soc_term) {eA_gamma_statement};")
-        target_increment_statement <- glue::glue("target += log({ILVm_variable_effects} ({if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * ind_term + soc_term){gamma_statement});")
-        log_lik_statement <- glue::glue("log_lik_matrix[trial, n] = log({ILVm_variable_effects} ({if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * ind_term + soc_term){gamma_statement}) - cum_hazard;")
-    } else if (model_type == "asocial") {
+      social_info_statement <- glue::glue(
+        "real soc_term = net_effect{ILVs_variable_effects};"
+      )
+
+      lambda_statement <- glue::glue(
+        "real lambda = {ILVm_variable_effects} ({if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * ind_term + soc_term) * D[trial, time_step] {gamma_statement};"
+      )
+
+      lambda_statement_estAcq <- glue::glue(
+        "real lambda = {ILVm_variable_effects} ({if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * ind_term + soc_term) {eA_gamma_statement};"
+      )
+
+      if (dTADA) {
+        target_increment_statement <- glue::glue(
+          "target += lambda + log1m_exp(-lambda);"
+        )
+
+        log_lik_statement <- glue::glue(
+          "// dTADA: probability of learning within interval\n" %+%
+            "log_lik_matrix[trial, n] = lambda + log1m_exp(-lambda) - cum_hazard;"
+        )
+      } else {
+        target_increment_statement <- glue::glue(
+          "target += log({ILVm_variable_effects} ({if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * ind_term + soc_term){gamma_statement});"
+        )
+
+        log_lik_statement <- glue::glue(
+          "log_lik_matrix[trial, n] = log({ILVm_variable_effects} ({if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * ind_term + soc_term){gamma_statement}) - cum_hazard;"
+        )
+      }
+    }
+    else if (model_type == "asocial") {
         social_info_statement <- ""
         lambda_statement <- glue::glue("real lambda =  {if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * ind_term * D[trial, time_step]{gamma_statement};")
         lambda_statement_estAcq <- glue::glue("real lambda =  {if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * ind_term{eA_gamma_statement};")
@@ -451,7 +472,6 @@ transformed parameters {{
 model {{
     log_lambda_0_mean ~ {prior_baserate};
     {if (model_type=='full') paste0('log_s_mean ~ ',prior_s,';') else ''}
-    {if (model_type=='full') {w_prior} else ''}
     {if (model_type=='full') {f_prior} else ''}
     {if (model_type=='full') {k_prior} else ''}
     {gamma_prior}
@@ -538,6 +558,10 @@ generated quantities {{
     {gq_transformed_params_declaration}
     matrix[K, Q] log_lik_matrix = rep_matrix(0.0, K, Q);           // LL for each observation
 
+    //for %ST
+    int count_ST = 0;
+    vector[N_networks] psocn_sum = rep_vector(0.0, N_networks);
+
     for (trial in 1:K) {{
         for (n in 1:N[trial]) {{
             int id = ind_id[trial, n];
@@ -554,7 +578,8 @@ generated quantities {{
                     cum_hazard += lambda; // accumulate hazard
                     //if it learn_time, record the ll
                     if (time_step == learn_time){{
-                        {log_lik_statement}
+                                             {log_lik_statement}
+                                             {psoc_code}
                     }}
                 }}
             }}
@@ -581,6 +606,8 @@ generated quantities {{
         }}
 
     }}
+
+    vector[N_networks] percent_ST = psocn_sum / count_ST;
 
     {est_acqTime_code}
 

@@ -6,7 +6,7 @@
 \usage{
 generate_STb_model(
   STb_data,
-  data_type = c("time", "order"),
+  data_type = c("continuous_time", "discrete_time", "order"),
   model_type = c("full", "asocial"),
   intrinsic_rate = c("constant", "weibull"),
   transmission_func = c("standard", "freqdep_f", "freqdep_k"),
@@ -19,11 +19,11 @@ generate_STb_model(
 \arguments{
 \item{STb_data}{a list of formatted data returned from the STbayes_data() function}
 
-\item{data_type}{string specifying the type of data you have ("time" or "order"). "time" will generate cTADA specification, "order" will generate OADA specification.}
+\item{data_type}{string specifying the type of data you have ("continuous_time" for cTADA, "discrete_time" for dTADA or "order" for OADA). continuous_time assumes you know precisely when events happened. discrete_time assumes you know roughly when individuals learned (within some discrete period), and order assumes that you have no time information.}
 
 \item{model_type}{string specifying the model type: "asocial" or "full"}
 
-\item{intrinsic_rate}{Define shape of intrinsic rate (either "constant" or "weibull"). Weibull fits extra parameter gamma that allows for time-varying event rates.}
+\item{intrinsic_rate}{Define shape of intrinsic rate (either "constant" or "weibull"). Weibull fits extra parameter (gamma) that allows for time-varying event rates.}
 
 \item{transmission_func}{string specifying transmission function: "standard", "freqdep_f" or "freqdep_k" for frequency dependent complex contagion. Defaults to "standard".}
 

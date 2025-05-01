@@ -73,10 +73,6 @@ generate_STb_model_OADA <- function(STb_data,
     num_networks <- length(network_names)
     separate_s <- (STb_data$multinetwork_s == "separate" & num_networks > 1)
 
-    if (STb_data$multinetwork_s == "separate" & num_networks == 1) {
-      stop("multinetwork_s = 'separate' requires more than one network.")
-    }
-
     # make custom declarations for distributions:
     if (is_distribution & model_type=="full") {
       # data declaration
@@ -126,21 +122,9 @@ generate_STb_model_OADA <- function(STb_data,
 
     if (model_type == "full") {
       if (separate_s) {
-        if ("s" %in% veff_ID) {
-          # Varying s per network and individual
-          s_param <- paste0("matrix[N_networks, P] log_s_mean;")
-        } else {
-          # Static s per network
-          s_param <- "vector[N_networks] log_s_mean;"
-        }
+        s_param <- "vector[N_networks] log_s_mean;"
       } else {
-        if ("s" %in% veff_ID) {
-          # Varying s per individual, shared network weights
-          s_param <- "real log_s_mean;"
-        } else {
-          # Static global s
-          s_param <- "real log_s_mean;"
-        }
+        s_param <- "real log_s_mean;"
       }
     } else {
       s_param <- ""
@@ -194,13 +178,13 @@ generate_STb_model_OADA <- function(STb_data,
       )
 
       # If shared s (i.e., use w[] weights), declare w
-      if (!separate_s & num_networks>1) {
-        w_param <- paste0("simplex[", num_networks, "] w; // Weights for networks")
-        w_prior <- paste0("w ~ dirichlet(rep_vector(0.5, ", num_networks, "));")
-      } else {
-        w_param <- ""
-        w_prior <- ""
-      }
+      # if (!separate_s & num_networks>1) {
+      #   w_param <- paste0("simplex[", num_networks, "] w; // Weights for networks")
+      #   w_prior <- paste0("w ~ dirichlet(rep_vector(0.5, ", num_networks, "));")
+      # } else {
+      #   w_param <- ""
+      #   w_prior <- ""
+      # }
     } else{
       network_term=""
       network_term_j =""
@@ -244,7 +228,7 @@ generate_STb_model_OADA <- function(STb_data,
     gq_transformed_params <- c()
 
     #if user didn't specify veff_ID for s
-    if (!is.element('s', veff_ID)  & model_type=="full"){
+    if (!is.element("s", veff_ID) & model_type == "full") {
       if (separate_s) {
         # static s[n]
         transformed_params <- append(transformed_params, "vector<lower=0>[N_networks] s_prime = exp(log_s_mean);")
@@ -276,17 +260,16 @@ generate_STb_model_OADA <- function(STb_data,
                 "matrix<lower=0>[N_networks, P] s_prime;
 for (n in 1:N_networks) {{
   for (id in 1:P) {{
-    s_prime[n, id] = exp(log_s_mean[n] + v_ID[id, {count}]);
+    s_prime[n, id] = exp(log_s_mean[n] + v_ID[id, n]);
   }}
 }}"
               ))
-              gq_transformed_params <- append(gq_transformed_params, "real s_mean = mean(to_vector(s_prime));")
+
+              count <- count + num_networks
             } else {
               # s[id] = exp(log_s_mean + v_ID[,i])
               transformed_params <- append(transformed_params, paste0("vector<lower=0>[P] s_prime = exp(log_s_mean + v_ID[,", count, "]);"))
-              #gq_transformed_params <- append(gq_transformed_params, paste0("vector<lower=0>[P] s = s_prime ./ lambda_0;"))
               gq_transformed_params <- append(gq_transformed_params, paste0("real sprime_mean = exp(log_s_mean);"))
-              #gq_transformed_params <- append(gq_transformed_params, paste0("real<lower=0> s_mean = (exp(log_s_mean)) / (exp(log_lambda_0_mean));"))
             }
             count <- count + 1
           }
@@ -487,7 +470,6 @@ int<lower=0> K;                // Number of trials
 parameters {{
     {distribution_param_declaration}
     {if (model_type=='full') 'real log_s_mean; // Overall social transmission rate' else ''}
-    {if (model_type=='full') {w_param} else ''}
     {ILVi_param}
     {if (model_type=='full') {ILVs_param} else ''}
     {if (model_type=='full') {ILVm_param} else ''}
@@ -513,9 +495,9 @@ transformed parameters {{
 
     #create string inputs cuz recursion don't work 2 levels down in glue
     if (model_type=='full'){
-        i_social_info_statement = glue::glue("real i_soc = {if (is.element('s', veff_ID) & !separate_s) 's_prime[id]' else if (!is.element('s', veff_ID) & !separate_s) 's_prime' else '1.0'} * (net_effect{ILVs_variable_effects});")
+        i_social_info_statement = glue::glue("real i_soc = 1.0 * (net_effect{ILVs_variable_effects});")
         i_lambda_statement = glue::glue("real i_lambda = {ILVm_variable_effects} * (i_ind + i_soc);")
-        j_social_info_statement = glue::glue("real j_soc = {if (is.element('s', veff_ID) & !separate_s) 's_prime[j]' else if (!is.element('s', veff_ID) & !separate_s) 's_prime' else '1.0'} * (net_effect_j{ILVs_variable_effects_j});")
+        j_social_info_statement = glue::glue("real j_soc = 1.0 * (net_effect_j{ILVs_variable_effects_j});")
         j_lambda_statement = glue::glue("real j_lambda = {ILVm_variable_effects_j} * (j_ind + j_soc);")
 
         target_increment_statement = glue::glue("target += log(i_lambda) - log(sum(j_rates));")
@@ -534,7 +516,6 @@ transformed parameters {{
     model_block <- glue::glue("
 model {{
     {if (model_type=='full') paste0('log_s_mean ~ ',prior_s,';') else ''}
-    {if (model_type=='full') {w_prior} else ''}
     {if (model_type=='full') {f_prior} else ''}
     {if (model_type=='full') {k_prior} else ''}
     {ILVi_prior}

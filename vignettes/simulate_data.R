@@ -8,7 +8,7 @@ N <- 100  # Population size
 k <- 7    # Degree of each node in the random regular graph
 lambda_0=0.001 #baseline
 A <- 1  # Individual learning rate
-s <- 3  # Social learning rate per unit connection
+s <- 30  # Social learning rate per unit connection
 t_steps <- 1000
 
 # create random regular graph
@@ -102,7 +102,7 @@ hist(data_list_user$D)
 
 #generate STAN model from input data
 model_obj = generate_STb_model(data_list_user, gq=T, est_acqTime = T)
-
+cat(model_obj)
 # Write to file for debugging? uncomment below why not
 write(model_obj, file = "../inst/extdata/STAN_example_vanilla_ctada.stan")
 

@@ -19,9 +19,13 @@ get_network_term <- function(transmission_func, is_distribution = FALSE,
 
   net_effect_term = if(id_var=="j") "net_effect_j" else "net_effect"
 
-  s_prime_term <- if ("s" %in% veff_ID) glue::glue("s_prime[network,{id_var}]") else "s_prime[network]"
+  s_prime_term <- if (num_networks>1 & separate_s){
+    if ("s" %in% veff_ID) glue::glue("s_prime[network,{id_var}]") else "s_prime[network]"
+  } else{
+    if ("s" %in% veff_ID) glue::glue("s_prime[{id_var}]") else "s_prime"
+  }
 
-    w_term <- if ("w" %in% veff_ID) glue::glue("w[network,{id_var}]") else "w[network]"
+    #w_term <- if ("w" %in% veff_ID) glue::glue("w[network,{id_var}]") else "w[network]"
 
     net_expr <- if (is_distribution) {
         glue::glue("{net_var}[{net_index}][{id_var}, ]")
@@ -34,7 +38,7 @@ get_network_term <- function(transmission_func, is_distribution = FALSE,
     if (transmission_func == "standard") {
         return(glue::glue("real {net_effect_term} = 0;
 for (network in 1:N_networks) {{
-  {net_effect_term} += {if (separate_s & num_networks>1) {s_prime_term} else if (!separate_s & num_networks>1) {w_term} else '1.0'} * {base_term};
+  {net_effect_term} += {s_prime_term} * {base_term};
 }}"))
     }
 
@@ -45,7 +49,7 @@ for (network in 1:N_networks) {{
   real active = {base_term};
   real inactive = sum({net_expr} .* (1 - Z[{trial_var}][{time_var}, ]));
   real frac = pow(active, {f_term}) / (pow(active, {f_term}) + pow(inactive, {f_term}));
-  {net_effect_term} += {if (separate_s & num_networks>1) {s_prime_term} else if (!separate_s & num_networks>1) {w_term} else '1.0'} * frac;
+  {net_effect_term} += {s_prime_term} * frac;
 }}"))
     }
 
@@ -57,7 +61,7 @@ for (network in 1:N_networks) {{
   real denom = numer + sum({net_expr} .* (1 - Zn[{trial_var}][{time_var}, ]));
   real prop = denom > 0 ? numer / denom : 0.0;
   real dini_transformed = dini_func(prop, {k_term});
-  {net_effect_term} += {if (separate_s & num_networks>1) {s_prime_term} else if (!separate_s & num_networks>1) {w_term} else '1.0'} * dini_transformed;
+  {net_effect_term} += {s_prime_term} * dini_transformed;
 }}"))
     }
 

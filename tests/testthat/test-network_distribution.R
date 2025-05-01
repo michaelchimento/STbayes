@@ -13,7 +13,7 @@ test_that("Network structure is consistent using distribution edgeweights.", {
 
 
     # Import data
-    data_imported <- import_user_STb(diffusion_data, bisonr_fit)
+    data_imported <- import_user_STb(diffusion_data, bisonr_fit, network_type = "directed")
 
     testthat::expect_equal(data_imported$network_names, "net1")
     testthat::expect_equal(length(data_imported$logit_edge_mu), 90)

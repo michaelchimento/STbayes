@@ -3,7 +3,7 @@
 #' @param event_data dataframe with columns id, trial, time, t_end
 #' @param networks Either a dataframe, a bisonr fit or STRAND fit, or a list of bisonr or STRAND fits. If dataframe: with columns trial, from, to, and one or more columns of edge weights named descriptively. Optionally an integer time column can be provided for dynamic network analysis, although networks must be provided for each time period between transmission events.
 #' @param network_type "undirected" or "directed".
-#' @param multinetwork_s "shared" or "separate". If supplying more than one network, specify whether each network receives it's own s parameter, or if a single s parameter is estimated with an additional a simplex w[n_networks] vector.
+#' @param multinetwork_s "separate" or "shared". If supplying more than one network, specify whether each network receives it's own s parameter, or shares a single parameter.
 #' @param ILV_c optional dataframe with columns id, and any constant individual-level variables that might be of interest
 #' @param ILV_tv optional dataframe with columns trial, id, time and any time-varying variables. Variable values should summarize the variable for each inter-acquisition period.
 #' @param ILVi Optional character vector of column names from ILV metadata to be considered when estimating intrinsic rate. If not specified, all ILV are applied to both.
@@ -63,7 +63,7 @@
 import_user_STb <- function(event_data,
                             networks,
                             network_type = c("undirected", "directed"),
-                            multinetwork_s = c("shared", "separate"),
+                            multinetwork_s = c("separate", "shared"),
                             ILV_c = NULL,
                             ILV_tv = NULL,
                             ILVi = NULL,
@@ -422,7 +422,7 @@ import_user_STb <- function(event_data,
     }
 
     if (data_list$multinetwork_s == "separate" & data_list$N_networks == 1) {
-        stop("multinetwork_s = 'separate' requires more than one network.")
+        data_list$multinetwork_s = "shared"
     }
 
     ## Final sanity check and return ##

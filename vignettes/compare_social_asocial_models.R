@@ -9,6 +9,7 @@ data_list_user = import_user_STb(event_data, edge_list)
 
 # generate, fit, and summarize models
 model = generate_STb_model(data_list_user, est_acqTime = TRUE, model_type="full")
+cat(model)
 full_fit = fit_STb(data_list_user,
                    model,
                    chains = 5,
@@ -16,6 +17,7 @@ full_fit = fit_STb(data_list_user,
                    parallel_chains=5,
                    iter = 2000,
                    control = list(adapt_delta = 0.99))
+STb_summary(full_fit, depth=2)
 model = generate_STb_model(data_list_user, est_acqTime = TRUE, model_type="asocial")
 asocial_fit = fit_STb(data_list_user,
                       model,
@@ -25,7 +27,7 @@ asocial_fit = fit_STb(data_list_user,
                       iter = 2000,
                       control = list(adapt_delta = 0.99))
 
-STb_summary(full_fit, digits = 10)
+STb_summary(full_fit, digits = 4)
 STb_summary(asocial_fit, digits = 4)
 
 # convenient workflow for model comparison.

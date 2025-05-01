@@ -8,7 +8,7 @@ edge_list = STbayes::edge_list
 data_list_user = import_user_STb(event_data, edge_list)
 
 #generate STAN model from input data
-model_obj = generate_STb_model(data_list_user, gq=T, est_acqTime = T)
+model_obj = generate_STb_model(data_list_user, gq=T)
 cat(model_obj)
 # fit model
 full_fit = fit_STb(data_list_user,

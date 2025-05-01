@@ -7,6 +7,7 @@
 import_NBDA_STb(
   nbda_object,
   network_names = c("default"),
+  multinetwork_s = c("separate", "shared"),
   ILVi = NULL,
   ILVs = NULL,
   ILVm = NULL
@@ -16,6 +17,8 @@ import_NBDA_STb(
 \item{nbda_object}{object of NBDAdata class}
 
 \item{network_names}{character vector of descriptive names of networks you're importing.}
+
+\item{multinetwork_s}{"separate" or "shared". If supplying more than one network, specify whether each network receives it's own s parameter, or shares a single parameter.}
 
 \item{ILVi}{Optional character vector of ILVS to be considered when estimating intrinsic rate. If not specified, taken from NBDA object.}
 

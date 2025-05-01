@@ -13,6 +13,7 @@ data_list = import_NBDA_STb(nbdaData_cTADA)
 model_obj = generate_STb_model(data_list,
                                gq=T, #create a generated quantities block (for model comparison)
                                est_acqTime = F) #prior for s
+#take a look at the model
 cat(model_obj)
 #fit model
 fit_social = fit_STb(data_list,

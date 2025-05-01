@@ -1,4 +1,5 @@
 test_that("import_user and import_nbda result in element-wise equivalent data lists", {
+    library(dplyr)
     tie_vec = STbayes::event_data %>%
         dplyr::arrange(time) %>%
         dplyr::group_by(time, .drop = T) %>%

@@ -2,6 +2,7 @@
 #'
 #' @param nbda_object object of NBDAdata class
 #' @param network_names character vector of descriptive names of networks you're importing.
+#' @param multinetwork_s "separate" or "shared". If supplying more than one network, specify whether each network receives it's own s parameter, or shares a single parameter.
 #' @param ILVi Optional character vector of ILVS to be considered when estimating intrinsic rate. If not specified, taken from NBDA object.
 #' @param ILVs Optional character vector of ILVS to be considered when estimating social transmission rate. If not specified, taken from NBDA object.
 #' @param ILVm Optional character vector of ILVS to be considered in a multiplicative model. If not specified, taken from NBDA object.
@@ -13,7 +14,15 @@
 #' nbda_object<-nbdaData_cTADA <- STbayes::nbdaData_cTADA
 #' data_list <- import_NBDA_STb(nbda_object, network_names="assoc")
 
-import_NBDA_STb <- function(nbda_object, network_names= c("default"), ILVi = NULL, ILVs = NULL, ILVm = NULL) {
+import_NBDA_STb <- function(nbda_object,
+                            network_names= c("default"),
+                            multinetwork_s = c("separate", "shared"),
+                            ILVi = NULL,
+                            ILVs = NULL,
+                            ILVm = NULL) {
+
+    multinetwork_s <- match.arg(multinetwork_s)
+
     # Initialize list
     data_list <- list()
 
@@ -144,7 +153,7 @@ import_NBDA_STb <- function(nbda_object, network_names= c("default"), ILVi = NUL
     data_list$ind_id <- id_data  # Individual IDs matrix
     data_list$Zn <- create_Z_matrix(event_data, high_res=F) # knowledge state matrix
     data_list$Z <- sweep(data_list$Zn, MARGIN = 3, STATS = nbda_object@weights, FUN = "*") #mult with weights
-
+    data_list$multinetwork_s = multinetwork_s
 
     #### ILV Metadata ####
 
@@ -263,6 +272,10 @@ import_NBDA_STb <- function(nbda_object, network_names= c("default"), ILVi = NUL
 
     data_list$high_res = F
     data_list$N_networks = num_networks
+
+    if (data_list$multinetwork_s == "separate" & data_list$N_networks == 1) {
+        data_list$multinetwork_s = "shared"
+    }
 
     #### Output Messages ####
     dl_sanity_check(data_list=data_list)
