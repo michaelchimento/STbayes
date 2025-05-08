@@ -112,7 +112,7 @@ model_obj <- generate_STb_model(data_list_user, veff = c("lambda_0", "s"))
 
 # write(model_obj, file = "../inst/extdata/STAN_example_veff.stan")
 fit_veff <- fit_STb(data_list_user,
-  "../inst/extdata/STAN_example_veff.stan",
+  model_obj,
   chains = 5,
   cores = 5,
   parallel_chains = 5,
@@ -122,11 +122,11 @@ fit_veff <- fit_STb(data_list_user,
 
 #### Plot mean estimates ####
 summary_df <- STb_summary(fit_veff, digits = 5, depth = 1)
-
+summary_df
 # True values to compare
 true_vals <- c(
     log_lambda_0_mean = -5,
-    log_s_mean = -3.5,
+    log_s_prime_mean = -3.5,
     `sigma_ID[1]` = 0.25,
     `sigma_ID[2]` = 0.25
 )
@@ -157,54 +157,91 @@ g1 <- ggplot(selected, aes(y = Label, x = Median)) +
     ) +
     theme_linedraw(base_size = 14)
 
-#### Plot varying effects against true vals ####
+# Extract draws
 draws <- fit_veff$draws(variables = c("lambda_0", "s_prime"), format = "draws_df")
-# Identify number of individuals (assuming parameters are vectorized per individual)
+
+# Get variable names
 lambda_names <- grep("^lambda_0\\[", colnames(draws), value = TRUE)
 s_names <- grep("^s_prime\\[", colnames(draws), value = TRUE)
 
-# Compute means
-lambda_0_mean_estimates <- colMeans(draws[, lambda_names, drop = FALSE])
-s_mean_estimates <- colMeans(draws[, s_names, drop = FALSE])
+# Compute HPDIs for each individual
+get_hpdi_df <- function(draw_mat, param_names, param_true, label) {
+  draws_long <- posterior::as_draws_df(draw_mat[, param_names])
+  log_draws <- log(draws_long)
 
-N <- length(lambda_0_mean_estimates)
-estimated <- data.frame(
-  id = seq_len(N),
-  est_lambda_0 = lambda_0_mean_estimates,
-  est_s_prime = s_mean_estimates
-)
+  hpdi <- posterior::summarise_draws(log_draws, ~ c(mean = mean(.x), posterior::quantile2(.x, probs = c(0.0275, .975))))
+  hpdi <- as.data.frame(hpdi)
+  hpdi$true <- param_true
+  hpdi <- hpdi[order(hpdi$mean), ]
+  hpdi$id <- seq_along(param_names)
+  hpdi$label <- label
+  return(hpdi)
+}
 
-# Join with known/true parameter values
-df_comparison <- dplyr::left_join(estimated, individual_params, by = "id")
+hpdi_lambda <- get_hpdi_df(draws, lambda_names, log(individual_params$lambda_0), expression(log(lambda[0])))
+hpdi_s <- get_hpdi_df(draws, s_names, log(individual_params$s_prime), expression(log(s * "'")))
 
-p1 <- ggplot(df_comparison, aes(x = s_prime, y = est_s_prime)) +
-  geom_point() +
-  geom_abline(slope = 1, intercept = 0, lty = "dashed") +
-  geom_segment(
-    aes(x = s_prime, xend = s_prime, y = est_s_prime, yend = s_prime),
-    color = "red",
-    alpha = 0.4
-  ) +
-  labs(
-    x = expression("Real " * s * "'"[i]),
-    y = expression("Estimated " * s * "'"[i])
-  ) +
-  theme_linedraw()
-p2 <- ggplot(df_comparison, aes(x = lambda_0, y = est_lambda_0)) +
-  geom_point() +
-  geom_abline(slope = 1, intercept = 0, lty = "dashed") +
-  geom_segment(
-    aes(x = lambda_0, xend = lambda_0, y = est_lambda_0, yend = lambda_0),
-    color = "red",
-    alpha = 0.4
-  ) +
-  labs(
-    x = expression("Real " * lambda[0 * i]),
-    y = expression("Estimated " * lambda[0 * i])
-  ) +
-  theme_linedraw()
-g2 <- ggarrange(p1, p2, labels = c("B","C"))
+# Plot function
+plot_hpdi <- function(hpdi_df) {
+  ggplot(hpdi_df, aes(x = id, y = mean)) +
+    geom_segment(aes(x = id, xend = id, y = q2.75, yend = q97.5), color = "grey") +
+    geom_point() +
+    geom_point(aes(y = true), shape = 4, color = "steelblue", size = 2) +
+    labs(x = "Individual", y = hpdi_df$label[1]) +
+    theme_bw()+
+    coord_flip()
+}
 
+p1 <- plot_hpdi(hpdi_s)
+p2 <- plot_hpdi(hpdi_lambda)
+
+g2 <-ggarrange(p1, p2, labels = c("B", "C"))
 
 ggarrange(g1, g2, nrow = 2, labels = "A")
 ggsave("../docs/ID_veff.pdf", width = 10, height = 6, units = "cm", scale = 2)
+
+#### Plot varying effects against true vals ####
+# draws <- fit_veff$draws(variables = c("lambda_0", "s_prime"), format = "draws_df")
+# lambda_names <- grep("^lambda_0\\[", colnames(draws), value = TRUE)
+# s_names <- grep("^s_prime\\[", colnames(draws), value = TRUE)
+#
+# lambda_0_mean_estimates <- colMeans(draws[, lambda_names, drop = FALSE])
+# s_mean_estimates <- colMeans(draws[, s_names, drop = FALSE])
+#
+# N <- length(lambda_0_mean_estimates)
+# estimated <- data.frame(
+#   id = seq_len(N),
+#   est_lambda_0 = lambda_0_mean_estimates,
+#   est_s_prime = s_mean_estimates
+# )
+#
+# df_comparison <- dplyr::left_join(estimated, individual_params, by = "id")
+#
+# p1 <- ggplot(df_comparison, aes(x = s_prime, y = est_s_prime)) +
+#   geom_point() +
+#   geom_abline(slope = 1, intercept = 0, lty = "dashed") +
+#   geom_segment(
+#     aes(x = s_prime, xend = s_prime, y = est_s_prime, yend = s_prime),
+#     color = "red",
+#     alpha = 0.4
+#   ) +
+#   labs(
+#     x = expression("Real " * s * "'"[i]),
+#     y = expression("Estimated " * s * "'"[i])
+#   ) +
+#   theme_linedraw()
+# p2 <- ggplot(df_comparison, aes(x = lambda_0, y = est_lambda_0)) +
+#   geom_point() +
+#   geom_abline(slope = 1, intercept = 0, lty = "dashed") +
+#   geom_segment(
+#     aes(x = lambda_0, xend = lambda_0, y = est_lambda_0, yend = lambda_0),
+#     color = "red",
+#     alpha = 0.4
+#   ) +
+#   labs(
+#     x = expression("Real " * lambda[0 * i]),
+#     y = expression("Estimated " * lambda[0 * i])
+#   ) +
+#   theme_linedraw()
+# g2 <- ggarrange(p1, p2, labels = c("B","C"))
+# g2

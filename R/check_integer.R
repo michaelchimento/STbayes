@@ -4,5 +4,5 @@
 #'
 #' @return boolean values of whether a number is integer or integer-like
 check_integer <- function(x) {
-    x == round(x)
+  x == round(x)
 }

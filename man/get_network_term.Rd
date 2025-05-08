@@ -10,12 +10,37 @@ get_network_term(
   separate_s = FALSE,
   num_networks = 1,
   veff_ID = c(),
+  s_var = "s_prime",
   net_var = "A",
   net_index = "network",
   id_var = "id",
   trial_var = "trial",
   time_var = "time_step"
 )
+}
+\arguments{
+\item{transmission_func}{simple or complex transmission}
+
+\item{is_distribution}{did the user supply a posterior distribution for edges}
+
+\item{separate_s}{whether or not s should be constrained to be the same for all networks}
+
+\item{veff_ID}{vector of varying effects}
+
+\item{s_var}{string used to represent s term ("s_prime" or "s_direct")}
+
+\item{net_var}{string used to represent network variable "A"}
+
+\item{net_index}{string used to index networks "network"}
+
+\item{id_var}{string used to index individuals. "id" for tada, need to use "id" and "j" for oada}
+
+\item{trial_var}{string used to index trial "trial"}
+
+\item{time_var}{string used to index time "time_step"}
+}
+\value{
+string of stan code to be used in the model for calculating network effects
 }
 \description{
 Helper function to generate network terms for STAN

@@ -8,9 +8,10 @@ STb_summary(
   fit,
   depth = 1,
   prob = 0.95,
-  ignore_params = c("lp__", "idx", "log_lik", "log_lik_matrix", "acquisition_time",
-    "z_ID", "Rho_ID", "v_ID", ".chain", ".iteration", ".draw"),
-  digits = 3
+  ignore_params = c("lp__", "idx", "log_lik", "log_lik_matrix", "count_ST", "psocn_sum",
+    "acquisition_time", "z_ID", "Rho_ID", "v_ID", ".chain", ".iteration", ".draw"),
+  digits = 3,
+  CI_method = c("HPDI", "PI")
 )
 }
 \arguments{
@@ -23,6 +24,8 @@ STb_summary(
 \item{ignore_params}{character vector of parameters to ignore}
 
 \item{digits}{integer of digits to round to}
+
+\item{CI_method}{"HPDI" for highest density interval or "PI" for quantiles (equal tails). Defaults to HPDI.}
 }
 \value{
 Summary table

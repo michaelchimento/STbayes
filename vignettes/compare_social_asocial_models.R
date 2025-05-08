@@ -15,17 +15,15 @@ full_fit = fit_STb(data_list_user,
                    chains = 5,
                    cores = 5,
                    parallel_chains=5,
-                   iter = 2000,
-                   control = list(adapt_delta = 0.99))
-STb_summary(full_fit, depth=2)
+                   iter = 2000)
+STb_summary(full_fit)
 model = generate_STb_model(data_list_user, est_acqTime = TRUE, model_type="asocial")
 asocial_fit = fit_STb(data_list_user,
                       model,
                       chains = 5,
                       cores = 5,
                       parallel_chains=5,
-                      iter = 2000,
-                      control = list(adapt_delta = 0.99))
+                      iter = 2000)
 
 STb_summary(full_fit, digits = 4)
 STb_summary(asocial_fit, digits = 4)

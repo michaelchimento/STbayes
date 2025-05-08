@@ -6,16 +6,16 @@
 #'
 #' @examples
 return_N_veff <- function(text) {
-    # regex match v_ID[,*]
-    matches <- regmatches(text, gregexpr("v_ID\\[,(\\d+)\\]", text, perl = TRUE))
+  # regex match v_ID[,*]
+  matches <- regmatches(text, gregexpr("v_ID\\[\\s*,\\s*(\\d+)\\]", text, perl = TRUE))
 
-    # extract values
-    numbers <- as.numeric(unlist(regmatches(unlist(matches), gregexpr("\\d+", unlist(matches)))))
+  # extract values
+  numbers <- as.numeric(unlist(regmatches(unlist(matches), gregexpr("\\d+", unlist(matches)))))
 
-    # return the highest number, or 0 if no matches found
-    if (length(numbers) > 0) {
-        return(max(numbers))
-    } else {
-        return(0)
-    }
+  # return the highest number, or 0 if no matches found
+  if (length(numbers) > 0) {
+    return(max(numbers))
+  } else {
+    return(0)
+  }
 }

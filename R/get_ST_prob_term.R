@@ -13,41 +13,41 @@
 get_ST_prob_term <- function(transmission_func, is_distribution = FALSE,
                              separate_s = FALSE, veff_ID = c(),
                              num_networks = 1,
+                             s_var = "s_prime",
                              id_var = "id", trial_var = "trial", time_var = "time_step",
                              net_var = "A",
-                             ILVs_variable_effects = "") {
-    # choose s term
-    s_term <- if (num_networks > 1 && separate_s) {
-        if ("s" %in% veff_ID) glue::glue("s_prime[network, {id_var}]") else glue::glue("s_prime[network]")
-    } else {
-        if ("s" %in% veff_ID) glue::glue("s_prime[{id_var}]") else "s_prime"
-    }
+                             ILVs_variable_effects = "",
+                             weibull_term = "") {
+  # choose s term
+  s_term <- if (num_networks > 1 && separate_s) {
+    if ("s" %in% veff_ID) glue::glue("{s_var}[network, {id_var}]") else glue::glue("{s_var}[network]")
+  } else {
+    if ("s" %in% veff_ID) glue::glue("{s_var}[{id_var}]") else glue::glue("{s_var}")
+  }
 
-    full_s_term <- glue::glue("{s_term} * D[{trial_var}, {time_var}] {ILVs_variable_effects}")
+  full_s_term <- glue::glue("{s_term} * D[{trial_var}, {time_var}] {ILVs_variable_effects} {weibull_term}")
 
-    net_expr <- if (is_distribution) {
-        glue::glue("{net_var}[network][{id_var}, ]")
-    } else {
-        glue::glue("{net_var}[network, {trial_var}, {time_var}][{id_var}, ]")
-    }
+  net_expr <- if (is_distribution) {
+    glue::glue("{net_var}[network][{id_var}, ]")
+  } else {
+    glue::glue("{net_var}[network, {trial_var}, {time_var}][{id_var}, ]")
+  }
 
-    active_expr <- glue::glue("sum({net_expr} .* Z[{trial_var}][{time_var}, ])")
-    inactive_expr <- glue::glue("sum({net_expr} .* (1 - Z[{trial_var}][{time_var}, ]))")
-    total_expr <- glue::glue("sum({net_expr} .* Zn[{trial_var}][{time_var}, ])") # for freqdep_k
+  active_expr <- glue::glue("sum({net_expr} .* Z[{trial_var}][{time_var}, ])")
+  inactive_expr <- glue::glue("sum({net_expr} .* (1 - Z[{trial_var}][{time_var}, ]))")
+  total_expr <- glue::glue("sum({net_expr} .* Zn[{trial_var}][{time_var}, ])") # for freqdep_k
 
-    st_lines <- switch(
-        transmission_func,
-        "standard" = glue::glue("
+  st_lines <- switch(transmission_func,
+    "standard" = glue::glue("
     for (network in 1:N_networks) {{
         real Tn = {active_expr};
         psocn_sum[network] += ({full_s_term} * Tn) / lambda;
     }}
     count_ST += 1;
     "),
-
-        "freqdep_f" = {
-            f_term <- if ("f" %in% veff_ID) glue::glue("f[{id_var}]") else "f"
-            glue::glue("
+    "freqdep_f" = {
+      f_term <- if ("f" %in% veff_ID) glue::glue("f[{id_var}]") else "f"
+      glue::glue("
       for (network in 1:N_networks) {{
           real active = {active_expr};
           real inactive = {inactive_expr};
@@ -56,11 +56,10 @@ get_ST_prob_term <- function(transmission_func, is_distribution = FALSE,
       }}
       count_ST += 1;
       ")
-        },
-
-        "freqdep_k" = {
-            k_term <- if ("k" %in% veff_ID) glue::glue("k_shape[{id_var}]") else "k_shape"
-            glue::glue("
+    },
+    "freqdep_k" = {
+      k_term <- if ("k" %in% veff_ID) glue::glue("k_shape[{id_var}]") else "k_shape"
+      glue::glue("
       for (network in 1:N_networks) {{
           real numer = {active_expr};
           real denom = numer + sum({net_expr} .* (1 - Zn[{trial_var}][{time_var}, ]));
@@ -70,10 +69,9 @@ get_ST_prob_term <- function(transmission_func, is_distribution = FALSE,
       }}
       count_ST += 1;
       ")
-        },
+    },
+    stop("Unsupported transmission_func")
+  )
 
-        stop("Unsupported transmission_func")
-    )
-
-    return(st_lines)
+  return(st_lines)
 }

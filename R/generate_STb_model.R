@@ -13,7 +13,7 @@
 #' @return A STAN model (character) that is customized to the input data.
 #'
 #' @examples
-#' #very mock data
+#' # very mock data
 #' event_data <- data.frame(
 #'   id = c("A", "B", "C", "D", "E", "F"),
 #'   trial = c(1, 1, 1, 2, 2, 2),
@@ -27,12 +27,12 @@
 #'   kin = c(1, 0, 1, 0, 1, 1),
 #'   inverse_distance = c(0, 1, .5, .25, .1, 0)
 #' )
-#'  ILV_c<- data.frame(
-#'     id = LETTERS[1:6],
-#'     age = c(-1, -2, 0, 1, 2), # continuous variables should be normalized
-#'     sex = c(0, 1, 1, 0, 1, 0), # Factor ILVs must be input as numeric
-#'     weight = c(0.5, .25, .3, 0, -.2, -.4)
-#'  )
+#' ILV_c <- data.frame(
+#'   id = LETTERS[1:6],
+#'   age = c(-1, -2, 0, 1, 2), # continuous variables should be normalized
+#'   sex = c(0, 1, 1, 0, 1, 0), # Factor ILVs must be input as numeric
+#'   weight = c(0.5, .25, .3, 0, -.2, -.4)
+#' )
 #' data_list <- import_user_STb(
 #'   event_data = event_data,
 #'   networks = networks,
@@ -42,78 +42,114 @@
 #'   ILVm = c("weight") # Use weight for multiplicative effect on asocial and social learning
 #' )
 #'
-#' model = generate_STb_model(data_list) # creates full specification of cTADA model, no varying effects and default priors.
-#' model = generate_STb_model(data_list, veff_ID = c("lambda_0", "s")) # estimate varying effects by ID for baseline learning rate and strength of social transmission.
-#' model = generate_STb_model(data_list, data="order") # creates OADA specification
-#' model = generate_STb_model(data_list, priors=list(log_lambda_0 = "normal(7, 3)", log_s = "uniform(7, 3)")) # adjust priors
+#' model <- generate_STb_model(data_list) # creates full specification of cTADA model, no varying effects and default priors.
+#' model <- generate_STb_model(data_list, veff_ID = c("lambda_0", "s")) # estimate varying effects by ID for baseline learning rate and strength of social transmission.
+#' model <- generate_STb_model(data_list, data = "order") # creates OADA specification
+#' model <- generate_STb_model(data_list, priors = list(log_lambda_0 = "normal(-2, 3)", log_sprime = "uniform(-7, 3)")) # adjust priors
 
 #' print(model)
 generate_STb_model <- function(STb_data,
                                data_type = c("continuous_time", "discrete_time", "order"),
-                               model_type = c("full","asocial"),
+                               model_type = c("full", "asocial"),
                                intrinsic_rate = c("constant", "weibull"),
-                               transmission_func = c("standard","freqdep_f","freqdep_k"),
+                               transmission_func = c("standard", "freqdep_f", "freqdep_k"),
                                veff_ID = c(),
                                gq = TRUE,
                                est_acqTime = FALSE,
-                               priors = list()) {
+                               priors = list(),
+                               direct_s = F) {
+  data_type <- match.arg(data_type)
+  model_type <- match.arg(model_type)
+  intrinsic_rate <- match.arg(intrinsic_rate)
+  transmission_func <- match.arg(transmission_func)
+  multinetwork_s <- STb_data$multinetwork_s
 
-    data_type <- match.arg(data_type)
-    model_type <- match.arg(model_type)
-    intrinsic_rate <- match.arg(intrinsic_rate)
-    transmission_func <- match.arg(transmission_func)
-    multinetwork_s <- STb_data$multinetwork_s
+  if (data_type == "order" && "lambda_0" %in% veff_ID) {
+    stop("lambda_0 cannot be veff_ID when using OADA.")
+  }
+  #
+  #     if (transmission_func != "standard" && length(STb_data$network_names)>1) {
+  #         stop('Complex transmission can only be used with single network models. Please use transmission_func="standard"')
+  #     }
 
-    if (data_type == "order" && "lambda_0" %in% veff_ID) {
-        stop('lambda_0 cannot be veff_ID when using OADA.')
+  default_priors <- list(
+    log_lambda0 = "normal(-4, 3)",
+    log_sprime = "normal(-4, 3)",
+    beta_ILV = "normal(0,1)",
+    log_f = "normal(0,1)",
+    k_raw = "normal(0,3)",
+    z_ID = "normal(0,1)",
+    sigma_ID = "normal(0,1)",
+    rho_ID = "lkj_corr_cholesky(3)",
+    gamma = "normal(0,1)"
+  )
+
+  priors <- utils::modifyList(default_priors, priors)
+
+
+  if (data_type == "continuous_time" & direct_s==F) {
+    message("Creating cTADA type model with the following default priors:")
+    for (p in names(priors)) {
+      message(paste(p, "~", priors[[p]]))
     }
-#
-#     if (transmission_func != "standard" && length(STb_data$network_names)>1) {
-#         stop('Complex transmission can only be used with single network models. Please use transmission_func="standard"')
-#     }
-
-    default_priors <- list(log_lambda_0 = "normal(-4, 3)",
-                           log_s = "normal(-4, 3)",
-                           beta_ILV = "normal(0,1)",
-                           log_f = "normal(0,1)",
-                           k_raw = "normal(0,3)",
-                           z_ID = "normal(0,1)",
-                           sigma_ID = "normal(0,1)",
-                           rho_ID = "lkj_corr_cholesky(3)",
-                           gamma = "normal(0,1)")
-
-    priors <- utils::modifyList(default_priors, priors)
-    message("Creating model with the following default priors:")
-    for (p in names(priors)){
-        message(paste(p, "~", priors[[p]]))
+    return(generate_STb_model_TADA(
+      STb_data = STb_data,
+      model_type = model_type,
+      intrinsic_rate = intrinsic_rate,
+      transmission_func = transmission_func,
+      dTADA = F,
+      veff_ID = veff_ID,
+      gq = gq,
+      est_acqTime = est_acqTime,
+      priors = priors
+    ))
+  } else if (data_type == "continuous_time" & direct_s==T){
+    priors <- utils::modifyList(priors, list(log_sprime="normal(0,3)"))
+    message("Creating cTADA type model (s modelled directly) with the following default priors:")
+    for (p in names(priors)) {
+      message(paste(p, "~", priors[[p]]))
     }
-
-    if (data_type == "continuous_time") {
-        return(generate_STb_model_TADA(STb_data = STb_data,
-                                        model_type = model_type,
-                                        intrinsic_rate = intrinsic_rate,
-                                        transmission_func = transmission_func,
-                                        dTADA = F,
-                                        veff_ID = veff_ID,
-                                        gq = gq,
-                                        est_acqTime = est_acqTime,
-                                        priors = priors))
-    } else if (data_type == "discrete_time"){
-        return(generate_STb_model_TADA(STb_data = STb_data,
-                                        model_type = model_type,
-                                        intrinsic_rate = intrinsic_rate,
-                                        transmission_func = transmission_func,
-                                        dTADA = T,
-                                        veff_ID = veff_ID,
-                                        gq = gq,
-                                        est_acqTime = est_acqTime,
-                                        priors = priors))
-    } else if (data_type == "order") {
-        return(generate_STb_model_OADA(STb_data = STb_data,
-                                       model_type = model_type,
-                                       transmission_func = transmission_func,
-                                       veff_ID = veff_ID,
-                                       gq = gq,
-                                       priors = priors))
-    } else stop("Please choose data_type in cTADA, dTADA, or OADA.")
+    return(generate_STb_model_TADA_sdirect(
+      STb_data = STb_data,
+      model_type = model_type,
+      intrinsic_rate = intrinsic_rate,
+      transmission_func = transmission_func,
+      dTADA = F,
+      veff_ID = veff_ID,
+      gq = gq,
+      est_acqTime = est_acqTime,
+      priors = priors
+    ))
+  } else if (data_type == "discrete_time") {
+    message("Creating dTADA type model with the following default priors:")
+    for (p in names(priors)) {
+      message(paste(p, "~", priors[[p]]))
+    }
+    return(generate_STb_model_TADA(
+      STb_data = STb_data,
+      model_type = model_type,
+      intrinsic_rate = intrinsic_rate,
+      transmission_func = transmission_func,
+      dTADA = T,
+      veff_ID = veff_ID,
+      gq = gq,
+      est_acqTime = est_acqTime,
+      priors = priors
+    ))
+  } else if (data_type == "order") {
+    message("Creating OADA type model with the following default priors:")
+    for (p in names(priors)) {
+      message(paste(p, "~", priors[[p]]))
+    }
+    return(generate_STb_model_OADA(
+      STb_data = STb_data,
+      model_type = model_type,
+      transmission_func = transmission_func,
+      veff_ID = veff_ID,
+      gq = gq,
+      priors = priors
+    ))
+  } else {
+    stop("Please choose data_type in 'continuous_time', 'discrete_time', 'order'.")
+  }
 }

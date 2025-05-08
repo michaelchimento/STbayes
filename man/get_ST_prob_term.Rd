@@ -10,10 +10,13 @@ get_ST_prob_term(
   separate_s = FALSE,
   veff_ID = c(),
   num_networks = 1,
+  s_var = "s_prime",
   id_var = "id",
   trial_var = "trial",
   time_var = "time_step",
-  net_var = "A"
+  net_var = "A",
+  ILVs_variable_effects = "",
+  weibull_term = ""
 )
 }
 \arguments{

@@ -71,25 +71,23 @@ import_user_STb <- function(event_data,
                             ILVm = NULL,
                             t_weights = NULL,
                             high_res = FALSE) {
-
-
     # warnings
-    if ( all(is.null(ILVi), is.null(ILVs), is.null(ILVm)) & (!is.null(ILV_c) | !is.null(ILV_tv))) {
-        message("WARNING: You have provided ILV, yet did not specify whether they should be additive or multiplicative (missing arguments ILVi, ILVs, ILVm). If not specified, they will not be included in the model.")
+    if (all(is.null(ILVi), is.null(ILVs), is.null(ILVm)) & (!is.null(ILV_c) | !is.null(ILV_tv))) {
+        message("🤔 You have provided ILVs, yet did not specify whether they should be additive or multiplicative (missing arguments ILVi, ILVs, ILVm). They will not be included in the model.")
     }
 
     if (inherits(networks, "data.frame")) {
-        message("User supplied edge weights as point estimates.")
+        message("User supplied edge weights as point estimates 📍")
         is_distribution <- FALSE
     } else if (inherits(networks, "bison_model") || inherits(networks, "STRAND Results Object")) {
-        message("User supplied a single Bayesian network fit.")
+        message("User supplied edge weights as posterior distributions 🌈 ")
         networks <- list(networks)
         is_distribution <- TRUE
     } else if (is.list(networks) && all(sapply(networks, function(x) inherits(x, "bison_model") || inherits(x, "STRAND Results Object")))) {
-        message("User supplied a list of Bayesian network fits (bisonr or STRAND).")
+        message("User supplied a list of Bayesian network fits [🌈 ,🌈] ")
         is_distribution <- TRUE
     } else {
-        stop("Please supply a dataframe, a bison_model or STRAND fit object, or a list of them.")
+        stop("😔 Please give me a networks argument with a dataframe, a bisonR model fit (or a list of fits). I dunno what to do with this.")
     }
 
     network_type <- match.arg(network_type)
@@ -105,19 +103,16 @@ import_user_STb <- function(event_data,
     event_data <- event_data[order(event_data$trial_numeric, event_data$time), ]
     event_data$index <- with(event_data, ave(trial_numeric, trial_numeric, FUN = seq_along))
 
-    if (high_res) {
-        event_data$discrete_time <- event_data$time
-    } else {
-        # create discrete time (this should be 0 if ID was a demo/seed)
-        event_data$discrete_time <- NA
-        event_data$discrete_time[event_data$time != 0] <- with(
-            event_data[event_data$time != 0, ],
-            ave(time, trial_numeric, FUN = function(x) as.numeric(as.factor(x)))
-        )
-        event_data$discrete_time[event_data$time == 0] <- 0
-    }
+    # create discrete time (this should be 0 if ID was a demo/seed)
+    event_data$discrete_time <- NA
+    event_data$discrete_time[event_data$time != 0] <- with(
+        event_data[event_data$time != 0, ],
+        ave(time, trial_numeric, FUN = function(x) as.numeric(as.factor(x)))
+    )
+    event_data$discrete_time[event_data$time == 0] <- 0
 
-    #not using these now but just in case..
+
+    # not using these now but just in case..
     event_data$tie <- with(event_data, ave(time, interaction(trial_numeric, time), FUN = function(x) length(x) > 1))
     event_data$seed <- ifelse(event_data$time == 0, 1, 0)
 
@@ -128,7 +123,7 @@ import_user_STb <- function(event_data,
             trial_numeric = unique(df$trial_numeric),
             num_uncensored = nrow(df) - sum(df$censored),
             num_censored = sum(df$censored),
-            max_periods = if (high_res) max(df$t_end) else max(df$discrete_time)
+            max_periods = max(df$discrete_time)
         )
     }))
 
@@ -139,20 +134,15 @@ import_user_STb <- function(event_data,
     D_data <- unique(temp_data[order(temp_data$trial_numeric, temp_data$time), c("trial_numeric", "time", "discrete_time")])
     D_data <- D_data[D_data$time != 0, ]
 
+
+    # Calculate the duration as time - lag(time) for each grouping
+    D_data$duration <- with(D_data, ave(time, trial_numeric, FUN = function(x) c(x[1], diff(x))))
+    D_data$duration <- ifelse(is.na(D_data$duration), D_data$time, D_data$duration)
+    #multiply the networks and transmission weights
     if (high_res) {
-        # Expand to full grid of [trial x time] from 1 to max time observed
-        max_times <- aggregate(discrete_time ~ trial_numeric, data = D_data, FUN = max)
-        D_data <- do.call(rbind, lapply(1:nrow(max_times), function(i) {
-            data.frame(trial_numeric = max_times$trial_numeric[i],
-                       discrete_time = seq(1, max_times$discrete_time[i]),
-                       duration = 1)
-        }))
-    } else {
-        # Calculate the duration as time - lag(time) for each grouping
-        D_data$duration <- with(D_data, ave(time, trial_numeric, FUN = function(x) c(x[1], diff(x))))
-        D_data$duration <- ifelse(is.na(D_data$duration), D_data$time, D_data$duration)
-        D_data <- D_data[, !(names(D_data) %in% "time")]
+        networks = process_networks_x_weights_hires(event_data= event_data, t_weights=t_weights, networks=networks, D_data=D_data)
     }
+    D_data <- D_data[, !(names(D_data) %in% "time")]
 
     # pivot wider
     D_data_real <- with(D_data, tapply(duration, list(trial_numeric, discrete_time), FUN = max, default = 0))
@@ -180,31 +170,36 @@ import_user_STb <- function(event_data,
         N = structure(N_data$num_uncensored, dim = length(N_data$num_uncensored)),
         N_c = structure(N_data$num_censored, dim = length(N_data$num_censored)),
         T = structure(N_data$max_periods, dim = length(N_data$max_periods)),
-        t = if (high_res) time_data else t_data,
+        t = t_data,
         T_max = max(N_data$max_periods),
         time = time_data,
         time_max = time_max,
         Q = max(event_data$index),
-        D = if (high_res) D_data_real[,1:max(N_data$max_periods)] else D_data_real,
-        D_int = if (high_res) D_data_int[,1:max(N_data$max_periods)] else D_data_int,
+        D = D_data_real,
+        D_int = D_data_int,
         ind_id = id_data,
         Zn = create_Z_matrix(event_data, high_res),
         Z = create_Z_matrix(event_data, high_res),
-        high_res = high_res,
-        multinetwork_s = multinetwork_s
+        high_res = F,
+        multinetwork_s = multinetwork_s,
+        directed = if (network_type == "directed") T else F
     )
 
-    dim(data_list$D) = c(data_list$K, data_list$T_max)
-    dim(data_list$D_int) = c(data_list$K, data_list$T_max)
+    dim(data_list$D) <- c(data_list$K, data_list$T_max)
+    dim(data_list$D_int) <- c(data_list$K, data_list$T_max)
 
-    if (!is.null(t_weights)) {
+    if (!is.null(t_weights) & !high_res) {
         data_list$W <- create_W_matrix(t_weights, data_list$T_max)
-        if (!all(dim(data_list$Z) == dim(data_list$W))) stop(paste0("Dimensions of Z (",
-                                                                    paste(dim(data_list$Z), collapse = ","),
-                                                                    ") do not match W (",
-                                                                    paste(dim(data_list$W), collapse = ","), ")."))
+        if (!all(dim(data_list$Z) == dim(data_list$W))) {
+            stop(paste0(
+                "Dimensions of Z (",
+                paste(dim(data_list$Z), collapse = ","),
+                ") do not match W (",
+                paste(dim(data_list$W), collapse = ","), ")."
+            ))
+        }
         data_list$Z <- data_list$Z * data_list$W
-        #data_list$Z <- data_list$W
+        # data_list$Z <- data_list$W
     }
 
     #### Constant ILV ####
@@ -271,6 +266,8 @@ import_user_STb <- function(event_data,
         }
         if (is.null(ILVm)) {
             data_list$ILVm_names <- "ILVabsent"
+        } else {
+            data_list$ILVm_names <- ILVm
         }
         # write datatypes
         data_list$ILV_datatypes <- ILV_datatypes
@@ -284,10 +281,10 @@ import_user_STb <- function(event_data,
     ## Network handling for high-resolution data
     if (!is_distribution) {
         if (data_list$P != length(unique(c(networks$from, networks$to)))) {
-            stop("Networks do not contain the same number of unique individuals as the event data.")
+            stop("😔 Networks do not contain the same number of unique individuals as the event data.")
         }
         if (data_list$K != length(unique(networks$trial))) {
-            stop("Networks do not contain the same number of trials as the event data.")
+            stop("😔 Networks do not contain the same number of trials as the event data.")
         }
         is_dynamic <- "time" %in% names(networks)
         if (!is_dynamic) {
@@ -304,13 +301,11 @@ import_user_STb <- function(event_data,
         networks$from_numeric <- temp_names$numeric[match(networks$from, temp_names$name)]
         networks$to_numeric <- temp_names$numeric[match(networks$to, temp_names$name)]
         networks$trial_numeric <- as.numeric(as.factor(networks$trial))
-        if (!high_res) {
-            networks$discrete_time <- with(networks, ave(time, trial_numeric, FUN = function(x) as.numeric(as.factor(x))))
-        } else {
-            networks$discrete_time <- networks$time
-        }
+
+        networks$discrete_time <- with(networks, ave(time, trial_numeric, FUN = function(x) as.numeric(as.factor(x))))
+
         is_symmetric <- nrow(networks[networks$trial_numeric == 1 & networks$discrete_time == min(networks$discrete_time), ]) == data_list$P * (data_list$P - 1)
-        max_timesteps <- if (high_res) max(event_data$t_end) else max(data_list$T)
+        max_timesteps <- max(data_list$T)
 
         dims <- c(length(network_cols), data_list$K, max_timesteps, data_list$P, data_list$P)
         A_array <- array(0, dim = dims)
@@ -335,12 +330,12 @@ import_user_STb <- function(event_data,
                 }
             }
         }
-        if (min(A_array) < 0) stop("Edgeweights below zero detected. Rescale so that 0 = no connection.")
+        if (min(A_array) < 0) stop("😔 Edgeweights below zero detected. Rescale so that 0 = no connection.")
         data_list$A <- A_array
         data_list$network_names <- network_cols
-        data_list$N_networks = length(network_cols)
+        data_list$N_networks <- length(network_cols)
     }
-    #IF DISTRIBUTION
+    # IF DISTRIBUTION
     else {
         N_networks <- length(networks)
 
@@ -358,29 +353,30 @@ import_user_STb <- function(event_data,
                 dyad_matrix <- do.call(rbind, dyads)
                 dyad_df <- data.frame(
                     from = as.integer(dyad_matrix[, 1]),
-                    to   = as.integer(dyad_matrix[, 2]),
+                    to = as.integer(dyad_matrix[, 2]),
                     stringsAsFactors = FALSE
                 )
 
                 # Drop self-loops
-                dyad_df <- dyad_df[dyad_df$from != dyad_df$to, ]
                 edge_samples <- net_obj$edge_samples[, dyad_df$from != dyad_df$to, drop = FALSE]
+                dyad_df <- dyad_df[dyad_df$from != dyad_df$to, ]
+                data_list$from_ID <- dyad_df$from
+                data_list$to_ID <- dyad_df$to
 
                 if (net_obj$directed) {
                     # Use samples as-is
                     edges <- edge_samples
-
                 } else {
                     # Duplicate edges to simulate directed version
-                    from_ids <- c(dyad_df$from, dyad_df$to)
-                    to_ids   <- c(dyad_df$to, dyad_df$from)
-                    dyad_df <- data.frame(from = from_ids, to = to_ids)
-                    edges <- cbind(edge_samples, edge_samples)
+                    # from_ids <- c(dyad_df$from, dyad_df$to)
+                    # to_ids   <- c(dyad_df$to, dyad_df$from)
+                    # dyad_df <- data.frame(from = from_ids, to = to_ids)
+                    # edges <- cbind(edge_samples, edge_samples)
+                    edges <- edge_samples
                 }
-
             } else if (inherits(net_obj, "STRAND Results Object")) {
                 # STRAND handling
-                ass_matrix <- net_obj$samples$predicted_network_sample  # [draws, from, to]
+                ass_matrix <- net_obj$samples$predicted_network_sample # [draws, from, to]
                 draws <- dim(ass_matrix)[1]
                 P <- dim(ass_matrix)[2]
 
@@ -396,10 +392,9 @@ import_user_STb <- function(event_data,
                     }
                 }
 
-                edges <- qlogis(edge_mat)  # convert to logit space
-
+                edges <- qlogis(edge_mat) # convert to logit space
             } else {
-                stop("Unrecognized distributional network object. Expected bison_model or STRAND Results Object.")
+                stop("😔 Unrecognized distributional network object. Expected bison_model or STRAND Results Object.")
             }
 
             if (i == 1) {
@@ -418,11 +413,11 @@ import_user_STb <- function(event_data,
         data_list$logit_edge_cov <- logit_edge_cov
         data_list$N_dyad <- N_dyad
         data_list$network_names <- paste0("net", seq_len(N_networks))
-        data_list$N_networks = N_networks
+        data_list$N_networks <- N_networks
     }
 
     if (data_list$multinetwork_s == "separate" & data_list$N_networks == 1) {
-        data_list$multinetwork_s = "shared"
+        data_list$multinetwork_s <- "shared"
     }
 
     ## Final sanity check and return ##

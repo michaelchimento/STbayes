@@ -16,11 +16,10 @@ full_fit = fit_STb(data_list_user,
                    parallel_chains=5,
                    chains = 5,
                    cores = 5,
-                   iter=3000)
+                   iter= 5000)
 
 # check estimates
-STb_summary(full_fit, digits=4)
-
+STb_summary(full_fit, digits=3)
 #get estimated times
 acqdata = extract_acqTime(full_fit, data_list_user)
 

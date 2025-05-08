@@ -13,7 +13,8 @@ generate_STb_model(
   veff_ID = c(),
   gq = TRUE,
   est_acqTime = FALSE,
-  priors = list()
+  priors = list(),
+  direct_s = F
 )
 }
 \arguments{
@@ -44,7 +45,7 @@ A STAN model (character) that is customized to the input data.
 generate_STb_model: Dynamically generate STAN model based on input data
 }
 \examples{
-#very mock data
+# very mock data
 event_data <- data.frame(
   id = c("A", "B", "C", "D", "E", "F"),
   trial = c(1, 1, 1, 2, 2, 2),
@@ -58,12 +59,12 @@ networks <- data.frame(
   kin = c(1, 0, 1, 0, 1, 1),
   inverse_distance = c(0, 1, .5, .25, .1, 0)
 )
- ILV_c<- data.frame(
-    id = LETTERS[1:6],
-    age = c(-1, -2, 0, 1, 2), # continuous variables should be normalized
-    sex = c(0, 1, 1, 0, 1, 0), # Factor ILVs must be input as numeric
-    weight = c(0.5, .25, .3, 0, -.2, -.4)
- )
+ILV_c <- data.frame(
+  id = LETTERS[1:6],
+  age = c(-1, -2, 0, 1, 2), # continuous variables should be normalized
+  sex = c(0, 1, 1, 0, 1, 0), # Factor ILVs must be input as numeric
+  weight = c(0.5, .25, .3, 0, -.2, -.4)
+)
 data_list <- import_user_STb(
   event_data = event_data,
   networks = networks,
@@ -73,9 +74,9 @@ data_list <- import_user_STb(
   ILVm = c("weight") # Use weight for multiplicative effect on asocial and social learning
 )
 
-model = generate_STb_model(data_list) # creates full specification of cTADA model, no varying effects and default priors.
-model = generate_STb_model(data_list, veff_ID = c("lambda_0", "s")) # estimate varying effects by ID for baseline learning rate and strength of social transmission.
-model = generate_STb_model(data_list, data="order") # creates OADA specification
-model = generate_STb_model(data_list, priors=list(log_lambda_0 = "normal(7, 3)", log_s = "uniform(7, 3)")) # adjust priors
+model <- generate_STb_model(data_list) # creates full specification of cTADA model, no varying effects and default priors.
+model <- generate_STb_model(data_list, veff_ID = c("lambda_0", "s")) # estimate varying effects by ID for baseline learning rate and strength of social transmission.
+model <- generate_STb_model(data_list, data = "order") # creates OADA specification
+model <- generate_STb_model(data_list, priors = list(log_lambda_0 = "normal(-2, 3)", log_sprime = "uniform(-7, 3)")) # adjust priors
 print(model)
 }

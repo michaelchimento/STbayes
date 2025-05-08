@@ -7,7 +7,20 @@
 #' @return list containing loo_objects, comparison, and pareto_diagnostics if using loo-psis.
 #' @export
 STb_compare <- function(..., model_names = NULL, method = "loo-psis") {
-  models <- list(...)
+  args <- list(...)  # <- You need this line
+  if (is.list(args[[1]])) {
+    models <- args[[1]]
+    model_names <- names(models)
+  } else {
+    models <- list(...)
+    if (is.null(model_names)) {
+      model_names <- as.character(match.call(expand.dots = FALSE)$`...`)
+    }
+  }
+
+  if (length(models) < 2) {
+    stop("Provide at least two fitted models.")
+  }
 
   if (length(models) < 2) {
     stop("Provide at least two fitted models.")
@@ -28,12 +41,12 @@ STb_compare <- function(..., model_names = NULL, method = "loo-psis") {
       stop(sprintf("Model '%s' must be of class CmdStanMCMC.", name))
     }
     log_lik <- model$draws("log_lik", format = "draws_matrix")
-    log_lik <- log_lik[, colSums(log_lik) != 0, drop = FALSE] #drop cols that are zero cuz it's just demos
+    log_lik <- log_lik[, colSums(log_lik) != 0, drop = FALSE] # drop cols that are zero cuz it's just demos
 
     if (method == "loo-psis") {
-        return(loo::loo(log_lik))
+      return(loo::loo(log_lik))
     } else {
-        return(loo::waic(log_lik))
+      return(loo::waic(log_lik))
     }
   }, models, model_names, SIMPLIFY = FALSE)
 
@@ -51,11 +64,15 @@ STb_compare <- function(..., model_names = NULL, method = "loo-psis") {
       problem_indices <- which(k_values > 0.7)
 
       if (length(problem_indices) > 0) {
-        cat(sprintf("Model '%s' has %d problematic Pareto k values (k > 0.7).",
-                        model_names[i], length(problem_indices)))
+        cat(sprintf(
+          "Model '%s' has %d problematic Pareto k values (k > 0.7).",
+          model_names[i], length(problem_indices)
+        ))
         if (any(k_values > 1)) {
-          cat(sprintf("  - WARNING: %d observations have k > 1 (LOO is unreliable).\n",
-                      sum(k_values > 1)))
+          cat(sprintf(
+            "  - WARNING: %d observations have k > 1 (LOO is unreliable).\n",
+            sum(k_values > 1)
+          ))
         }
         cat("  - Problematic observation indices:", paste(problem_indices, collapse = ", "), "\n")
       }

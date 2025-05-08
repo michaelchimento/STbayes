@@ -8,7 +8,7 @@ N <- 100  # Population size
 k <- 7    # Degree of each node in the random regular graph
 lambda_0=0.001 #baseline
 A <- 1  # Individual learning rate
-s <- 30  # Social learning rate per unit connection
+s <- 3  # Social learning rate per unit connection
 t_steps <- 1000
 
 # create random regular graph

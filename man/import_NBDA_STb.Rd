@@ -33,6 +33,6 @@ A list containing properly formatted data to run social transmission models.
 import_NBDA_STb: create STbayes_data object from nbda object
 }
 \examples{
-nbda_object<-nbdaData_cTADA <- STbayes::nbdaData_cTADA
-data_list <- import_NBDA_STb(nbda_object, network_names="assoc")
+nbda_object <- nbdaData_cTADA <- STbayes::nbdaData_cTADA
+data_list <- import_NBDA_STb(nbda_object, network_names = "assoc")
 }

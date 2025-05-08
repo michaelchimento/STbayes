@@ -33,7 +33,7 @@ A STAN model (character) that is customized to the input data.
 Dynamically generate STAN model based on input data
 }
 \examples{
-#very mock data
+# very mock data
 event_data <- data.frame(
   id = c("A", "B", "C", "D", "E", "F"),
   trial = c(1, 1, 1, 2, 2, 2),
@@ -62,8 +62,8 @@ data_list <- import_user_STb(
   ILVm = c("weight") # Use weight for multiplicative effect on asocial and social learning
 )
 
-model = generate_STb_model_OADA(data_list) # no varying effects
-model = generate_STb_model_OADA(data_list, veff_ID = c("s")) # estimate varying effects by ID for strength of social transmission. Baseline is not estimated for OADA type models.
+model <- generate_STb_model_OADA(data_list) # no varying effects
+model <- generate_STb_model_OADA(data_list, veff_ID = c("s")) # estimate varying effects by ID for strength of social transmission. Baseline is not estimated for OADA type models.
 print(model)
 
 }
