@@ -257,27 +257,31 @@ generate_STb_model_OADA <- function(STb_data,
   count <- 1
 
   if (N_veff > 0) {
-    for (parameter in veff_ID) {
-      if (parameter == "s" & model_type == "full") {
-        # this is still a bit weird, adding single varying effect for all networks..
-        if (separate_s) {
-          # s[n, id] as exp(log_s_prime_mean[n, id] + v_ID[,i])
-          transformed_params <- append(transformed_params, glue::glue(
-            "matrix<lower=0>[N_networks, P] s_prime;
+    if ("s" %in% veff_ID & model_type == "full") {
+      # this is still a bit weird, adding single varying effect for all networks..
+      if (separate_s) {
+        # s[n, id] as exp(log_s_prime_mean[n, id] + v_ID[,i])
+        transformed_params <- append(transformed_params, glue::glue(
+          "matrix<lower=0>[N_networks, P] s_prime;
 for (n in 1:N_networks) {{
   for (id in 1:P) {{
     s_prime[n, id] = exp(log_s_prime_mean[n] + v_ID[id, n]);
   }}
 }}"
-          ))
+        ))
 
-          count <- count + num_networks
-        } else {
-          # s[id] = exp(log_s_prime_mean + v_ID[,i])
-          transformed_params <- append(transformed_params, paste0("vector<lower=0>[P] s_prime = exp(log_s_prime_mean + v_ID[,", count, "]);"))
-          gq_transformed_params <- append(gq_transformed_params, paste0("real sprime_mean = exp(log_s_prime_mean);"))
-        }
+        count <- count + num_networks
+      } else {
+        # s[id] = exp(log_s_prime_mean + v_ID[,i])
+        transformed_params <- append(transformed_params, paste0("vector<lower=0>[P] s_prime = exp(log_s_prime_mean + v_ID[,", count, "]);"))
+        gq_transformed_params <- append(gq_transformed_params, paste0("real sprime_mean = exp(log_s_prime_mean);"))
         count <- count + 1
+      }
+
+    }
+    for (parameter in veff_ID) {
+      if (parameter == "s" & model_type == "full") {
+        next
       } else if (parameter == "f" & model_type == "full") {
         transformed_params <- append(transformed_params, paste0("vector<lower=0>[P] f = exp(log_f_mean + v_ID[,", count, "]);"))
         transformed_params <- append(transformed_params, paste0("real<lower=0> f_mean = exp(log_f_mean);"))

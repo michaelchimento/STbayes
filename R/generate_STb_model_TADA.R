@@ -273,8 +273,7 @@ generate_STb_model_TADA <- function(STb_data,
   count <- 1
 
   if (N_veff > 0) {
-    for (parameter in veff_ID) {
-      if (parameter == "s" & model_type == "full") {
+    if ("s" %in% veff_ID & model_type == "full"){
         # this is still a bit weird, adding single varying effect for all networks..
         if (separate_s) {
           # s[n, id] as exp(log_s_prime_mean[n, id] + v_ID[,i])
@@ -294,16 +293,20 @@ for (n in 1:N_networks) {{
   }}
 }}"
           ))
-          gq_transformed_params <- append(gq_transformed_params, "vector[N_networks] s_mean = exp(log_s_prime_mean) / lambda_0_mean;")
+          gq_transformed_params <- append(gq_transformed_params, "vector[N_networks] s_mean = exp(log_s_prime_mean) / exp(log_lambda_0_mean);")
           count <- count + num_networks
         } else {
           # s[id] = exp(log_s_prime_mean + v_ID[,i])
           transformed_params <- append(transformed_params, paste0("vector<lower=0>[P] s_prime = exp(log_s_prime_mean + v_ID[,", count, "]);"))
-          gq_transformed_params <- append(gq_transformed_params, paste0("vector<lower=0>[P] s = s_prime ./ lambda_0;"))
+          gq_transformed_params <- append(gq_transformed_params, paste0("vector<lower=0>[P] s_id = s_prime ./ lambda_0;"))
           gq_transformed_params <- append(gq_transformed_params, paste0("real sprime_mean = exp(log_s_prime_mean);"))
           gq_transformed_params <- append(gq_transformed_params, paste0("real<lower=0> s_mean = (exp(log_s_prime_mean)) / (exp(log_lambda_0_mean));"))
+          count <- count + 1
         }
-        count <- count + 1
+    }
+    for (parameter in veff_ID) {
+      if (parameter =="s"){
+        next
       } else if (parameter == "lambda_0") {
         transformed_params <- append(transformed_params, paste0("vector<lower=0>[P] lambda_0 = exp(log_lambda_0_mean + v_ID[,", count, "]);"))
         gq_transformed_params <- append(gq_transformed_params, paste0("real lambda_0_mean = exp(log_lambda_0_mean);"))

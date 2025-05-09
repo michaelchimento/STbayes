@@ -31,7 +31,7 @@ get_network_term <- function(transmission_func, is_distribution = FALSE,
     glue::glue("{net_var}[{net_index}, {trial_var}, {time_var}][{id_var}, ]")
   }
 
-  base_term <- glue::glue("sum({net_expr} .* Z[{trial_var}][{time_var}, ])")
+  base_term <- glue::glue("dot_product({net_expr},Z[{trial_var}][{time_var}, ])")
 
   if (transmission_func == "standard") {
     return(glue::glue("real {net_effect_term} = 0;
@@ -45,7 +45,7 @@ for (network in 1:N_networks) {{
     return(glue::glue("real {net_effect_term} = 0;
 for (network in 1:N_networks) {{
   real active = {base_term};
-  real inactive = sum({net_expr} .* (1 - Z[{trial_var}][{time_var}, ]));
+  real inactive = dot_product({net_expr}, (1 - Z[{trial_var}][{time_var}, ]));
   real frac = pow(active, {f_term}) / (pow(active, {f_term}) + pow(inactive, {f_term}));
   {net_effect_term} += {s_term} * frac;
 }}"))
@@ -56,7 +56,7 @@ for (network in 1:N_networks) {{
     return(glue::glue("real {net_effect_term} = 0;
 for (network in 1:N_networks) {{
   real numer = {base_term};
-  real denom = numer + sum({net_expr} .* (1 - Zn[{trial_var}][{time_var}, ]));
+  real denom = numer + dot_product({net_expr} , (1 - Zn[{trial_var}][{time_var}, ]));
   real prop = denom > 0 ? numer / denom : 0.0;
   real dini_transformed = dini_func(prop, {k_term});
   {net_effect_term} += {s_term} * dini_transformed;

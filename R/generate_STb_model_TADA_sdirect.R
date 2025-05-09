@@ -275,36 +275,39 @@ generate_STb_model_TADA_sdirect <- function(STb_data,
     count <- 1
 
     if (N_veff > 0) {
-        for (parameter in veff_ID) {
-            if (parameter == "s" & model_type == "full") {
-                if (separate_s) {
-                    # s[n, id] as exp(log_s_direct_mean[n, id] + v_ID[,i])
-                    transformed_params <- append(transformed_params, glue::glue(
-                        "matrix<lower=0>[N_networks, P] s_direct;
+        if ("s" %in% veff_ID & model_type == "full"){
+          if (separate_s) {
+            # s[n, id] as exp(log_s_direct_mean[n, id] + v_ID[,i])
+            transformed_params <- append(transformed_params, glue::glue(
+              "matrix<lower=0>[N_networks, P] s_direct;
 for (n in 1:N_networks) {{
   for (id in 1:P) {{
     s_direct[n, id] = exp(log_s_direct_mean[n] + v_ID[id, n]);
   }}
 }}"
-                    ))
-                    gq_transformed_params <- append(gq_transformed_params, glue::glue(
-                        "matrix<lower=0>[N_networks, P] s_prime;
+            ))
+            gq_transformed_params <- append(gq_transformed_params, glue::glue(
+              "matrix<lower=0>[N_networks, P] s_prime;
 for (n in 1:N_networks) {{
   for (id in 1:P) {{
     s_prime[n, id] = s_direct[n, id] * lambda_0[id];
   }}
 }}"
-                    ))
-                    gq_transformed_params <- append(gq_transformed_params, "vector[N_networks] s_mean = exp(log_s_direct_mean);")
-                    count <- count + num_networks
-                } else {
-                    # s[id] = exp(log_s_direct_mean + v_ID[,i])
-                    transformed_params <- append(transformed_params, paste0("vector<lower=0>[P] s_direct = exp(log_s_direct_mean + v_ID[,", count, "]);"))
-                    gq_transformed_params <- append(gq_transformed_params, paste0("vector<lower=0>[P] s_prime = s_direct .* lambda_0;"))
-                    gq_transformed_params <- append(gq_transformed_params, paste0("real s_direct_mean = exp(log_s_direct_mean);"))
-                    gq_transformed_params <- append(gq_transformed_params, paste0("real<lower=0> s_prime_mean = (exp(log_s_direct_mean)) * (exp(log_lambda_0_mean));"))
-                }
-                count <- count + 1
+            ))
+            gq_transformed_params <- append(gq_transformed_params, "vector[N_networks] s_mean = exp(log_s_direct_mean);")
+            count <- count + num_networks
+          } else {
+            # s[id] = exp(log_s_direct_mean + v_ID[,i])
+            transformed_params <- append(transformed_params, paste0("vector<lower=0>[P] s_direct = exp(log_s_direct_mean + v_ID[,", count, "]);"))
+            gq_transformed_params <- append(gq_transformed_params, paste0("vector<lower=0>[P] s_prime = s_direct .* lambda_0;"))
+            gq_transformed_params <- append(gq_transformed_params, paste0("real s_direct_mean = exp(log_s_direct_mean);"))
+            gq_transformed_params <- append(gq_transformed_params, paste0("real<lower=0> s_prime_mean = (exp(log_s_direct_mean)) * (exp(log_lambda_0_mean));"))
+            count <- count + 1
+          }
+        }
+        for (parameter in veff_ID) {
+            if (parameter == "s" & model_type == "full") {
+              next
             } else if (parameter == "lambda_0") {
                 transformed_params <- append(transformed_params, paste0("vector<lower=0>[P] lambda_0 = exp(log_lambda_0_mean + v_ID[,", count, "]);"))
                 gq_transformed_params <- append(gq_transformed_params, paste0("real lambda_0_mean = exp(log_lambda_0_mean);"))

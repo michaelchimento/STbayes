@@ -28,7 +28,7 @@ STb_summary <- function(fit, depth = 1, prob = 0.95,
 
   # Get parameter names and filter
   param_names <- names(draws_df)
-  s_prime_params <- grep("^s_prime\\[", param_names, value = TRUE)
+  s_prime_params <- grep("^log_s_prime_mean\\[", param_names, value = TRUE)
   sigma_ID_params <- grep("^sigma_ID\\[", param_names, value = TRUE)
   s_mean_params <- grep("^s_mean\\[", param_names, value = TRUE)
   s_params <- grep("^s\\[", param_names, value = TRUE)
@@ -43,8 +43,9 @@ STb_summary <- function(fit, depth = 1, prob = 0.95,
   keep_params <- Filter(depth_filter, keep_params)
   keep_params <- Reduce(union, list(
     keep_params,
-    s_params,
+    s_prime_params,
     s_mean_params,
+    s_params,
     sigma_ID_params,
     ST_params
   ))
@@ -74,6 +75,10 @@ STb_summary <- function(fit, depth = 1, prob = 0.95,
   numeric_cols <- sapply(summary_stats, is.numeric)
   summary_stats <- as.data.frame(summary_stats)
   summary_stats[numeric_cols] <- lapply(summary_stats[numeric_cols], round, digits = digits)
+
+  summary_stats$order_priority <- vapply(summary_stats$Parameter, order_params, FUN.VALUE = numeric(1))
+  summary_stats <- summary_stats[order(summary_stats$order_priority, summary_stats$Parameter), ]
+  summary_stats$order_priority <- NULL
 
   return(summary_stats)
 }
