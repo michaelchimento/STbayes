@@ -10,7 +10,8 @@ import_NBDA_STb(
   multinetwork_s = c("separate", "shared"),
   ILVi = NULL,
   ILVs = NULL,
-  ILVm = NULL
+  ILVm = NULL,
+  high_res = F
 )
 }
 \arguments{

@@ -31,7 +31,6 @@ process_networks_x_weights_hires <- function(event_data, t_weights, networks, D_
     network_dt <- temp_net
     cutpoints_dt <- data.table::as.data.table(D_data)
     data.table::setkey(cutpoints_dt, trial, time)
-    #network_dt$time <- ifelse(network_dt$time > 1, network_dt$time - 1, 1)
 
     # roll = -Inf ensures that each row gets the most recent discrete time value from D_data
     network_dt <- cutpoints_dt[network_dt, on = c("trial", "time"), roll = -Inf]
@@ -41,7 +40,8 @@ process_networks_x_weights_hires <- function(event_data, t_weights, networks, D_
     ), lapply(.SD, sum)),
     by = .(trial, from, to, discrete_time),
     .SDcols = weight_cols]
-    network_dt$weight = network_dt$weight/(network_dt$duration)
+    #network_dt$weight = network_dt$weight/(network_dt$duration)
+    network_dt[, (weight_cols) := lapply(.SD, function(x) x /duration), .SDcols = weight_cols]
 
     #remove extra column
     network_dt$time = network_dt$discrete_time
