@@ -73,8 +73,8 @@ generate_STb_model <- function(STb_data,
   #     }
 
   default_priors <- list(
-    log_lambda0 = "normal(-4, 3)",
-    log_sprime = "normal(-4, 3)",
+    log_lambda0 = "normal(-4, 2)",
+    log_sprime = "normal(-4, 2)",
     beta_ILV = "normal(0,1)",
     log_f = "normal(0,1)",
     k_raw = "normal(0,3)",

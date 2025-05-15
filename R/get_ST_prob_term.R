@@ -17,7 +17,8 @@ get_ST_prob_term <- function(transmission_func, is_distribution = FALSE,
                              id_var = "id", trial_var = "trial", time_var = "time_step",
                              net_var = "A",
                              ILVs_variable_effects = "",
-                             weibull_term = "") {
+                             weibull_term = "",
+                             high_res=F) {
   # choose s term
   s_term <- if (num_networks > 1 && separate_s) {
     if ("s" %in% veff_ID) glue::glue("{s_var}[network, {id_var}]") else glue::glue("{s_var}[network]")
@@ -33,9 +34,8 @@ get_ST_prob_term <- function(transmission_func, is_distribution = FALSE,
     glue::glue("{net_var}[network, {trial_var}, {time_var}][{id_var}, ]")
   }
 
-  active_expr <- glue::glue("sum({net_expr} .* Z[{trial_var}][{time_var}, ])")
-  inactive_expr <- glue::glue("sum({net_expr} .* (1 - Z[{trial_var}][{time_var}, ]))")
-  total_expr <- glue::glue("sum({net_expr} .* Zn[{trial_var}][{time_var}, ])") # for freqdep_k
+  active_expr <- glue::glue("dot_product({net_expr}, Z[{trial_var}][{time_var}, ])")
+  inactive_expr <- glue::glue("dot_product({net_expr}, (1 - Zn[{trial_var}][{time_var}, ]))")
 
   st_lines <- switch(transmission_func,
     "standard" = glue::glue("
@@ -59,16 +59,27 @@ get_ST_prob_term <- function(transmission_func, is_distribution = FALSE,
     },
     "freqdep_k" = {
       k_term <- if ("k" %in% veff_ID) glue::glue("k_shape[{id_var}]") else "k_shape"
-      glue::glue("
+      if (!high_res){
+        glue::glue("
       for (network in 1:N_networks) {{
           real numer = {active_expr};
-          real denom = numer + sum({net_expr} .* (1 - Zn[{trial_var}][{time_var}, ]));
+          real denom = numer + dot_product({net_expr}, (1 - Zn[{trial_var}][{time_var}, ]));
           real prop = denom > 0 ? numer / denom : 0.0;
           real dini = dini_func(prop, {k_term});
           psocn_sum[network] += ({full_s_term} * dini) / lambda;
       }}
       count_ST += 1;
       ")
+      } else{
+        glue::glue("
+        for (network in 1:N_networks) {{
+          real dini = dini_func(prop_k[network, trial, time_step, id], {k_term});
+          psocn_sum[network] += ({full_s_term} * dini) / lambda;
+        }}
+      count_ST += 1;
+      ")
+      }
+
     },
     stop("Unsupported transmission_func")
   )

@@ -5,7 +5,7 @@
 \title{Helper function to generate network terms for STAN}
 \usage{
 get_network_term(
-  transmission_func,
+  transmission_func = "standard",
   is_distribution = FALSE,
   separate_s = FALSE,
   num_networks = 1,
@@ -15,7 +15,8 @@ get_network_term(
   net_index = "network",
   id_var = "id",
   trial_var = "trial",
-  time_var = "time_step"
+  time_var = "time_step",
+  high_res = F
 )
 }
 \arguments{

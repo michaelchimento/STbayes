@@ -11,7 +11,7 @@
 #' @examples
 
 
-process_networks_x_weights_hires <- function(event_data, t_weights, networks, D_data) {
+OLD_process_networks_x_weights_hires <- function(event_data, t_weights, networks, D_data) {
     t_weights$trial = as.integer(as.factor(t_weights$trial))
     t_weights$id = as.integer(as.factor(t_weights$id))
     networks$trial = as.integer(as.factor(networks$trial))
@@ -38,11 +38,11 @@ process_networks_x_weights_hires <- function(event_data, t_weights, networks, D_
     temp_net <- merge(networks, t_weights, by = c("trial", "time", "to"), all.x = TRUE)
     summary(temp_net)
     # # weight columns
-     weight_cols <- setdiff(names(temp_net), c("trial", "from", "to", "time", "t_weight"))
-     for (col in weight_cols) {
-         temp_net[[col]] <- temp_net[[col]] * temp_net$t_weight
-     }
-     temp_net$t_weight <- NULL
+    weight_cols <- setdiff(names(temp_net), c("trial", "from", "to", "time", "t_weight"))
+    for (col in weight_cols) {
+        temp_net[[col]] <- temp_net[[col]] * temp_net$t_weight
+    }
+    temp_net$t_weight <- NULL
     #
     # # assign numeric IDs
     # event_data$id_numeric <- as.numeric(as.factor(event_data$id))

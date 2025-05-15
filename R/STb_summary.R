@@ -14,7 +14,7 @@
 STb_summary <- function(fit, depth = 1, prob = 0.95,
                         ignore_params = c(
                           "lp__", "idx", "log_lik", "log_lik_matrix", "count_ST", "psocn_sum",
-                          "acquisition_time", "z_ID", "Rho_ID", "v_ID", ".chain", ".iteration", ".draw"
+                          "acquisition_time", "z_ID", "Rho_ID", "v_ID", ".chain", ".iteration", ".draw", "s_prime"
                         ),
                         digits = 3,
                         CI_method = c("HPDI", "PI")) {
@@ -76,8 +76,17 @@ STb_summary <- function(fit, depth = 1, prob = 0.95,
   summary_stats <- as.data.frame(summary_stats)
   summary_stats[numeric_cols] <- lapply(summary_stats[numeric_cols], round, digits = digits)
 
+  #order
   summary_stats$order_priority <- vapply(summary_stats$Parameter, order_params, FUN.VALUE = numeric(1))
-  summary_stats <- summary_stats[order(summary_stats$order_priority, summary_stats$Parameter), ]
+  #natural ordering of indexes
+  # Extract numeric index from parameters (e.g., s[10] -> 10), scalar -> NA
+  matches <- regmatches(summary_stats$Parameter, gregexpr("(?<=\\[)\\d+(?=\\])", summary_stats$Parameter, perl = TRUE))
+  summary_stats$param_index <- sapply(matches, function(x) if (length(x) == 1) as.numeric(x) else NA_real_)
+  summary_stats$param_index[is.na(summary_stats$param_index)] <- -1  # ensure scalar params sort first
+
+  # Sort by group and then numeric index
+  summary_stats <- summary_stats[order(summary_stats$order_priority, summary_stats$param_index), ]
+  summary_stats$param_index <- NULL
   summary_stats$order_priority <- NULL
 
   return(summary_stats)

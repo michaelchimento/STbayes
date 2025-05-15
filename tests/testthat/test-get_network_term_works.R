@@ -12,7 +12,7 @@ test_that("get_network_term generates network terms correctly", {
     network_term,
     "real net_effect = 0;
 for (network in 1:N_networks) {
-  net_effect += s_prime[network] * sum(A[network, trial, time_step][id, ] .* Z[trial][time_step, ]);
+  net_effect += s_prime[network] * dot_product(A[network, trial, time_step][id, ],Z[trial][time_step, ]);
 }"
   )
 
@@ -28,8 +28,8 @@ for (network in 1:N_networks) {
     network_term,
     "real net_effect = 0;
 for (network in 1:N_networks) {
-  real numer = sum(A[network, trial, time_step][id, ] .* Z[trial][time_step, ]);
-  real denom = numer + sum(A[network, trial, time_step][id, ] .* (1 - Zn[trial][time_step, ]));
+  real numer = dot_product(A[network, trial, time_step][id, ],Z[trial][time_step, ]);
+  real denom = numer + dot_product(A[network, trial, time_step][id, ], (1 - Zn[trial][time_step, ]));
   real prop = denom > 0 ? numer / denom : 0.0;
   real dini_transformed = dini_func(prop, k_shape);
   net_effect += s_prime[network] * dini_transformed;
@@ -48,9 +48,12 @@ for (network in 1:N_networks) {
     network_term,
     "real net_effect = 0;
 for (network in 1:N_networks) {
-  real active = sum(A[network, trial, time_step][id, ] .* Z[trial][time_step, ]);
-  real inactive = sum(A[network, trial, time_step][id, ] .* (1 - Z[trial][time_step, ]));
-  real frac = pow(active, f) / (pow(active, f) + pow(inactive, f));
+  real active = dot_product(A[network, trial, time_step][id, ],Z[trial][time_step, ]);
+  real inactive = dot_product(A[network, trial, time_step][id, ], (1 - Zn[trial][time_step, ]));
+  real frac = 0;
+  if ((active + inactive)>0){
+    frac = pow(active, f) / (pow(active, f) + pow(inactive, f));
+  }
   net_effect += s_prime[network] * frac;
 }"
   )
@@ -67,7 +70,7 @@ for (network in 1:N_networks) {
     network_term,
     "real net_effect = 0;
 for (network in 1:N_networks) {
-  net_effect += s_prime[network] * sum(A[network][id, ] .* Z[trial][time_step, ]);
+  net_effect += s_prime[network] * dot_product(A[network][id, ],Z[trial][time_step, ]);
 }"
   )
 
@@ -83,8 +86,8 @@ for (network in 1:N_networks) {
     network_term,
     "real net_effect = 0;
 for (network in 1:N_networks) {
-  real numer = sum(A[network][id, ] .* Z[trial][time_step, ]);
-  real denom = numer + sum(A[network][id, ] .* (1 - Zn[trial][time_step, ]));
+  real numer = dot_product(A[network][id, ],Z[trial][time_step, ]);
+  real denom = numer + dot_product(A[network][id, ], (1 - Zn[trial][time_step, ]));
   real prop = denom > 0 ? numer / denom : 0.0;
   real dini_transformed = dini_func(prop, k_shape);
   net_effect += s_prime[network] * dini_transformed;
@@ -103,9 +106,12 @@ for (network in 1:N_networks) {
     network_term,
     "real net_effect = 0;
 for (network in 1:N_networks) {
-  real active = sum(A[network][id, ] .* Z[trial][time_step, ]);
-  real inactive = sum(A[network][id, ] .* (1 - Z[trial][time_step, ]));
-  real frac = pow(active, f) / (pow(active, f) + pow(inactive, f));
+  real active = dot_product(A[network][id, ],Z[trial][time_step, ]);
+  real inactive = dot_product(A[network][id, ], (1 - Zn[trial][time_step, ]));
+  real frac = 0;
+  if ((active + inactive)>0){
+    frac = pow(active, f) / (pow(active, f) + pow(inactive, f));
+  }
   net_effect += s_prime[network] * frac;
 }"
   )
@@ -123,7 +129,7 @@ for (network in 1:N_networks) {
     network_term,
     "real net_effect = 0;
 for (network in 1:N_networks) {
-  net_effect += s_prime[network,id] * sum(A[network, trial, time_step][id, ] .* Z[trial][time_step, ]);
+  net_effect += s_prime[network,id] * dot_product(A[network, trial, time_step][id, ],Z[trial][time_step, ]);
 }"
   )
 
@@ -139,8 +145,8 @@ for (network in 1:N_networks) {
     network_term,
     "real net_effect = 0;
 for (network in 1:N_networks) {
-  real numer = sum(A[network, trial, time_step][id, ] .* Z[trial][time_step, ]);
-  real denom = numer + sum(A[network, trial, time_step][id, ] .* (1 - Zn[trial][time_step, ]));
+  real numer = dot_product(A[network, trial, time_step][id, ],Z[trial][time_step, ]);
+  real denom = numer + dot_product(A[network, trial, time_step][id, ], (1 - Zn[trial][time_step, ]));
   real prop = denom > 0 ? numer / denom : 0.0;
   real dini_transformed = dini_func(prop, k_shape);
   net_effect += s_prime[network,id] * dini_transformed;
@@ -159,9 +165,12 @@ for (network in 1:N_networks) {
     network_term,
     "real net_effect = 0;
 for (network in 1:N_networks) {
-  real active = sum(A[network, trial, time_step][id, ] .* Z[trial][time_step, ]);
-  real inactive = sum(A[network, trial, time_step][id, ] .* (1 - Z[trial][time_step, ]));
-  real frac = pow(active, f) / (pow(active, f) + pow(inactive, f));
+  real active = dot_product(A[network, trial, time_step][id, ],Z[trial][time_step, ]);
+  real inactive = dot_product(A[network, trial, time_step][id, ], (1 - Zn[trial][time_step, ]));
+  real frac = 0;
+  if ((active + inactive)>0){
+    frac = pow(active, f) / (pow(active, f) + pow(inactive, f));
+  }
   net_effect += s_prime[network,id] * frac;
 }"
   )
@@ -178,7 +187,7 @@ for (network in 1:N_networks) {
     network_term,
     "real net_effect = 0;
 for (network in 1:N_networks) {
-  net_effect += s_prime[network,id] * sum(A[network][id, ] .* Z[trial][time_step, ]);
+  net_effect += s_prime[network,id] * dot_product(A[network][id, ],Z[trial][time_step, ]);
 }"
   )
 
@@ -194,8 +203,8 @@ for (network in 1:N_networks) {
     network_term,
     "real net_effect = 0;
 for (network in 1:N_networks) {
-  real numer = sum(A[network][id, ] .* Z[trial][time_step, ]);
-  real denom = numer + sum(A[network][id, ] .* (1 - Zn[trial][time_step, ]));
+  real numer = dot_product(A[network][id, ],Z[trial][time_step, ]);
+  real denom = numer + dot_product(A[network][id, ], (1 - Zn[trial][time_step, ]));
   real prop = denom > 0 ? numer / denom : 0.0;
   real dini_transformed = dini_func(prop, k_shape);
   net_effect += s_prime[network,id] * dini_transformed;
@@ -214,9 +223,12 @@ for (network in 1:N_networks) {
     network_term,
     "real net_effect = 0;
 for (network in 1:N_networks) {
-  real active = sum(A[network][id, ] .* Z[trial][time_step, ]);
-  real inactive = sum(A[network][id, ] .* (1 - Z[trial][time_step, ]));
-  real frac = pow(active, f) / (pow(active, f) + pow(inactive, f));
+  real active = dot_product(A[network][id, ],Z[trial][time_step, ]);
+  real inactive = dot_product(A[network][id, ], (1 - Zn[trial][time_step, ]));
+  real frac = 0;
+  if ((active + inactive)>0){
+    frac = pow(active, f) / (pow(active, f) + pow(inactive, f));
+  }
   net_effect += s_prime[network,id] * frac;
 }"
   )
@@ -234,7 +246,7 @@ for (network in 1:N_networks) {
     network_term,
     "real net_effect = 0;
 for (network in 1:N_networks) {
-  net_effect += s_prime * sum(A[network, trial, time_step][id, ] .* Z[trial][time_step, ]);
+  net_effect += s_prime * dot_product(A[network, trial, time_step][id, ],Z[trial][time_step, ]);
 }"
   )
 
@@ -250,8 +262,8 @@ for (network in 1:N_networks) {
     network_term,
     "real net_effect = 0;
 for (network in 1:N_networks) {
-  real numer = sum(A[network, trial, time_step][id, ] .* Z[trial][time_step, ]);
-  real denom = numer + sum(A[network, trial, time_step][id, ] .* (1 - Zn[trial][time_step, ]));
+  real numer = dot_product(A[network, trial, time_step][id, ],Z[trial][time_step, ]);
+  real denom = numer + dot_product(A[network, trial, time_step][id, ], (1 - Zn[trial][time_step, ]));
   real prop = denom > 0 ? numer / denom : 0.0;
   real dini_transformed = dini_func(prop, k_shape);
   net_effect += s_prime * dini_transformed;
@@ -270,9 +282,12 @@ for (network in 1:N_networks) {
     network_term,
     "real net_effect = 0;
 for (network in 1:N_networks) {
-  real active = sum(A[network, trial, time_step][id, ] .* Z[trial][time_step, ]);
-  real inactive = sum(A[network, trial, time_step][id, ] .* (1 - Z[trial][time_step, ]));
-  real frac = pow(active, f) / (pow(active, f) + pow(inactive, f));
+  real active = dot_product(A[network, trial, time_step][id, ],Z[trial][time_step, ]);
+  real inactive = dot_product(A[network, trial, time_step][id, ], (1 - Zn[trial][time_step, ]));
+  real frac = 0;
+  if ((active + inactive)>0){
+    frac = pow(active, f) / (pow(active, f) + pow(inactive, f));
+  }
   net_effect += s_prime * frac;
 }"
   )
@@ -289,7 +304,7 @@ for (network in 1:N_networks) {
     network_term,
     "real net_effect = 0;
 for (network in 1:N_networks) {
-  net_effect += s_prime * sum(A[network][id, ] .* Z[trial][time_step, ]);
+  net_effect += s_prime * dot_product(A[network][id, ],Z[trial][time_step, ]);
 }"
   )
 
@@ -305,8 +320,8 @@ for (network in 1:N_networks) {
     network_term,
     "real net_effect = 0;
 for (network in 1:N_networks) {
-  real numer = sum(A[network][id, ] .* Z[trial][time_step, ]);
-  real denom = numer + sum(A[network][id, ] .* (1 - Zn[trial][time_step, ]));
+  real numer = dot_product(A[network][id, ],Z[trial][time_step, ]);
+  real denom = numer + dot_product(A[network][id, ], (1 - Zn[trial][time_step, ]));
   real prop = denom > 0 ? numer / denom : 0.0;
   real dini_transformed = dini_func(prop, k_shape);
   net_effect += s_prime * dini_transformed;
@@ -325,9 +340,12 @@ for (network in 1:N_networks) {
     network_term,
     "real net_effect = 0;
 for (network in 1:N_networks) {
-  real active = sum(A[network][id, ] .* Z[trial][time_step, ]);
-  real inactive = sum(A[network][id, ] .* (1 - Z[trial][time_step, ]));
-  real frac = pow(active, f) / (pow(active, f) + pow(inactive, f));
+  real active = dot_product(A[network][id, ],Z[trial][time_step, ]);
+  real inactive = dot_product(A[network][id, ], (1 - Zn[trial][time_step, ]));
+  real frac = 0;
+  if ((active + inactive)>0){
+    frac = pow(active, f) / (pow(active, f) + pow(inactive, f));
+  }
   net_effect += s_prime * frac;
 }"
   )
@@ -344,7 +362,7 @@ for (network in 1:N_networks) {
     network_term,
     "real net_effect = 0;
 for (network in 1:N_networks) {
-  net_effect += s_prime * sum(A[network, trial, time_step][id, ] .* Z[trial][time_step, ]);
+  net_effect += s_prime * dot_product(A[network, trial, time_step][id, ],Z[trial][time_step, ]);
 }"
   )
 
@@ -360,8 +378,8 @@ for (network in 1:N_networks) {
     network_term,
     "real net_effect = 0;
 for (network in 1:N_networks) {
-  real numer = sum(A[network, trial, time_step][id, ] .* Z[trial][time_step, ]);
-  real denom = numer + sum(A[network, trial, time_step][id, ] .* (1 - Zn[trial][time_step, ]));
+  real numer = dot_product(A[network, trial, time_step][id, ],Z[trial][time_step, ]);
+  real denom = numer + dot_product(A[network, trial, time_step][id, ], (1 - Zn[trial][time_step, ]));
   real prop = denom > 0 ? numer / denom : 0.0;
   real dini_transformed = dini_func(prop, k_shape[id]);
   net_effect += s_prime * dini_transformed;
@@ -380,9 +398,12 @@ for (network in 1:N_networks) {
     network_term,
     "real net_effect = 0;
 for (network in 1:N_networks) {
-  real active = sum(A[network, trial, time_step][id, ] .* Z[trial][time_step, ]);
-  real inactive = sum(A[network, trial, time_step][id, ] .* (1 - Z[trial][time_step, ]));
-  real frac = pow(active, f[id]) / (pow(active, f[id]) + pow(inactive, f[id]));
+  real active = dot_product(A[network, trial, time_step][id, ],Z[trial][time_step, ]);
+  real inactive = dot_product(A[network, trial, time_step][id, ], (1 - Zn[trial][time_step, ]));
+  real frac = 0;
+  if ((active + inactive)>0){
+    frac = pow(active, f[id]) / (pow(active, f[id]) + pow(inactive, f[id]));
+  }
   net_effect += s_prime * frac;
 }"
   )
@@ -398,7 +419,7 @@ for (network in 1:N_networks) {
     network_term,
     "real net_effect = 0;
 for (network in 1:N_networks) {
-  net_effect += s_prime * sum(A[network][id, ] .* Z[trial][time_step, ]);
+  net_effect += s_prime * dot_product(A[network][id, ],Z[trial][time_step, ]);
 }"
   )
 
@@ -414,8 +435,8 @@ for (network in 1:N_networks) {
     network_term,
     "real net_effect = 0;
 for (network in 1:N_networks) {
-  real numer = sum(A[network][id, ] .* Z[trial][time_step, ]);
-  real denom = numer + sum(A[network][id, ] .* (1 - Zn[trial][time_step, ]));
+  real numer = dot_product(A[network][id, ],Z[trial][time_step, ]);
+  real denom = numer + dot_product(A[network][id, ], (1 - Zn[trial][time_step, ]));
   real prop = denom > 0 ? numer / denom : 0.0;
   real dini_transformed = dini_func(prop, k_shape[id]);
   net_effect += s_prime * dini_transformed;
@@ -434,10 +455,14 @@ for (network in 1:N_networks) {
     network_term,
     "real net_effect = 0;
 for (network in 1:N_networks) {
-  real active = sum(A[network][id, ] .* Z[trial][time_step, ]);
-  real inactive = sum(A[network][id, ] .* (1 - Z[trial][time_step, ]));
-  real frac = pow(active, f[id]) / (pow(active, f[id]) + pow(inactive, f[id]));
+  real active = dot_product(A[network][id, ],Z[trial][time_step, ]);
+  real inactive = dot_product(A[network][id, ], (1 - Zn[trial][time_step, ]));
+  real frac = 0;
+  if ((active + inactive)>0){
+    frac = pow(active, f[id]) / (pow(active, f[id]) + pow(inactive, f[id]));
+  }
   net_effect += s_prime * frac;
 }"
   )
 })
+

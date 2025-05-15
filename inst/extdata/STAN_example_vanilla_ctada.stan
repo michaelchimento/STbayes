@@ -36,7 +36,7 @@ model {
                     real ind_term = 1.0;
                     real net_effect = 0;
 for (network in 1:N_networks) {
-  net_effect += s_prime * sum(A[network, trial, time_step][id, ] .* Z[trial][time_step, ]);
+  net_effect += s_prime * dot_product(A[network, trial, time_step][id, ],Z[trial][time_step, ]);
 }
                     real soc_term = net_effect;
                     real lambda =  (lambda_0 * ind_term + soc_term) * D[trial, time_step] ;
@@ -54,7 +54,7 @@ for (network in 1:N_networks) {
                         real ind_term = 1.0;
                         real net_effect = 0;
 for (network in 1:N_networks) {
-  net_effect += s_prime * sum(A[network, trial, time_step][id, ] .* Z[trial][time_step, ]);
+  net_effect += s_prime * dot_product(A[network, trial, time_step][id, ],Z[trial][time_step, ]);
 }
                         real soc_term = net_effect;
                         real lambda =  (lambda_0 * ind_term + soc_term) * D[trial, time_step] ;
@@ -80,7 +80,7 @@ generated quantities {
                     real ind_term = 1.0;
                     real net_effect = 0;
 for (network in 1:N_networks) {
-  net_effect += s_prime * sum(A[network, trial, time_step][id, ] .* Z[trial][time_step, ]);
+  net_effect += s_prime * dot_product(A[network, trial, time_step][id, ],Z[trial][time_step, ]);
 }
                     real soc_term = net_effect;
                     real lambda =  (lambda_0 * ind_term + soc_term) * D[trial, time_step] ;
@@ -89,7 +89,7 @@ for (network in 1:N_networks) {
                     if (time_step == learn_time){
                                              log_lik_matrix[trial, n] = log( (lambda_0 * ind_term + soc_term)) - cum_hazard;
                                              for (network in 1:N_networks) {
-    real Tn = sum(A[network, trial, time_step][id, ] .* Z[trial][time_step, ]);
+    real Tn = dot_product(A[network, trial, time_step][id, ], Z[trial][time_step, ]);
     psocn_sum[network] += (s_prime * D[trial, time_step]   * Tn) / lambda;
 }
 count_ST += 1;
@@ -108,7 +108,7 @@ count_ST += 1;
                         real ind_term = 1.0;
                         real net_effect = 0;
 for (network in 1:N_networks) {
-  net_effect += s_prime * sum(A[network, trial, time_step][id, ] .* Z[trial][time_step, ]);
+  net_effect += s_prime * dot_product(A[network, trial, time_step][id, ],Z[trial][time_step, ]);
 }
                         real soc_term = net_effect;
                         real lambda =  (lambda_0 * ind_term + soc_term) * D[trial, time_step] ;

@@ -1,6 +1,4 @@
 test_that("Network structure is consistent using distribution edgeweights.", {
-  set.seed(42) # for reproducibility
-
   bisonr_fit <- STbayes::bisonr_fit
 
   # network has 10 individuals, create mock diffusion data

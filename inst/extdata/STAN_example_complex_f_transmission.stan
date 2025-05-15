@@ -39,9 +39,12 @@ model {
                     real ind_term = 1.0;
                     real net_effect = 0;
 for (network in 1:N_networks) {
-  real active = sum(A[network, trial, time_step][id, ] .* Z[trial][time_step, ]);
-  real inactive = sum(A[network, trial, time_step][id, ] .* (1 - Z[trial][time_step, ]));
-  real frac = pow(active, f) / (pow(active, f) + pow(inactive, f));
+  real active = dot_product(A[network, trial, time_step][id, ],Z[trial][time_step, ]);
+  real inactive = dot_product(A[network, trial, time_step][id, ], (1 - Zn[trial][time_step, ]));
+  real frac = 0;
+  if ((active + inactive)>0){
+    frac = pow(active, f) / (pow(active, f) + pow(inactive, f));
+  }
   net_effect += s_prime * frac;
 }
                     real soc_term = net_effect;
@@ -60,9 +63,12 @@ for (network in 1:N_networks) {
                         real ind_term = 1.0;
                         real net_effect = 0;
 for (network in 1:N_networks) {
-  real active = sum(A[network, trial, time_step][id, ] .* Z[trial][time_step, ]);
-  real inactive = sum(A[network, trial, time_step][id, ] .* (1 - Z[trial][time_step, ]));
-  real frac = pow(active, f) / (pow(active, f) + pow(inactive, f));
+  real active = dot_product(A[network, trial, time_step][id, ],Z[trial][time_step, ]);
+  real inactive = dot_product(A[network, trial, time_step][id, ], (1 - Zn[trial][time_step, ]));
+  real frac = 0;
+  if ((active + inactive)>0){
+    frac = pow(active, f) / (pow(active, f) + pow(inactive, f));
+  }
   net_effect += s_prime * frac;
 }
                         real soc_term = net_effect;
@@ -89,9 +95,12 @@ generated quantities {
                     real ind_term = 1.0;
                     real net_effect = 0;
 for (network in 1:N_networks) {
-  real active = sum(A[network, trial, time_step][id, ] .* Z[trial][time_step, ]);
-  real inactive = sum(A[network, trial, time_step][id, ] .* (1 - Z[trial][time_step, ]));
-  real frac = pow(active, f) / (pow(active, f) + pow(inactive, f));
+  real active = dot_product(A[network, trial, time_step][id, ],Z[trial][time_step, ]);
+  real inactive = dot_product(A[network, trial, time_step][id, ], (1 - Zn[trial][time_step, ]));
+  real frac = 0;
+  if ((active + inactive)>0){
+    frac = pow(active, f) / (pow(active, f) + pow(inactive, f));
+  }
   net_effect += s_prime * frac;
 }
                     real soc_term = net_effect;
@@ -101,8 +110,8 @@ for (network in 1:N_networks) {
                     if (time_step == learn_time){
                                              log_lik_matrix[trial, n] = log( (lambda_0 * ind_term + soc_term)) - cum_hazard;
                                              for (network in 1:N_networks) {
-    real active = sum(A[network, trial, time_step][id, ] .* Z[trial][time_step, ]);
-    real inactive = sum(A[network, trial, time_step][id, ] .* (1 - Z[trial][time_step, ]));
+    real active = dot_product(A[network, trial, time_step][id, ], Z[trial][time_step, ]);
+    real inactive = dot_product(A[network, trial, time_step][id, ], (1 - Zn[trial][time_step, ]));
     real frac = pow(active, f) / (pow(active, f) + pow(inactive, f));
     psocn_sum[network] += (s_prime * D[trial, time_step]   * frac) / lambda;
 }
@@ -122,9 +131,12 @@ count_ST += 1;
                         real ind_term = 1.0;
                         real net_effect = 0;
 for (network in 1:N_networks) {
-  real active = sum(A[network, trial, time_step][id, ] .* Z[trial][time_step, ]);
-  real inactive = sum(A[network, trial, time_step][id, ] .* (1 - Z[trial][time_step, ]));
-  real frac = pow(active, f) / (pow(active, f) + pow(inactive, f));
+  real active = dot_product(A[network, trial, time_step][id, ],Z[trial][time_step, ]);
+  real inactive = dot_product(A[network, trial, time_step][id, ], (1 - Zn[trial][time_step, ]));
+  real frac = 0;
+  if ((active + inactive)>0){
+    frac = pow(active, f) / (pow(active, f) + pow(inactive, f));
+  }
   net_effect += s_prime * frac;
 }
                         real soc_term = net_effect;

@@ -16,7 +16,8 @@ get_ST_prob_term(
   time_var = "time_step",
   net_var = "A",
   ILVs_variable_effects = "",
-  weibull_term = ""
+  weibull_term = "",
+  high_res = F
 )
 }
 \arguments{

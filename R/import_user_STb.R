@@ -71,6 +71,15 @@ import_user_STb <- function(event_data,
                             ILVm = NULL,
                             t_weights = NULL,
                             high_res = FALSE) {
+
+    if (inherits(networks, "data.frame")) {
+        id_check <- standardize_ids(networks, event_data, ILV_c, ILV_tv, t_weights)
+        event_data <- id_check$event_data
+        ILV_c <- id_check$ILV_c
+        ILV_tv <- id_check$ILV_tv
+        t_weights <- id_check$t_weights
+    }
+
     # warnings
     if (all(is.null(ILVi), is.null(ILVs), is.null(ILVm)) & (!is.null(ILV_c) | !is.null(ILV_tv))) {
         message("🤔 You have provided ILVs, yet did not specify whether they should be additive or multiplicative (missing arguments ILVi, ILVs, ILVm). They will not be included in the model.")
@@ -87,7 +96,7 @@ import_user_STb <- function(event_data,
         message("User supplied a list of Bayesian network fits [🌈 ,🌈] ")
         is_distribution <- TRUE
     } else {
-        stop("😔 Please give me a networks argument with a dataframe, a bisonR model fit (or a list of fits). I dunno what to do with this.")
+        stop("😔 Please feed me a networks argument with a dataframe, a bisonR model fit (or a list of fits). I dunno what to do with this.")
     }
 
     network_type <- match.arg(network_type)
@@ -140,8 +149,11 @@ import_user_STb <- function(event_data,
     D_data$duration <- ifelse(is.na(D_data$duration), D_data$time, D_data$duration)
     #multiply the networks and transmission weights
     if (high_res) {
-        networks = process_networks_x_weights_hires(event_data= event_data, t_weights=t_weights, networks=networks, D_data=D_data)
+        full_networks <- grid_networks(event_data, networks)
+        prop_k <- process_hires_complex_k(event_data, full_networks, t_weights, D_data)
+        networks <- process_networks_x_weights_hires(event_data, t_weights, full_networks, D_data)
     }
+
     D_data <- D_data[, !(names(D_data) %in% "time")]
 
     # pivot wider
@@ -180,9 +192,10 @@ import_user_STb <- function(event_data,
         ind_id = id_data,
         Zn = create_Z_matrix(event_data, high_res),
         Z = create_Z_matrix(event_data, high_res),
-        high_res = F,
+        high_res = high_res,
         multinetwork_s = multinetwork_s,
-        directed = if (network_type == "directed") T else F
+        directed = if (network_type == "directed") T else F,
+        prop_k = if (high_res) prop_k else c()
     )
 
     dim(data_list$D) <- c(data_list$K, data_list$T_max)
@@ -278,10 +291,9 @@ import_user_STb <- function(event_data,
         data_list$ILVm_names <- "ILVabsent"
     }
 
-    ## Network handling for high-resolution data
     if (!is_distribution) {
         if (data_list$P != length(unique(c(networks$from, networks$to)))) {
-            stop("😔 Networks do not contain the same number of unique individuals as the event data.")
+            stop("😔 Networks and event data do not contain the same number of unique individuals. If individuals did not experience an event, please include them with column time = t_end+1.")
         }
         if (data_list$K != length(unique(networks$trial))) {
             stop("😔 Networks do not contain the same number of trials as the event data.")
@@ -424,3 +436,4 @@ import_user_STb <- function(event_data,
     dl_sanity_check(data_list = data_list)
     return(data_list)
 }
+

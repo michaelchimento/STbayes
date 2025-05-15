@@ -12,9 +12,9 @@
 #' @param time_var string used to index time "time_step"
 #' @export
 #' @return string of stan code to be used in the model for calculating network effects
-get_network_term <- function(transmission_func, is_distribution = FALSE,
+get_network_term <- function(transmission_func="standard", is_distribution = FALSE,
                              separate_s = FALSE, num_networks = 1, veff_ID = c(), s_var="s_prime", net_var = "A",
-                             net_index = "network", id_var = "id", trial_var = "trial", time_var = "time_step") {
+                             net_index = "network", id_var = "id", trial_var = "trial", time_var = "time_step", high_res=F) {
   net_effect_term <- if (id_var == "j") "net_effect_j" else "net_effect"
 
   s_term <- if (num_networks > 1 & separate_s) {
@@ -45,20 +45,30 @@ for (network in 1:N_networks) {{
     return(glue::glue("real {net_effect_term} = 0;
 for (network in 1:N_networks) {{
   real active = {base_term};
-  real inactive = dot_product({net_expr}, (1 - Z[{trial_var}][{time_var}, ]));
-  real frac = pow(active, {f_term}) / (pow(active, {f_term}) + pow(inactive, {f_term}));
+  real inactive = dot_product({net_expr}, (1 - Zn[{trial_var}][{time_var}, ]));
+  real frac = 0;
+  if ((active + inactive)>0){{
+    frac = pow(active, {f_term}) / (pow(active, {f_term}) + pow(inactive, {f_term}));
+  }}
   {net_effect_term} += {s_term} * frac;
 }}"))
   }
 
-  if (transmission_func == "freqdep_k") {
+  if (transmission_func == "freqdep_k" & !high_res) {
     k_term <- if ("k" %in% veff_ID) glue::glue("k_shape[{id_var}]") else "k_shape"
     return(glue::glue("real {net_effect_term} = 0;
 for (network in 1:N_networks) {{
   real numer = {base_term};
-  real denom = numer + dot_product({net_expr} , (1 - Zn[{trial_var}][{time_var}, ]));
+  real denom = numer + dot_product({net_expr}, (1 - Zn[{trial_var}][{time_var}, ]));
   real prop = denom > 0 ? numer / denom : 0.0;
   real dini_transformed = dini_func(prop, {k_term});
+  {net_effect_term} += {s_term} * dini_transformed;
+}}"))
+  } else if (transmission_func == "freqdep_k" & high_res){
+    k_term <- if ("k" %in% veff_ID) glue::glue("k_shape[{id_var}]") else "k_shape"
+    return(glue::glue("real {net_effect_term} = 0;
+for (network in 1:N_networks) {{
+  real dini_transformed = dini_func(prop_k[network, trial, time_step, id], {k_term});
   {net_effect_term} += {s_term} * dini_transformed;
 }}"))
   }

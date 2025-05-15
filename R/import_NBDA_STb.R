@@ -18,7 +18,8 @@ import_NBDA_STb <- function(nbda_object,
                             multinetwork_s = c("separate", "shared"),
                             ILVi = NULL,
                             ILVs = NULL,
-                            ILVm = NULL) {
+                            ILVm = NULL,
+                            high_res=F) {
   if (!.pkg_state$nbda_msg_shown) {
     message("👉 This function is convenient, but there's more flexibility and functionality available using the import_user_STb() function.")
     .pkg_state$nbda_msg_shown = TRUE
@@ -135,26 +136,31 @@ import_NBDA_STb <- function(nbda_object,
   }))
 
   #### Populate Data List ####
-  data_list$K <- length(unique(event_data$trial_numeric)) # Number of trials
-  data_list$P <- length(unique(event_data$id_numeric)) # Number of individuals
-  data_list$N <- N_data$num_uncensored # Uncensored counts per trial
+  data_list <- list(
+    K = length(unique(event_data$trial_numeric)), # Number of trials
+    P = length(unique(event_data$id_numeric)), # Number of individuals
+    N = N_data$num_uncensored, # Uncensored counts per trial
+    N_c = N_data$num_censored, # Censored counts per trial
+    T = N_data$max_periods, # Max time periods (discrete)
+    t = t_data, # Discrete time matrix
+    T_max = max(N_data$max_periods),
+    time = time_data,
+    time_max = time_max,
+    Q = max(event_data$index), # Max individuals per trial
+    D = D_data_real, # duration data
+    D_int = D_data_int, # duration data in integer format (experimental)
+    ind_id = id_data, # Individual IDs matrix
+    Zn = create_Z_matrix(event_data, high_res = F), # knowledge state matrix
+    multinetwork_s = multinetwork_s,
+    prop_k = NULL, #not used by nbda imports
+    high_res = F,  #not used by nbda imports
+    directed = F  #not used by nbda imports
+  )
   dim(data_list$N) <- length(data_list$N)
-  data_list$N_c <- N_data$num_censored # Censored counts per trial
   dim(data_list$N_c) <- length(data_list$N_c)
-  data_list$T <- N_data$max_periods # Max time periods (discrete)
   dim(data_list$T) <- length(data_list$T)
-  data_list$t <- t_data # Discrete time matrix
-  data_list$T_max <- max(N_data$max_periods)
-  data_list$time <- time_data
-  data_list$time_max <- time_max
-  data_list$Q <- max(event_data$index) # Max individuals per trial
-  data_list$D <- D_data_real # duration data
-  data_list$D_int <- D_data_int # duration data in integer format (experimental)
   dim(data_list$D_int) <- dim(data_list$D) # why is r so annoying
-  data_list$ind_id <- id_data # Individual IDs matrix
-  data_list$Zn <- create_Z_matrix(event_data, high_res = F) # knowledge state matrix
   data_list$Z <- sweep(data_list$Zn, MARGIN = 3, STATS = nbda_object@weights, FUN = "*") # mult with weights
-  data_list$multinetwork_s <- multinetwork_s
 
   #### ILV Metadata ####
 

@@ -5,14 +5,16 @@
 #' @return Nothing, just print sanity check
 dl_sanity_check <- function(data_list) {
   message(paste(
-    "🤔 Sanity check! User provided data about:\n",
-    data_list$P, "individuals across",
-    data_list$K, "independent diffusions (trials).\n",
-    "There were", data_list$Q, "individuals in each trial.\n",
-    "User supplied", length(data_list$network_names), "networks:", paste(data_list$network_names, collapse = ", "), "\n",
-    "ILV for asocial learning:", paste(data_list$ILVi_names, collapse = ", "), "\n",
-    "ILV for social learning:", paste(data_list$ILVs_names, collapse = ", "), "\n",
-    "multipliative model ILV:", paste(data_list$ILVm_names, collapse = ", "), "\n",
-    "Does that seem right to you?"
+    "░▒▓█►─═ Sanity check ═─◄█▓▒░",
+    "User provided data about:",
+    paste(data_list$P, "individuals across", data_list$K, "independent diffusions (trials)."),
+    paste("There were", data_list$Q, "individuals in each trial."),
+    paste("User supplied", length(data_list$network_names), "networks:", paste(data_list$network_names, collapse = ", ")),
+    paste("ILV for asocial learning:", paste(data_list$ILVi_names, collapse = ", ")),
+    paste("ILV for social learning:", paste(data_list$ILVs_names, collapse = ", ")),
+    paste("multiplicative model ILV:", paste(data_list$ILVm_names, collapse = ", ")),
+    "🤔 Does that seem right to you?",
+    sep = "\n"
   ))
+
 }

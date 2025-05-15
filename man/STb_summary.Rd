@@ -9,7 +9,8 @@ STb_summary(
   depth = 1,
   prob = 0.95,
   ignore_params = c("lp__", "idx", "log_lik", "log_lik_matrix", "count_ST", "psocn_sum",
-    "acquisition_time", "z_ID", "Rho_ID", "v_ID", ".chain", ".iteration", ".draw"),
+    "acquisition_time", "z_ID", "Rho_ID", "v_ID", ".chain", ".iteration", ".draw",
+    "s_prime"),
   digits = 3,
   CI_method = c("HPDI", "PI")
 )

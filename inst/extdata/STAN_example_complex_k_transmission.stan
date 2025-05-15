@@ -47,8 +47,8 @@ model {
                     real ind_term = 1.0;
                     real net_effect = 0;
 for (network in 1:N_networks) {
-  real numer = sum(A[network, trial, time_step][id, ] .* Z[trial][time_step, ]);
-  real denom = numer + sum(A[network, trial, time_step][id, ] .* (1 - Zn[trial][time_step, ]));
+  real numer = dot_product(A[network, trial, time_step][id, ],Z[trial][time_step, ]);
+  real denom = numer + dot_product(A[network, trial, time_step][id, ], (1 - Zn[trial][time_step, ]));
   real prop = denom > 0 ? numer / denom : 0.0;
   real dini_transformed = dini_func(prop, k_shape);
   net_effect += s_prime * dini_transformed;
@@ -69,8 +69,8 @@ for (network in 1:N_networks) {
                         real ind_term = 1.0;
                         real net_effect = 0;
 for (network in 1:N_networks) {
-  real numer = sum(A[network, trial, time_step][id, ] .* Z[trial][time_step, ]);
-  real denom = numer + sum(A[network, trial, time_step][id, ] .* (1 - Zn[trial][time_step, ]));
+  real numer = dot_product(A[network, trial, time_step][id, ],Z[trial][time_step, ]);
+  real denom = numer + dot_product(A[network, trial, time_step][id, ], (1 - Zn[trial][time_step, ]));
   real prop = denom > 0 ? numer / denom : 0.0;
   real dini_transformed = dini_func(prop, k_shape);
   net_effect += s_prime * dini_transformed;
@@ -99,8 +99,8 @@ generated quantities {
                     real ind_term = 1.0;
                     real net_effect = 0;
 for (network in 1:N_networks) {
-  real numer = sum(A[network, trial, time_step][id, ] .* Z[trial][time_step, ]);
-  real denom = numer + sum(A[network, trial, time_step][id, ] .* (1 - Zn[trial][time_step, ]));
+  real numer = dot_product(A[network, trial, time_step][id, ],Z[trial][time_step, ]);
+  real denom = numer + dot_product(A[network, trial, time_step][id, ], (1 - Zn[trial][time_step, ]));
   real prop = denom > 0 ? numer / denom : 0.0;
   real dini_transformed = dini_func(prop, k_shape);
   net_effect += s_prime * dini_transformed;
@@ -112,8 +112,8 @@ for (network in 1:N_networks) {
                     if (time_step == learn_time){
                                              log_lik_matrix[trial, n] = log( (lambda_0 * ind_term + soc_term)) - cum_hazard;
                                              for (network in 1:N_networks) {
-    real numer = sum(A[network, trial, time_step][id, ] .* Z[trial][time_step, ]);
-    real denom = numer + sum(A[network, trial, time_step][id, ] .* (1 - Zn[trial][time_step, ]));
+    real numer = dot_product(A[network, trial, time_step][id, ], Z[trial][time_step, ]);
+    real denom = numer + dot_product(A[network, trial, time_step][id, ], (1 - Zn[trial][time_step, ]));
     real prop = denom > 0 ? numer / denom : 0.0;
     real dini = dini_func(prop, k_shape);
     psocn_sum[network] += (s_prime * D[trial, time_step]   * dini) / lambda;
@@ -134,8 +134,8 @@ count_ST += 1;
                         real ind_term = 1.0;
                         real net_effect = 0;
 for (network in 1:N_networks) {
-  real numer = sum(A[network, trial, time_step][id, ] .* Z[trial][time_step, ]);
-  real denom = numer + sum(A[network, trial, time_step][id, ] .* (1 - Zn[trial][time_step, ]));
+  real numer = dot_product(A[network, trial, time_step][id, ],Z[trial][time_step, ]);
+  real denom = numer + dot_product(A[network, trial, time_step][id, ], (1 - Zn[trial][time_step, ]));
   real prop = denom > 0 ? numer / denom : 0.0;
   real dini_transformed = dini_func(prop, k_shape);
   net_effect += s_prime * dini_transformed;

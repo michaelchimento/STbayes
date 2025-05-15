@@ -7,7 +7,7 @@
 #' @return list containing loo_objects, comparison, and pareto_diagnostics if using loo-psis.
 #' @export
 STb_compare <- function(..., model_names = NULL, method = "loo-psis") {
-  args <- list(...)  # <- You need this line
+  args <- list(...)
   if (is.list(args[[1]])) {
     models <- args[[1]]
     model_names <- names(models)

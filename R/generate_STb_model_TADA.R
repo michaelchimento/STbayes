@@ -60,6 +60,9 @@ generate_STb_model_TADA <- function(STb_data,
     est_acqTime <- FALSE
   }
 
+  high_res_k = if (STb_data$high_res==T & transmission_func=="freqdep_k") T else F
+  high_res_f = if (STb_data$high_res==T & transmission_func=="freqdep_f") T else F
+
   prior_lambda0 <- priors[["log_lambda0"]]
   prior_s <- priors[["log_sprime"]]
   prior_f <- priors[["log_f"]]
@@ -103,7 +106,6 @@ generate_STb_model_TADA <- function(STb_data,
       if (STb_data$directed == T) {
         glue::glue("{matrix_decls}
                         for (network in 1:N_networks){{
-                          int edge_idx = 1;
                           for (edge_idx in 1:N_dyad) {{
                                 real w = inv_logit(edge_logit[network, edge_idx]);
                                 A[network, from_ID[edge_idx], to_ID[edge_idx]] = w;
@@ -187,7 +189,8 @@ generate_STb_model_TADA <- function(STb_data,
       is_distribution = is_distribution,
       num_networks = num_networks,
       separate_s = separate_s,
-      veff_ID = veff_ID
+      veff_ID = veff_ID,
+      high_res = high_res_k
     )
 
     # If shared s (i.e., use w[] weights), declare w
@@ -224,7 +227,7 @@ generate_STb_model_TADA <- function(STb_data,
     ILV_declaration <- paste0(
       sapply(combined_ILV_vars, function(var) {
         if (!is.null(dim(STb_data[[paste0("ILV_", var)]]))) {
-          if (STb_data$high_res) paste0("array[K,T_max,P] real ILV_", var, ";") else paste0("array[K,T_max,P] real ILV_", var, ";")
+          paste0("array[K,T_max,P] real ILV_", var, ";")
         } else {
           paste0("array[P] real ILV_", var, ";")
         }
@@ -393,6 +396,7 @@ data {{
     {if (est_acqTime) 'array[K] int<lower=0> time_max; //Duration of obs period for each trial' else ''}
     {if (est_acqTime) 'array[K, T_max] int<lower=0> D_int; // integer durations' else ''}
     {distribution_data_declaration}
+    {if (high_res_k) 'array[N_networks, K, T_max, P] real<lower=0, upper=1> prop_k;' else ''}
 }}
 ")
   # Parameters block
@@ -440,7 +444,8 @@ transformed parameters {{
         veff_ID = veff_ID,
         num_networks = num_networks,
         ILVs_variable_effects = ILVs_variable_effects,
-        weibull_term = gamma_statement)
+        weibull_term = gamma_statement,
+        high_res=high_res_k)
     }
 
     social_info_statement <- glue::glue(

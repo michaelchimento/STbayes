@@ -225,7 +225,7 @@ generate_STb_model_TADA_sdirect <- function(STb_data,
         ILV_declaration <- paste0(
             sapply(combined_ILV_vars, function(var) {
                 if (!is.null(dim(STb_data[[paste0("ILV_", var)]]))) {
-                    if (STb_data$high_res) paste0("array[K,T_max,P] real ILV_", var, ";") else paste0("array[K,T_max,P] real ILV_", var, ";")
+                    paste0("array[K,T_max,P] real ILV_", var, ";")
                 } else {
                     paste0("array[P] real ILV_", var, ";")
                 }
@@ -444,7 +444,8 @@ transformed parameters {{
         veff_ID = veff_ID,
         num_networks = num_networks,
         ILVs_variable_effects = ILVs_variable_effects,
-        weibull_term = gamma_statement
+        weibull_term = gamma_statement,
+        high_res = STb_data$high_res
       )
         social_info_statement <- glue::glue(
             "real soc_term = net_effect{ILVs_variable_effects};"

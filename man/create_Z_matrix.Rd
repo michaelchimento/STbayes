@@ -4,7 +4,7 @@
 \alias{create_Z_matrix}
 \title{create_Z_matrix: private function to create the knowledge state matrix Z\link{k,t,n}}
 \usage{
-create_Z_matrix(event_data, high_res)
+create_Z_matrix(event_data, high_res, time_type = c("interval", "real"))
 }
 \arguments{
 \item{event_data}{dataframe (event_data) in import_NBDA_STb.R / import_user_STb.R}
