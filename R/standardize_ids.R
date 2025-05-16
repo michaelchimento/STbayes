@@ -116,7 +116,8 @@ standardize_ids <- function(networks, event_data, ILV_c = NULL, ILV_tv = NULL, t
         }
 
         t_weights <- merge(t_weights, id_map, by = "id", all.x = TRUE)
-        t_weights <- t_weights[order(t_weights$trial, t_weights$time), ]
+        if ("time" %in% names(t_weights)) t_weights <- t_weights[order(t_weights$trial, t_weights$time), ] else t_weights <- t_weights[order(t_weights$trial), ]
+
     }
 
     return(list(
