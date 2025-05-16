@@ -440,7 +440,7 @@ transformed parameters {{
         transmission_func = transmission_func,
         is_distribution = is_distribution,
         separate_s = separate_s,
-        s_var = "lambda_0[id] * s_direct",
+        s_var = "lambda_0 * s_direct",
         veff_ID = veff_ID,
         num_networks = num_networks,
         ILVs_variable_effects = ILVs_variable_effects,
