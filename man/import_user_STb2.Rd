@@ -2,7 +2,7 @@
 % Please edit documentation in R/import_user_STb2.R
 \name{import_user_STb2}
 \alias{import_user_STb2}
-\title{import_user_STb2: Create STbayes_data object from user supplied data}
+\title{import_user_STb2: Create STbayes_data object from user supplied data. Rather than pre-process high res data, this will just create a massive datalist to be sent to Stan. Models will take much longer to run.}
 \usage{
 import_user_STb2(
   event_data,
@@ -45,7 +45,7 @@ import_user_STb2(
 A list object containing properly formatted data to run social transmission models.
 }
 \description{
-import_user_STb2: Create STbayes_data object from user supplied data
+import_user_STb2: Create STbayes_data object from user supplied data. Rather than pre-process high res data, this will just create a massive datalist to be sent to Stan. Models will take much longer to run.
 }
 \examples{
 # very mock data

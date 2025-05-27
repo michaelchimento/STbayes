@@ -182,15 +182,6 @@ generate_STb_model_OADA <- function(STb_data,
       veff_ID = veff_ID,
       id_var = "j"
     )
-
-    # If shared s (i.e., use w[] weights), declare w
-    # if (!separate_s & num_networks>1) {
-    #   w_param <- paste0("simplex[", num_networks, "] w; // Weights for networks")
-    #   w_prior <- paste0("w ~ dirichlet(rep_vector(0.5, ", num_networks, "));")
-    # } else {
-    #   w_param <- ""
-    #   w_prior <- ""
-    # }
   } else {
     network_term <- ""
     network_term_j <- ""

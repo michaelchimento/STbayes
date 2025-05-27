@@ -5,12 +5,14 @@ Authors@R:
     person("Michael", "Chimento", , "mchimento@ab.mpg.de", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0001-5697-1701"))
 Description: STbayes is a flexible tool for building and running Bayesian models of social transmission over networks, inspired by the network-based diffusion analysis (NBDA) framework. STbayes builds and compiles customized STAN programs based on the user's input. These models estimate rates of asocial and social transmission that can be affected by individual level variables. Models can be optionally fitted with random effects to account for inter-individual variation. The model can accept static or dynamic networks, and can compare multiple networks if supplied. Furthermore, networks may be supplied with point-estimate edge weights, or posterior distributions of edgeweights, allowing for propagation of uncertainty from network inference. The package accepts either raw data supplied by the user, or NBDA objects exported from the NBDA package.
+LinkingTo: Rcpp
 Imports: 
     cmdstanr,
     posterior,
     loo,
     glue,
-    methods
+    methods,
+    Rcpp
 License: AGPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

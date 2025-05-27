@@ -70,16 +70,7 @@ get_ST_prob_term <- function(transmission_func, is_distribution = FALSE,
       }}
       count_ST += 1;
       ")
-      } else{
-        glue::glue("
-        for (network in 1:N_networks) {{
-          real dini = dini_func(prop_k[network, trial, time_step, id], {k_term});
-          psocn_sum[network] += ({full_s_term} * dini) / lambda;
-        }}
-      count_ST += 1;
-      ")
       }
-
     },
     stop("Unsupported transmission_func")
   )

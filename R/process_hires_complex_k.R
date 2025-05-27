@@ -38,7 +38,7 @@ process_hires_complex_k <- function(event_data, networks, t_weights, D_data) {
 
     # Apply transmission weights
     temp_net <- merge(networks, t_weights, by = c("trial", "time", "to"), all.x = TRUE)
-    weight_cols <- setdiff(names(temp_net), c("trial", "from", "to", "time", "t_weight", "z", "zn", "acquisition_time"))
+    weight_cols <- setdiff(names(temp_net), c("trial", "from", "to", "time", "t_weight", "z", "zn", "acquisition_time", "id_numeric"))
 
     N_networks <- length(weight_cols)
     K <- max(temp_net$trial)

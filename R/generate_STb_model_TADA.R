@@ -60,9 +60,6 @@ generate_STb_model_TADA <- function(STb_data,
     est_acqTime <- FALSE
   }
 
-  high_res_k = if (STb_data$high_res==T & transmission_func=="freqdep_k") T else F
-  high_res_f = if (STb_data$high_res==T & transmission_func=="freqdep_f") T else F
-
   prior_lambda0 <- priors[["log_lambda0"]]
   prior_s <- priors[["log_sprime"]]
   prior_f <- priors[["log_f"]]
@@ -190,7 +187,7 @@ generate_STb_model_TADA <- function(STb_data,
       num_networks = num_networks,
       separate_s = separate_s,
       veff_ID = veff_ID,
-      high_res = high_res_k
+      high_res = F
     )
 
     # If shared s (i.e., use w[] weights), declare w
@@ -396,7 +393,6 @@ data {{
     {if (est_acqTime) 'array[K] int<lower=0> time_max; //Duration of obs period for each trial' else ''}
     {if (est_acqTime) 'array[K, T_max] int<lower=0> D_int; // integer durations' else ''}
     {distribution_data_declaration}
-    {if (high_res_k) 'array[N_networks, K, T_max, P] real<lower=0, upper=1> prop_k;' else ''}
 }}
 ")
   # Parameters block
@@ -445,7 +441,7 @@ transformed parameters {{
         num_networks = num_networks,
         ILVs_variable_effects = ILVs_variable_effects,
         weibull_term = gamma_statement,
-        high_res=high_res_k)
+        high_res=F)
     }
 
     social_info_statement <- glue::glue(

@@ -64,13 +64,6 @@ for (network in 1:N_networks) {{
   real dini_transformed = dini_func(prop, {k_term});
   {net_effect_term} += {s_term} * dini_transformed;
 }}"))
-  } else if (transmission_func == "freqdep_k" & high_res){
-    k_term <- if ("k" %in% veff_ID) glue::glue("k_shape[{id_var}]") else "k_shape"
-    return(glue::glue("real {net_effect_term} = 0;
-for (network in 1:N_networks) {{
-  real dini_transformed = dini_func(prop_k[network, trial, time_step, id], {k_term});
-  {net_effect_term} += {s_term} * dini_transformed;
-}}"))
   }
 
   stop("Unknown transmission_func")

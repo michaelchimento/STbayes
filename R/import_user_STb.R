@@ -149,8 +149,8 @@ import_user_STb <- function(event_data,
     D_data$duration <- ifelse(is.na(D_data$duration), D_data$time, D_data$duration)
     #multiply the networks and transmission weights
     if (high_res) {
+        message("⚠ I will pre-process high-res data for standard transmission models. For complex transmission, please use import_user_STb2().")
         full_networks <- grid_networks(event_data, networks)
-        prop_k <- process_hires_complex_k(event_data, full_networks, t_weights, D_data)
         networks <- process_networks_x_weights_hires(event_data, t_weights, full_networks, D_data)
     }
 
@@ -194,8 +194,7 @@ import_user_STb <- function(event_data,
         Z = create_Z_matrix(event_data, high_res),
         high_res = high_res,
         multinetwork_s = multinetwork_s,
-        directed = if (network_type == "directed") T else F,
-        prop_k = if (high_res) prop_k else c()
+        directed = if (network_type == "directed") T else F
     )
 
     dim(data_list$D) <- c(data_list$K, data_list$T_max)
@@ -322,21 +321,43 @@ import_user_STb <- function(event_data,
         dims <- c(length(network_cols), data_list$K, max_timesteps, data_list$P, data_list$P)
         A_array <- array(0, dim = dims)
 
+        # flatten ONCE
+        A_flat <- as.numeric(aperm(A_array, c(1, 2, 3, 4, 5)))
+
+        # fill in-place
         for (n in seq_along(network_cols)) {
             column <- network_cols[n]
             for (k in 1:data_list$K) {
                 temp_df <- networks[networks$trial_numeric == k, ]
-                for (i in 1:nrow(temp_df)) {
-                    from <- as.integer(temp_df[i, "from_numeric"])
-                    to <- as.integer(temp_df[i, "to_numeric"])
-                    time <- as.integer(temp_df[i, "discrete_time"])
-                    value <- as.numeric(temp_df[i, column])
-                    A_array[n, k, time, from, to] <- value
-                    if (!is_symmetric & network_type == "undirected") A_array[n, k, time, to, from] <- value
+                from <- temp_df$from_numeric
+                to <- temp_df$to_numeric
+                time <- temp_df$discrete_time
+                value <- temp_df[[column]]
+
+                fill_array(
+                    A_flat, dims,
+                    from, to, time, value,
+                    n - 1, k - 1,
+                    (!is_symmetric && network_type == "undirected")
+                )
+            }
+        }
+
+        # reshape ONCE after all fill_array calls
+        A_array <- aperm(array(A_flat, dim = dims), c(1, 2, 3, 4, 5))
+
+        # replicate across time for static networks
+        if (!is_dynamic) {
+            for (n in seq_along(network_cols)) {
+                for (k in 1:data_list$K) {
+                    A_array[n, k, , , ] <- A_array[n, k, rep(1, dim(A_array)[3]), , ]
                 }
-                if (!is_dynamic) {
-                    A_array[n, k, , , ] <- rep(A_array[n, k, 1, , ], each = dim(A_array)[3])
-                }
+            }
+        }
+
+        # zero out diagonals
+        for (n in seq_along(network_cols)) {
+            for (k in 1:data_list$K) {
                 for (t in 1:max(data_list$T)) {
                     diag(A_array[n, k, t, , ]) <- 0
                 }
@@ -436,4 +457,3 @@ import_user_STb <- function(event_data,
     dl_sanity_check(data_list = data_list)
     return(data_list)
 }
-
