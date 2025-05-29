@@ -31,7 +31,7 @@ This package is under development and is not guaranteed to work.
 
 ## Installation<a name="Installation"></a>
 
-The functions of this package depend on ```cmdstanr```, ```posterior``` and ```loo```. You can install ```cmdstanr``` by following these [instructions](https://mc-stan.org/cmdstanr/articles/cmdstanr.html).
+The functions of this package depend on ```cmdstanr```, ```posterior```, ```bayestestR```, ```data.table``` and ```loo```. You can install ```cmdstanr``` by following these [instructions](https://mc-stan.org/cmdstanr/articles/cmdstanr.html).
 
 Vignettes use packages NBDA (install with ```devtools::install_github("whoppitt/NBDA"```), igraph, dplyr, ggplot2, and ggpubr.
 

@@ -1,6 +1,8 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
+//' @useDynLib STbayes, .registration = TRUE
+//' @export
 // [[Rcpp::export]]
 void fill_array(NumericVector A_array,
                 IntegerVector dims,

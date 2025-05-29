@@ -3,7 +3,6 @@
 #' @param event_data dataframe with columns id, trial, time, t_end
 #' @param networks Either a dataframe, a bisonr fit or STRAND fit, or a list of bisonr or STRAND fits. If dataframe: with columns trial, from, to, and one or more columns of edge weights named descriptively. Optionally an integer time column can be provided for dynamic network analysis, although networks must be provided for each time period between transmission events.
 #' @param network_type "undirected" or "directed".
-#' @param multinetwork_s "separate" or "shared". If supplying more than one network, specify whether each network receives it's own s parameter, or shares a single parameter.
 #' @param ILV_c optional dataframe with columns id, and any constant individual-level variables that might be of interest
 #' @param ILV_tv optional dataframe with columns trial, id, time and any time-varying variables. Variable values should summarize the variable for each inter-acquisition period.
 #' @param ILVi Optional character vector of column names from ILV metadata to be considered when estimating intrinsic rate. If not specified, all ILV are applied to both.
@@ -18,52 +17,51 @@
 #' @examples
 #' # very mock data
 #' event_data <- data.frame(
-#'   trial = rep(1:2, each = 3),
-#'   id = LETTERS[1:6],
-#'   time = c(0, 1, 2, 0, 1, 4),
-#'   t_end = c(3, 3, 3, 4, 4, 4)
+#'     trial = rep(1:2, each = 3),
+#'     id = LETTERS[1:6],
+#'     time = c(0, 1, 2, 0, 1, 4),
+#'     t_end = c(3, 3, 3, 4, 4, 4)
 #' )
 #' networks <- data.frame(
-#'   trial = rep(1:2, each = 3),
-#'   from = c("A", "A", "B", "D", "D", "E"),
-#'   to = c("B", "C", "C", "E", "F", "F"),
-#'   kin = c(1, 0, 1, 0, 1, 1),
-#'   inverse_distance = c(0, 1, .5, .25, .1, 0)
+#'     trial = rep(1:2, each = 3),
+#'     from = c("A", "A", "B", "D", "D", "E"),
+#'     to = c("B", "C", "C", "E", "F", "F"),
+#'     kin = c(1, 0, 1, 0, 1, 1),
+#'     inverse_distance = c(0, 1, .5, .25, .1, 0)
 #' )
 #' ILV_c <- data.frame(
-#'   id = LETTERS[1:6],
-#'   age = c(-1, -2, 0, 1, 2), # continuous variables should be normalized
-#'   sex = c(0, 1, 1, 0, 1, 0), # Factor ILVs must be input as numeric
-#'   weight = c(0.5, .25, .3, 0, -.2, -.4)
+#'     id = LETTERS[1:6],
+#'     age = c(-1, -2, 0, 1, 2), # continuous variables should be normalized
+#'     sex = c(0, 1, 1, 0, 1, 0), # Factor ILVs must be input as numeric
+#'     weight = c(0.5, .25, .3, 0, -.2, -.4)
 #' )
 #' ILV_tv <- data.frame(
-#'   trial = c(rep(1, each = 9), rep(2, each = 9)),
-#'   id = c(rep(LETTERS[1:3], each = 3), rep(LETTERS[4:6], each = 3)),
-#'   # these times correspond to the inter-acquisition periods
-#'   # e.g. 1 is from [t_0 to t_1), 2 is [t_1 to t_2), 3 = [t_2 to t_3 or t_end] if censored inds. present)
-#'   time = c(rep(1:3, times = 3), rep(1:3, times = 3)),
-#'   # ensure the variable is summarizing these inter-acquisition time periods
-#'   dist_from_task = rnorm(18)
+#'     trial = c(rep(1, each = 9), rep(2, each = 9)),
+#'     id = c(rep(LETTERS[1:3], each = 3), rep(LETTERS[4:6], each = 3)),
+#'     # these times correspond to the inter-acquisition periods
+#'     # e.g. 1 is from [t_0 to t_1), 2 is [t_1 to t_2), 3 = [t_2 to t_3 or t_end] if censored inds. present)
+#'     time = c(rep(1:3, times = 3), rep(1:3, times = 3)),
+#'     # ensure the variable is summarizing these inter-acquisition time periods
+#'     dist_from_task = rnorm(18)
 #' )
 #' t_weights <- data.frame(
-#'   trial = c(rep(1, each = 9), rep(2, each = 9)),
-#'   id = c(rep(LETTERS[1:3], each = 3), rep(LETTERS[4:6], each = 3)),
-#'   time = c(rep(1:3, times = 3), rep(1:3, times = 3)),
-#'   t_weight = exp(rnorm(18))
+#'     trial = c(rep(1, each = 9), rep(2, each = 9)),
+#'     id = c(rep(LETTERS[1:3], each = 3), rep(LETTERS[4:6], each = 3)),
+#'     time = c(rep(1:3, times = 3), rep(1:3, times = 3)),
+#'     t_weight = exp(rnorm(18))
 #' )
 #' imported_data <- import_user_STb(
-#'   event_data = event_data,
-#'   networks = networks,
-#'   ILV_c = ILV_c,
-#'   ILV_tv = ILV_tv,
-#'   ILVi = c("age", "dist_from_task"), # Use 'age' and time-varying ILV 'dist_from_task' for asocial learning
-#'   ILVs = c("sex"), # Use only 'sex' for social learning
-#'   ILVm = c("weight") # Use weight for multiplicative effect on asocial and social learning
+#'     event_data = event_data,
+#'     networks = networks,
+#'     ILV_c = ILV_c,
+#'     ILV_tv = ILV_tv,
+#'     ILVi = c("age", "dist_from_task"), # Use 'age' and time-varying ILV 'dist_from_task' for asocial learning
+#'     ILVs = c("sex"), # Use only 'sex' for social learning
+#'     ILVm = c("weight") # Use weight for multiplicative effect on asocial and social learning
 #' )
 import_user_STb2 <- function(event_data,
                              networks,
                              network_type = c("undirected", "directed"),
-                             multinetwork_s = c("separate", "shared"),
                              ILV_c = NULL,
                              ILV_tv = NULL,
                              ILVi = NULL,
@@ -71,27 +69,41 @@ import_user_STb2 <- function(event_data,
                              ILVm = NULL,
                              t_weights = NULL,
                              high_res = FALSE) {
-    # warnings
-    if (all(is.null(ILVi), is.null(ILVs), is.null(ILVm)) & (!is.null(ILV_c) | !is.null(ILV_tv))) {
-        message("WARNING: You have provided ILV, yet did not specify whether they should be additive or multiplicative (missing arguments ILVi, ILVs, ILVm). If not specified, they will not be included in the model.")
+    if (inherits(event_data, "data.frame")) {
+        check_required_cols(event_data, required_cols = c("id", "trial", "time", "t_end"), df_name = "event_data")
+    } else {
+        stop("😔 Please feed me an event_data argument with a dataframe. I dunno what to do with this.")
     }
 
     if (inherits(networks, "data.frame")) {
-        message("User supplied edge weights as point estimates.")
+        check_required_cols(networks, required_cols = c("trial", "from", "to"), df_name = "networks")
+        id_check <- standardize_ids(networks, event_data, ILV_c, ILV_tv, t_weights)
+        event_data <- id_check$event_data
+        ILV_c <- id_check$ILV_c
+        ILV_tv <- id_check$ILV_tv
+        t_weights <- id_check$t_weights
+    }
+
+    # other warnings
+    if (inherits(networks, "data.frame")) {
+        message("User supplied edge weights as point estimates 📍")
         is_distribution <- FALSE
     } else if (inherits(networks, "bison_model") || inherits(networks, "STRAND Results Object")) {
-        message("User supplied a single Bayesian network fit.")
+        message("User supplied edge weights as posterior distributions 🌈 ")
         networks <- list(networks)
         is_distribution <- TRUE
     } else if (is.list(networks) && all(sapply(networks, function(x) inherits(x, "bison_model") || inherits(x, "STRAND Results Object")))) {
-        message("User supplied a list of Bayesian network fits (bisonr or STRAND).")
+        message("User supplied a list of Bayesian network fits [🌈 ,🌈] ")
         is_distribution <- TRUE
     } else {
-        stop("Please supply a dataframe, a bison_model or STRAND fit object, or a list of them.")
+        stop("😔 Please feed me a networks argument with a dataframe, a bisonR model fit (or a list of fits). I dunno what to do with this.")
+    }
+
+    if (all(is.null(ILVi), is.null(ILVs), is.null(ILVm)) & (!is.null(ILV_c) | !is.null(ILV_tv))) {
+        message("🤔 You have provided ILVs, yet did not specify whether they should be additive or multiplicative (missing arguments ILVi, ILVs, ILVm). They will not be included in the model.")
     }
 
     network_type <- match.arg(network_type)
-    multinetwork_s <- match.arg(multinetwork_s)
 
     #### event_data ####
     # event_data should be in format id, trial, time, t_end
@@ -191,7 +203,6 @@ import_user_STb2 <- function(event_data,
         Zn = create_Z_matrix(event_data, high_res, if (high_res) "real" else "interval"),
         Z = create_Z_matrix(event_data, high_res, if (high_res) "real" else "interval"),
         high_res = high_res,
-        multinetwork_s = multinetwork_s,
         directed = if (network_type == "directed") T else F
     )
 
@@ -446,10 +457,6 @@ import_user_STb2 <- function(event_data,
         data_list$N_dyad <- N_dyad
         data_list$network_names <- paste0("net", seq_len(N_networks))
         data_list$N_networks <- N_networks
-    }
-
-    if (data_list$multinetwork_s == "separate" & data_list$N_networks == 1) {
-        data_list$multinetwork_s <- "shared"
     }
 
     ## Final sanity check and return ##

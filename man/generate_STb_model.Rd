@@ -10,6 +10,7 @@ generate_STb_model(
   model_type = c("full", "asocial"),
   intrinsic_rate = c("constant", "weibull"),
   transmission_func = c("standard", "freqdep_f", "freqdep_k"),
+  multinetwork_s = c("separate", "shared"),
   veff_ID = c(),
   gq = TRUE,
   est_acqTime = FALSE,
@@ -28,6 +29,8 @@ generate_STb_model(
 
 \item{transmission_func}{string specifying transmission function: "standard", "freqdep_f" or "freqdep_k" for frequency dependent complex contagion. Defaults to "standard".}
 
+\item{multinetwork_s}{string specifying how multi-network models are generated. "separate" estimates an s value for each network. "shared" generates model with single s and a vector of weights for each network.}
+
 \item{veff_ID}{Parameters for which to estimate varying effects by individuals. Default is no varying effects.}
 
 \item{gq}{Boolean to indicate whether the generated quantities block is added (incl. ll for WAIC)}
@@ -35,8 +38,6 @@ generate_STb_model(
 \item{est_acqTime}{Boolean to indicate whether gq block includes estimates for acquisition time. At the moment this uses 'one weird trick' to accomplish this and does not support estimates for non-integer learning times.}
 
 \item{priors}{named list with strings containing the prior for log(lambda_0), log(s'), log(f), k, z_id, sigma_id, rho_id.}
-
-\item{multi_network_s}{string specifying how multi-network models are generated. "separate" estimates an s value for each network. "shared" generates model with single s and a vector of weights for each network.}
 }
 \value{
 A STAN model (character) that is customized to the input data.
@@ -47,31 +48,31 @@ generate_STb_model: Dynamically generate STAN model based on input data
 \examples{
 # very mock data
 event_data <- data.frame(
-  id = c("A", "B", "C", "D", "E", "F"),
-  trial = c(1, 1, 1, 2, 2, 2),
-  time = c(0, 1, 2, 0, 1, 4),
-  max_time = c(3, 3, 3, 4, 4, 4)
+    id = c("A", "B", "C", "D", "E", "F"),
+    trial = c(1, 1, 1, 2, 2, 2),
+    time = c(0, 1, 2, 0, 1, 4),
+    max_time = c(3, 3, 3, 4, 4, 4)
 )
 networks <- data.frame(
-  trial = c(1, 1, 1, 2, 2, 2),
-  from = c("A", "A", "B", "D", "D", "E"),
-  to = c("B", "C", "C", "E", "F", "F"),
-  kin = c(1, 0, 1, 0, 1, 1),
-  inverse_distance = c(0, 1, .5, .25, .1, 0)
+    trial = c(1, 1, 1, 2, 2, 2),
+    from = c("A", "A", "B", "D", "D", "E"),
+    to = c("B", "C", "C", "E", "F", "F"),
+    kin = c(1, 0, 1, 0, 1, 1),
+    inverse_distance = c(0, 1, .5, .25, .1, 0)
 )
 ILV_c <- data.frame(
-  id = LETTERS[1:6],
-  age = c(-1, -2, 0, 1, 2), # continuous variables should be normalized
-  sex = c(0, 1, 1, 0, 1, 0), # Factor ILVs must be input as numeric
-  weight = c(0.5, .25, .3, 0, -.2, -.4)
+    id = LETTERS[1:6],
+    age = c(-1, -2, 0, 1, 2), # continuous variables should be normalized
+    sex = c(0, 1, 1, 0, 1, 0), # Factor ILVs must be input as numeric
+    weight = c(0.5, .25, .3, 0, -.2, -.4)
 )
 data_list <- import_user_STb(
-  event_data = event_data,
-  networks = networks,
-  ILV_c = ILV_c,
-  ILVi = c("age"), # Use only 'age' for asocial learning
-  ILVs = c("sex"), # Use only 'sex' for social learning
-  ILVm = c("weight") # Use weight for multiplicative effect on asocial and social learning
+    event_data = event_data,
+    networks = networks,
+    ILV_c = ILV_c,
+    ILVi = c("age"), # Use only 'age' for asocial learning
+    ILVs = c("sex"), # Use only 'sex' for social learning
+    ILVm = c("weight") # Use weight for multiplicative effect on asocial and social learning
 )
 
 model <- generate_STb_model(data_list) # creates full specification of cTADA model, no varying effects and default priors.
