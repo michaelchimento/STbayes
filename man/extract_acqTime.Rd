@@ -2,7 +2,7 @@
 % Please edit documentation in R/extract_acqTime.R
 \name{extract_acqTime}
 \alias{extract_acqTime}
-\title{Function to extract estimated acquisition times}
+\title{extract_acqTime}
 \usage{
 extract_acqTime(fit, data_list, prob = 0.95, var_name = "acquisition_time")
 }
@@ -19,5 +19,5 @@ extract_acqTime(fit, data_list, prob = 0.95, var_name = "acquisition_time")
 Dataframe of trial, individual, id, observed_time, mean/median/HPD of estimated time
 }
 \description{
-Function to extract estimated acquisition times
+Extract estimated acquisition times for posterior predictive check.
 }
