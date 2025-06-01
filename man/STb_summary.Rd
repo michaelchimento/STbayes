@@ -2,7 +2,7 @@
 % Please edit documentation in R/STb_summary.R
 \name{STb_summary}
 \alias{STb_summary}
-\title{Return summary table for CmdStanR fit}
+\title{STb_summary()}
 \usage{
 STb_summary(
   fit,
@@ -32,5 +32,19 @@ STb_summary(
 Summary table
 }
 \description{
-Return summary table for CmdStanR fit
+Create a useful summary table for STbayes fit. Contains estimates on log and
+linear scale for lambda_0 (intrinsic rate) and s' (social transmission rate).
+Includes estimated s (relative strength of social transmission).
+}
+\examples{
+data_list_user <- import_user_STb(STbayes::event_data, STbayes::edge_list)
+model_obj <- generate_STb_model(data_list_user)
+fit <- fit_STb(data_list_user,
+    model_obj,
+    parallel_chains = 5,
+    chains = 5,
+    cores = 5,
+    iter = 5000
+)
+STb_summary(fit, prob = 0.95, digits = 3, CI_method = "HPDI")
 }

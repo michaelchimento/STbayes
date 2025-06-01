@@ -2,16 +2,20 @@
 % Please edit documentation in R/create_Z_matrix.R
 \name{create_Z_matrix}
 \alias{create_Z_matrix}
-\title{create_Z_matrix: private function to create the knowledge state matrix Z\link{k,t,n}}
+\title{create_Z_matrix()}
 \usage{
 create_Z_matrix(event_data, high_res, time_type = c("interval", "real"))
 }
 \arguments{
 \item{event_data}{dataframe (event_data) in import_NBDA_STb.R / import_user_STb.R}
+
+\item{high_res}{boolean}
+
+\item{time_type}{do we want to summarize inter-event intervals or real time}
 }
 \value{
-matrix \link{k,t,n} where value=0 if naive at t, otherwise 1
+matrix dimensions k,t,n where value=0 if naive at t, otherwise 1
 }
 \description{
-create_Z_matrix: private function to create the knowledge state matrix Z\link{k,t,n}
+Helper function to create the knowledge state matrix Z with dims k,t,n
 }

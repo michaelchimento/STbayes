@@ -2,17 +2,33 @@
 % Please edit documentation in R/STb_save.R
 \name{STb_save}
 \alias{STb_save}
-\title{Save STbayes objects easily}
+\title{STb_save()}
 \usage{
 STb_save(fit, output_dir = "cmdstan_saves", name = NULL)
 }
 \arguments{
 \item{fit}{model fitted by STbayes}
 
-\item{output_dir}{where do you want to save it???}
+\item{output_dir}{path of where do you want to save}
 
 \item{name}{optional name to use for model}
 }
+\value{
+NULL, message if successfully saved.
+}
 \description{
-Save STbayes objects easily
+Save STbayes fits easily, rather than having to save the fit and chain csvs separately.
+Will provide a message with the command to re-load the fit for convenience.
+}
+\examples{
+data_list <- import_user_STb(STbayes::event_data, STbayes::edge_list)
+model_obj <- generate_STb_model(data_list, gq = TRUE)
+fit <- fit_STb(data_list_user,
+    model_obj,
+    parallel_chains = 5,
+    chains = 5,
+    cores = 5,
+    iter = 5000
+)
+STb_save(fit, output_dir = "../data/stan_fits", name = "my_fit")
 }

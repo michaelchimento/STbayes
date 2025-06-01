@@ -2,7 +2,7 @@
 % Please edit documentation in R/extract_LOOIC.R
 \name{extract_LOOIC}
 \alias{extract_LOOIC}
-\title{Convenience to extract LOOIC scores}
+\title{extract_LOOIC()}
 \usage{
 extract_LOOIC(fit)
 }
@@ -13,5 +13,5 @@ extract_LOOIC(fit)
 LOOIC estimate
 }
 \description{
-Convenience to extract LOOIC scores
+Convenience to quickly extract LOOIC scores. You should really be using \code{\link[=STb_compare]{STb_compare()}}.
 }

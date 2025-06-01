@@ -2,7 +2,7 @@
 % Please edit documentation in R/get_network_term.R
 \name{get_network_term}
 \alias{get_network_term}
-\title{Helper function to generate network terms for STAN}
+\title{get_network_term()}
 \usage{
 get_network_term(
   transmission_func = "standard",
@@ -26,6 +26,8 @@ get_network_term(
 
 \item{separate_s}{whether or not s should be constrained to be the same for all networks}
 
+\item{num_networks}{integer of number of networks}
+
 \item{veff_ID}{vector of varying effects}
 
 \item{s_var}{string used to represent s term ("s_prime" or "s_direct")}
@@ -39,6 +41,8 @@ get_network_term(
 \item{trial_var}{string used to index trial "trial"}
 
 \item{time_var}{string used to index time "time_step"}
+
+\item{high_res}{boolean indicating if high res}
 }
 \value{
 string of stan code to be used in the model for calculating network effects

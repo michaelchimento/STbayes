@@ -9,8 +9,7 @@ import_NBDA_STb(
   network_names = c("default"),
   ILVi = NULL,
   ILVs = NULL,
-  ILVm = NULL,
-  high_res = F
+  ILVm = NULL
 )
 }
 \arguments{

@@ -1,18 +1,19 @@
 #' Helper function for preprocessing "high resolution" data
+#' process_networks_x_weights_hires()
 #'
-#' @param t_weights
-#' @param networks
-#' @param event_data
+#' Helper function that pre-processes networks cxn x t_weights for fast high-res models.
+#'
+#' @param event_data event_data df
+#' @param t_weights t_weights df
+#' @param networks networks df
+#' @param D_data D_data df
 #'
 #' @importFrom data.table as.data.table setkey merge.data.table
-#' @return
-#' @export
-#'
-#' @examples
+#' @return dataframe where network weights are pre-processed to include cxn x t_weight
 
 process_networks_x_weights_hires <- function(event_data, t_weights, networks, D_data) {
-    t_weights$trial = as.integer(as.factor(t_weights$trial))
-    t_weights$id = as.integer(as.factor(t_weights$id))
+    t_weights$trial <- as.integer(as.factor(t_weights$trial))
+    t_weights$id <- as.integer(as.factor(t_weights$id))
 
     names(t_weights)[names(t_weights) == "id"] <- "to"
     names(D_data)[names(D_data) == "trial_numeric"] <- "trial"
@@ -39,14 +40,15 @@ process_networks_x_weights_hires <- function(event_data, t_weights, networks, D_
         duration = unique(duration)
     ), lapply(.SD, sum)),
     by = .(trial, from, to, discrete_time),
-    .SDcols = weight_cols]
-    #network_dt$weight = network_dt$weight/(network_dt$duration)
-    network_dt[, (weight_cols) := lapply(.SD, function(x) x /duration), .SDcols = weight_cols]
+    .SDcols = weight_cols
+    ]
+    # network_dt$weight = network_dt$weight/(network_dt$duration)
+    network_dt[, (weight_cols) := lapply(.SD, function(x) x / duration), .SDcols = weight_cols]
 
-    #remove extra column
-    network_dt$time = network_dt$discrete_time
-    network_dt$discrete_time = NULL
-    network_dt$duration = NULL
+    # remove extra column
+    network_dt$time <- network_dt$discrete_time
+    network_dt$discrete_time <- NULL
+    network_dt$duration <- NULL
     message("|Hi-Rez|: Pre-processing completed.")
     return(as.data.frame(network_dt))
 }

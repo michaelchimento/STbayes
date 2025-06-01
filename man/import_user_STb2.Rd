@@ -2,7 +2,7 @@
 % Please edit documentation in R/import_user_STb2.R
 \name{import_user_STb2}
 \alias{import_user_STb2}
-\title{import_user_STb2: Create STbayes_data object from user supplied data. Rather than pre-process high res data, this will just create a massive datalist to be sent to Stan. Models will take much longer to run.}
+\title{Import user data 2}
 \usage{
 import_user_STb2(
   event_data,
@@ -20,7 +20,8 @@ import_user_STb2(
 \arguments{
 \item{event_data}{dataframe with columns id, trial, time, t_end}
 
-\item{networks}{Either a dataframe, a bisonr fit or STRAND fit, or a list of bisonr or STRAND fits. If dataframe: with columns trial, from, to, and one or more columns of edge weights named descriptively. Optionally an integer time column can be provided for dynamic network analysis, although networks must be provided for each time period between transmission events.}
+\item{networks}{Either a dataframe, a bisonr fit, or a list of bisonr fits.
+If dataframe: with columns trial, from, to, and one or more columns of edge weights named descriptively.}
 
 \item{network_type}{"undirected" or "directed".}
 
@@ -42,7 +43,11 @@ import_user_STb2(
 A list object containing properly formatted data to run social transmission models.
 }
 \description{
-import_user_STb2: Create STbayes_data object from user supplied data. Rather than pre-process high res data, this will just create a massive datalist to be sent to Stan. Models will take much longer to run.
+First step of analysis pipeline: create STbayes data object from user
+supplied data to be used for generating and fitting models. This function is
+basically used when \emph{fitting models of complex transmission to high-resolution data.}
+Rather than pre-process high res data, this will just create a massive
+data-list to be sent to Stan. Models created with this function will take much longer to run.
 }
 \examples{
 # very mock data

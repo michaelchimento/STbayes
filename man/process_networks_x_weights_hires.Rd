@@ -2,13 +2,23 @@
 % Please edit documentation in R/process_hires_networks_x_weights.R
 \name{process_networks_x_weights_hires}
 \alias{process_networks_x_weights_hires}
-\title{Helper function for preprocessing "high resolution" data}
+\title{Helper function for preprocessing "high resolution" data
+process_networks_x_weights_hires()}
 \usage{
 process_networks_x_weights_hires(event_data, t_weights, networks, D_data)
 }
 \arguments{
-\item{event_data}{}
+\item{event_data}{event_data df}
+
+\item{t_weights}{t_weights df}
+
+\item{networks}{networks df}
+
+\item{D_data}{D_data df}
+}
+\value{
+dataframe where network weights are pre-processed to include cxn x t_weight
 }
 \description{
-Helper function for preprocessing "high resolution" data
+Helper function that pre-processes networks cxn x t_weights for fast high-res models.
 }

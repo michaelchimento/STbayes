@@ -1,4 +1,7 @@
-#' Fit STb model using cmdstanr
+#' fit_STb()
+#'
+#' Third step of analysis pipeline: Fits model using cmdstanr.
+#' After fitting, consider using [STb_save()] to store the output.
 #'
 #' @param data_list list object exported from import_user_STb or import_NBDA_STb
 #' @param model_obj Can be either model object exported from generate_STb_model or a filename
@@ -6,6 +9,17 @@
 #'
 #' @return A CmdStanMCMC fit object
 #' @export
+#'
+#' @examples
+#' data_list <- import_user_STb(STbayes::event_data, STbayes::edge_list)
+#' model_obj <- generate_STb_model(data_list)
+#' fit <- fit_STb(data_list_user,
+#'     model_obj,
+#'     parallel_chains = 5,
+#'     chains = 5,
+#'     cores = 5,
+#'     iter = 5000
+#' )
 fit_STb <- function(data_list, model_obj, ...) {
     extra_args <- list(...)
 
@@ -41,7 +55,7 @@ fit_STb <- function(data_list, model_obj, ...) {
     } else if (is.character(model_obj) && grepl("data \\{", model_obj)) {
         model_code <- model_obj
     } else {
-        stop("model_obj must be a file path to an existing .stan file or Stan code as a string (use generate_STb_model()).")
+        stop("\u274C model_obj must be a file path to an existing .stan file or Stan code as a string (use generate_STb_model()).")
     }
 
     # Write model to temp file
@@ -55,7 +69,7 @@ fit_STb <- function(data_list, model_obj, ...) {
 
     mod <- cmdstanr::cmdstan_model(temp_file)
 
-    message("Sampling...")
+    message("\u23F3 Sampling...")
 
     # remove elements of datalist not used... why cmd stan...
     data_list_clean <- Filter(function(x) {
@@ -66,7 +80,7 @@ fit_STb <- function(data_list, model_obj, ...) {
 
     fit <- do.call(mod$sample, valid_args)
 
-    message("🫴 Use STb_save() to save both the fit and chain csvs in a single, convenient RDS file. Or don't!")
+    message("\U0001FAF4 Use STb_save() to save both the fit and chain csvs in a single, convenient RDS file. Or don't!")
 
     return(fit)
 }

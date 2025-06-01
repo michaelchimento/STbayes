@@ -2,7 +2,7 @@ test_that("IDs are properly mapped and filled", {
     networks <- data.frame(
         trial = c(1, 1, 1),
         from = c("A", "A", "B"),
-        to   = c("B", "C", "C")
+        to = c("B", "C", "C")
     )
 
     event_data <- data.frame(
@@ -64,7 +64,8 @@ test_that("Error if event_data contains unknown IDs", {
     event_data <- data.frame(id = "Z", trial = 1, time = 0, t_end = 3)
 
     expect_error(standardize_ids(networks, event_data),
-                 regexp = "missing from the `networks`")
+        regexp = "missing from `networks`"
+    )
 })
 
 test_that("Error if ILV_c contains unknown IDs", {
@@ -73,7 +74,8 @@ test_that("Error if ILV_c contains unknown IDs", {
     ILV_c <- data.frame(id = c("A", "Z"), age = c(1, 2))
 
     expect_error(standardize_ids(networks, event_data, ILV_c = ILV_c),
-                 regexp = "missing from the `networks`")
+        regexp = "missing from `networks`"
+    )
 })
 
 test_that("Error if ILV_tv contains unknown IDs", {
@@ -83,4 +85,3 @@ test_that("Error if ILV_tv contains unknown IDs", {
 
     expect_error(standardize_ids(networks, event_data, ILV_tv = ILV))
 })
-

@@ -12,7 +12,9 @@ Imports:
     loo,
     glue,
     methods,
-    Rcpp
+    Rcpp,
+    data.table,
+    bayestestR
 License: AGPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -22,6 +24,9 @@ LazyDataCompression: xz
 Suggests: 
     dplyr,
     ggplot2,
-    NBDA
+    knitr,
+    NBDA,
+    rmarkdown
 Depends: 
-    R (>= 2.10)
+    R (>= 3.5)
+VignetteBuilder: knitr

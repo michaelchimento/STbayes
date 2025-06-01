@@ -1,6 +1,7 @@
 #' Dynamically generate STAN model based on input data
 #' @param STb_data a list of formatted data returned from the STbayes_data() function
 #' @param model_type string specifying the model type: "asocial" or "full"
+#' @param intrinsic_rate string specifying whether intrinsic rate is static or can change over time ("constant", "weibull")
 #' @param transmission_func string specifying transmission function: "standard", "freqdep_f" or "freqdep_k" for complex contagion. Defaults to "standard". Complex contagion with multi-network model is not supported.
 #' @param dTADA boolean indicating whether dTADA should be used.
 #' @param veff_ID Parameters for which to estimate varying effects by individuals. Default is no varying effects.
@@ -8,49 +9,15 @@
 #' @param est_acqTime Boolean to indicate whether gq block includes estimates for acquisition time. At the moment this uses 'one weird trick' to accomplish this and does not support estimates for non-integer learning times.
 #' @param priors named list with strings containing the prior for log baserate, s, f, k.
 #' @return A STAN model (character) that is customized to the input data.
-#'
-#' @examples
-#' # very mock data
-#' event_data <- data.frame(
-#'   id = c("A", "B", "C", "D", "E", "F"),
-#'   trial = c(1, 1, 1, 2, 2, 2),
-#'   time = c(0, 1, 2, 0, 1, 4),
-#'   max_time = c(3, 3, 3, 4, 4, 4)
-#' )
-#' networks <- data.frame(
-#'   trial = c(1, 1, 1, 2, 2, 2),
-#'   from = c("A", "A", "B", "D", "D", "E"),
-#'   to = c("B", "C", "C", "E", "F", "F"),
-#'   kin = c(1, 0, 1, 0, 1, 1),
-#'   inverse_distance = c(0, 1, .5, .25, .1, 0)
-#' )
-#' ILV_c <- data.frame(
-#'   id = LETTERS[1:6],
-#'   age = c(-1, -2, 0, 1, 2), # continuous variables should be normalized
-#'   sex = c(0, 1, 1, 0, 1, 0), # Factor ILVs must be input as numeric
-#'   weight = c(0.5, .25, .3, 0, -.2, -.4)
-#' )
-#' data_list <- import_user_STb(
-#'   event_data = event_data,
-#'   networks = networks,
-#'   ILV_c = ILV_c,
-#'   ILVi = c("age"), # Use only 'age' for asocial learning
-#'   ILVs = c("sex"), # Use only 'sex' for social learning
-#'   ILVm = c("weight") # Use weight for multiplicative effect on asocial and social learning
-#' )
-#'
-#' model <- generate_STb_model(data_list) # no varying effects
-#' model <- generate_STb_model(data_list, veff_ID = c("lambda_0", "s")) # estimate varying effects by ID for baseline learning rate and strength of social transmission.
-#' print(model)
 generate_STb_model_TADA_sdirect <- function(STb_data,
-                                    model_type = "full",
-                                    intrinsic_rate = "constant",
-                                    transmission_func = "standard",
-                                    dTADA = F,
-                                    veff_ID = c(),
-                                    gq = TRUE,
-                                    est_acqTime = FALSE,
-                                    priors = list()) {
+                                            model_type = "full",
+                                            intrinsic_rate = "constant",
+                                            transmission_func = "standard",
+                                            dTADA = F,
+                                            veff_ID = c(),
+                                            gq = TRUE,
+                                            est_acqTime = FALSE,
+                                            priors = list()) {
     if (!model_type %in% c("asocial", "full")) {
         stop("Invalid model_type. Choose 'asocial' or 'full'.")
     }
@@ -188,7 +155,7 @@ generate_STb_model_TADA_sdirect <- function(STb_data,
             num_networks = num_networks,
             separate_s = separate_s,
             veff_ID = veff_ID,
-            s_var="s_direct"
+            s_var = "s_direct"
         )
 
         # If shared s (i.e., use w[] weights), declare w
@@ -275,39 +242,39 @@ generate_STb_model_TADA_sdirect <- function(STb_data,
     count <- 1
 
     if (N_veff > 0) {
-        if ("s" %in% veff_ID & model_type == "full"){
-          if (separate_s) {
-            # s[n, id] as exp(log_s_direct_mean[n, id] + v_ID[,i])
-            transformed_params <- append(transformed_params, glue::glue(
-              "matrix<lower=0>[N_networks, P] s_direct;
+        if ("s" %in% veff_ID & model_type == "full") {
+            if (separate_s) {
+                # s[n, id] as exp(log_s_direct_mean[n, id] + v_ID[,i])
+                transformed_params <- append(transformed_params, glue::glue(
+                    "matrix<lower=0>[N_networks, P] s_direct;
 for (n in 1:N_networks) {{
   for (id in 1:P) {{
     s_direct[n, id] = exp(log_s_direct_mean[n] + v_ID[id, n]);
   }}
 }}"
-            ))
-            gq_transformed_params <- append(gq_transformed_params, glue::glue(
-              "matrix<lower=0>[N_networks, P] s_prime;
+                ))
+                gq_transformed_params <- append(gq_transformed_params, glue::glue(
+                    "matrix<lower=0>[N_networks, P] s_prime;
 for (n in 1:N_networks) {{
   for (id in 1:P) {{
     s_prime[n, id] = s_direct[n, id] * lambda_0[id];
   }}
 }}"
-            ))
-            gq_transformed_params <- append(gq_transformed_params, "vector[N_networks] s_mean = exp(log_s_direct_mean);")
-            count <- count + num_networks
-          } else {
-            # s[id] = exp(log_s_direct_mean + v_ID[,i])
-            transformed_params <- append(transformed_params, paste0("vector<lower=0>[P] s_direct = exp(log_s_direct_mean + v_ID[,", count, "]);"))
-            gq_transformed_params <- append(gq_transformed_params, paste0("vector<lower=0>[P] s_prime = s_direct .* lambda_0;"))
-            gq_transformed_params <- append(gq_transformed_params, paste0("real s_direct_mean = exp(log_s_direct_mean);"))
-            gq_transformed_params <- append(gq_transformed_params, paste0("real<lower=0> s_prime_mean = (exp(log_s_direct_mean)) * (exp(log_lambda_0_mean));"))
-            count <- count + 1
-          }
+                ))
+                gq_transformed_params <- append(gq_transformed_params, "vector[N_networks] s_mean = exp(log_s_direct_mean);")
+                count <- count + num_networks
+            } else {
+                # s[id] = exp(log_s_direct_mean + v_ID[,i])
+                transformed_params <- append(transformed_params, paste0("vector<lower=0>[P] s_direct = exp(log_s_direct_mean + v_ID[,", count, "]);"))
+                gq_transformed_params <- append(gq_transformed_params, paste0("vector<lower=0>[P] s_prime = s_direct .* lambda_0;"))
+                gq_transformed_params <- append(gq_transformed_params, paste0("real s_direct_mean = exp(log_s_direct_mean);"))
+                gq_transformed_params <- append(gq_transformed_params, paste0("real<lower=0> s_prime_mean = (exp(log_s_direct_mean)) * (exp(log_lambda_0_mean));"))
+                count <- count + 1
+            }
         }
         for (parameter in veff_ID) {
             if (parameter == "s" & model_type == "full") {
-              next
+                next
             } else if (parameter == "lambda_0") {
                 transformed_params <- append(transformed_params, paste0("vector<lower=0>[P] lambda_0 = exp(log_lambda_0_mean + v_ID[,", count, "]);"))
                 gq_transformed_params <- append(gq_transformed_params, paste0("real lambda_0_mean = exp(log_lambda_0_mean);"))
@@ -435,18 +402,18 @@ transformed parameters {{
 
 
     if (model_type == "full") {
-      # get %ST term
-      psoc_code <- get_ST_prob_term(
-        transmission_func = transmission_func,
-        is_distribution = is_distribution,
-        separate_s = separate_s,
-        s_var = "lambda_0 * s_direct",
-        veff_ID = veff_ID,
-        num_networks = num_networks,
-        ILVs_variable_effects = ILVs_variable_effects,
-        weibull_term = gamma_statement,
-        high_res = STb_data$high_res
-      )
+        # get %ST term
+        psoc_code <- get_ST_prob_term(
+            transmission_func = transmission_func,
+            is_distribution = is_distribution,
+            separate_s = separate_s,
+            s_var = "lambda_0 * s_direct",
+            veff_ID = veff_ID,
+            num_networks = num_networks,
+            ILVs_variable_effects = ILVs_variable_effects,
+            weibull_term = gamma_statement,
+            high_res = STb_data$high_res
+        )
         social_info_statement <- glue::glue(
             "real soc_term = net_effect{ILVs_variable_effects};"
         )
@@ -478,7 +445,7 @@ transformed parameters {{
             )
         }
     } else if (model_type == "asocial") {
-      psoc_code <- ""
+        psoc_code <- ""
         social_info_statement <- ""
         lambda_statement <- glue::glue("real lambda =  {if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * ind_term * D[trial, time_step]{gamma_statement};")
         lambda_statement_estAcq <- glue::glue("real lambda =  {if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * ind_term{eA_gamma_statement};")

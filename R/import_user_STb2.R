@@ -1,7 +1,14 @@
-#' import_user_STb2: Create STbayes_data object from user supplied data. Rather than pre-process high res data, this will just create a massive datalist to be sent to Stan. Models will take much longer to run.
+#' Import user data 2
+#'
+#' First step of analysis pipeline: create STbayes data object from user
+#' supplied data to be used for generating and fitting models. This function is
+#' basically used when *fitting models of complex transmission to high-resolution data.*
+#' Rather than pre-process high res data, this will just create a massive
+#' data-list to be sent to Stan. Models created with this function will take much longer to run.
 #'
 #' @param event_data dataframe with columns id, trial, time, t_end
-#' @param networks Either a dataframe, a bisonr fit or STRAND fit, or a list of bisonr or STRAND fits. If dataframe: with columns trial, from, to, and one or more columns of edge weights named descriptively. Optionally an integer time column can be provided for dynamic network analysis, although networks must be provided for each time period between transmission events.
+#' @param networks Either a dataframe, a bisonr fit, or a list of bisonr fits.
+#' If dataframe: with columns trial, from, to, and one or more columns of edge weights named descriptively.
 #' @param network_type "undirected" or "directed".
 #' @param ILV_c optional dataframe with columns id, and any constant individual-level variables that might be of interest
 #' @param ILV_tv optional dataframe with columns trial, id, time and any time-varying variables. Variable values should summarize the variable for each inter-acquisition period.
@@ -10,7 +17,7 @@
 #' @param ILVm Optional character vector of column names from ILV metadata to be considered in a multiplicative model.
 #' @param t_weights Optional dataframe with columns trial, id, time and t_weight. Transmission rates represent rates of production/relevant cues per inter-event period.
 #' @param high_res Boolean indicating whether or not user is providing networks and transmission weights per period duration=1
-#'
+#' @importFrom Rcpp evalCpp
 #' @return A list object containing properly formatted data to run social transmission models.
 #' @export
 #'
@@ -72,36 +79,37 @@ import_user_STb2 <- function(event_data,
     if (inherits(event_data, "data.frame")) {
         check_required_cols(event_data, required_cols = c("id", "trial", "time", "t_end"), df_name = "event_data")
     } else {
-        stop("😔 Please feed me an event_data argument with a dataframe. I dunno what to do with this.")
+        stop("\U0001F614 Please feed me a dataframe for the event_data argument.")
     }
 
     if (inherits(networks, "data.frame")) {
         check_required_cols(networks, required_cols = c("trial", "from", "to"), df_name = "networks")
-        id_check <- standardize_ids(networks, event_data, ILV_c, ILV_tv, t_weights)
-        event_data <- id_check$event_data
-        ILV_c <- id_check$ILV_c
-        ILV_tv <- id_check$ILV_tv
-        t_weights <- id_check$t_weights
     }
 
     # other warnings
     if (inherits(networks, "data.frame")) {
-        message("User supplied edge weights as point estimates 📍")
+        message("User supplied edge weights as point estimates \U0001F4CD")
         is_distribution <- FALSE
     } else if (inherits(networks, "bison_model") || inherits(networks, "STRAND Results Object")) {
-        message("User supplied edge weights as posterior distributions 🌈 ")
+        message("User supplied edge weights as posterior distributions \U0001F308")
         networks <- list(networks)
         is_distribution <- TRUE
     } else if (is.list(networks) && all(sapply(networks, function(x) inherits(x, "bison_model") || inherits(x, "STRAND Results Object")))) {
-        message("User supplied a list of Bayesian network fits [🌈 ,🌈] ")
+        message("User supplied a list of Bayesian network fits [\U0001F308 , \U0001F308] ")
         is_distribution <- TRUE
     } else {
-        stop("😔 Please feed me a networks argument with a dataframe, a bisonR model fit (or a list of fits). I dunno what to do with this.")
+        stop("\U0001F614 Please feed me a dataframe for the networks argument, or a bisonR model fit, or a list of fits.")
     }
 
     if (all(is.null(ILVi), is.null(ILVs), is.null(ILVm)) & (!is.null(ILV_c) | !is.null(ILV_tv))) {
-        message("🤔 You have provided ILVs, yet did not specify whether they should be additive or multiplicative (missing arguments ILVi, ILVs, ILVm). They will not be included in the model.")
+        message("\U0001F914 You have provided ILVs, yet did not specify whether they should be additive or multiplicative (missing arguments ILVi, ILVs, ILVm). They will not be included in the model.")
     }
+
+    id_check <- standardize_ids(networks, event_data, ILV_c, ILV_tv, t_weights)
+    event_data <- id_check$event_data
+    ILV_c <- id_check$ILV_c
+    ILV_tv <- id_check$ILV_tv
+    t_weights <- id_check$t_weights
 
     network_type <- match.arg(network_type)
 
@@ -109,7 +117,7 @@ import_user_STb2 <- function(event_data,
     # event_data should be in format id, trial, time, t_end
     # if time==0, assume to be trained demonstrator, if time>t_end, assume to be censored
     # create numeric variables in case user has supplied strings
-    event_data$id_numeric <- as.numeric(as.factor(event_data$id))
+    # event_data$id_numeric <- as.numeric(as.factor(event_data$id))
     event_data$trial_numeric <- as.numeric(as.factor(event_data$trial))
     # order in case user has not, assign indexes per trial
     event_data <- event_data[order(event_data$trial_numeric, event_data$time), ]
@@ -229,9 +237,9 @@ import_user_STb2 <- function(event_data,
     # identify ILVs from ILV_c
     if (!is.null(ILV_c)) {
         message("Constant ILV supplied.")
-        ILV_c$id_numeric <- as.numeric(as.factor(ILV_c$id))
+        # ILV_c$id_numeric <- as.numeric(as.factor(ILV_c$id))
         # order in case user has not
-        ILV_c <- ILV_c[order(ILV_c$id_numeric), ]
+        # ILV_c <- ILV_c[order(ILV_c$id_numeric), ]
         rownames(ILV_c) <- NULL
 
         # get column names
@@ -250,13 +258,13 @@ import_user_STb2 <- function(event_data,
     if (!is.null(ILV_tv)) {
         message("Time-varying ILV supplied.")
         # convert to numeric if not
-        ILV_tv$id_numeric <- as.numeric(as.factor(ILV_tv$id))
+        # ILV_tv$id_numeric <- as.numeric(as.factor(ILV_tv$id))
         ILV_tv$trial_numeric <- as.numeric(as.factor(ILV_tv$trial))
         ILV_tv$discrete_time <- with(
             ILV_tv, ave(time, trial_numeric, FUN = function(x) as.numeric(as.factor(x)))
         )
         # order in case user has not
-        ILV_tv <- ILV_tv[order(ILV_tv$trial_numeric, ILV_tv$id_numeric, ILV_tv$discrete_time), ]
+        # ILV_tv <- ILV_tv[order(ILV_tv$trial_numeric, ILV_tv$id_numeric, ILV_tv$discrete_time), ]
         rownames(ILV_tv) <- NULL
         # Get the ILV column names
         exclude_cols <- c("id", "id_numeric", "time", "discrete_time", "trial", "trial_numeric")
@@ -437,7 +445,7 @@ import_user_STb2 <- function(event_data,
 
                 edges <- qlogis(edge_mat) # convert to logit space
             } else {
-                stop("Unrecognized distributional network object. Expected bison_model or STRAND Results Object.")
+                stop("\u274C Unrecognized distributional network object. Expected bison_model.")
             }
 
             if (i == 1) {

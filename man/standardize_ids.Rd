@@ -2,7 +2,7 @@
 % Please edit documentation in R/standardize_ids.R
 \name{standardize_ids}
 \alias{standardize_ids}
-\title{standardize_ids}
+\title{standardize_ids()}
 \usage{
 standardize_ids(
   networks,
@@ -27,5 +27,5 @@ standardize_ids(
 list of dataframes with filled out ids
 }
 \description{
-standardize_ids
+Helper function that maps IDs across data with networks as reference
 }

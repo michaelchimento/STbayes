@@ -21,6 +21,8 @@ generate_STb_model_TADA_sdirect(
 
 \item{model_type}{string specifying the model type: "asocial" or "full"}
 
+\item{intrinsic_rate}{string specifying whether intrinsic rate is static or can change over time ("constant", "weibull")}
+
 \item{transmission_func}{string specifying transmission function: "standard", "freqdep_f" or "freqdep_k" for complex contagion. Defaults to "standard". Complex contagion with multi-network model is not supported.}
 
 \item{dTADA}{boolean indicating whether dTADA should be used.}
@@ -38,38 +40,4 @@ A STAN model (character) that is customized to the input data.
 }
 \description{
 Dynamically generate STAN model based on input data
-}
-\examples{
-# very mock data
-event_data <- data.frame(
-  id = c("A", "B", "C", "D", "E", "F"),
-  trial = c(1, 1, 1, 2, 2, 2),
-  time = c(0, 1, 2, 0, 1, 4),
-  max_time = c(3, 3, 3, 4, 4, 4)
-)
-networks <- data.frame(
-  trial = c(1, 1, 1, 2, 2, 2),
-  from = c("A", "A", "B", "D", "D", "E"),
-  to = c("B", "C", "C", "E", "F", "F"),
-  kin = c(1, 0, 1, 0, 1, 1),
-  inverse_distance = c(0, 1, .5, .25, .1, 0)
-)
-ILV_c <- data.frame(
-  id = LETTERS[1:6],
-  age = c(-1, -2, 0, 1, 2), # continuous variables should be normalized
-  sex = c(0, 1, 1, 0, 1, 0), # Factor ILVs must be input as numeric
-  weight = c(0.5, .25, .3, 0, -.2, -.4)
-)
-data_list <- import_user_STb(
-  event_data = event_data,
-  networks = networks,
-  ILV_c = ILV_c,
-  ILVi = c("age"), # Use only 'age' for asocial learning
-  ILVs = c("sex"), # Use only 'sex' for social learning
-  ILVm = c("weight") # Use weight for multiplicative effect on asocial and social learning
-)
-
-model <- generate_STb_model(data_list) # no varying effects
-model <- generate_STb_model(data_list, veff_ID = c("lambda_0", "s")) # estimate varying effects by ID for baseline learning rate and strength of social transmission.
-print(model)
 }

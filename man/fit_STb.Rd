@@ -2,7 +2,7 @@
 % Please edit documentation in R/fit_STb_model.R
 \name{fit_STb}
 \alias{fit_STb}
-\title{Fit STb model using cmdstanr}
+\title{fit_STb()}
 \usage{
 fit_STb(data_list, model_obj, ...)
 }
@@ -17,5 +17,17 @@ fit_STb(data_list, model_obj, ...)
 A CmdStanMCMC fit object
 }
 \description{
-Fit STb model using cmdstanr
+Third step of analysis pipeline: Fits model using cmdstanr.
+After fitting, consider using \code{\link[=STb_save]{STb_save()}} to store the output.
+}
+\examples{
+data_list <- import_user_STb(STbayes::event_data, STbayes::edge_list)
+model_obj <- generate_STb_model(data_list)
+fit <- fit_STb(data_list_user,
+    model_obj,
+    parallel_chains = 5,
+    chains = 5,
+    cores = 5,
+    iter = 5000
+)
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/return_N_veff.R
 \name{return_N_veff}
 \alias{return_N_veff}
-\title{return_N_veff: utility function to find the number of parameters with varying effects}
+\title{return_N_veff()}
 \usage{
 return_N_veff(text)
 }
@@ -13,5 +13,5 @@ return_N_veff(text)
 integer of number of varying effects present in model
 }
 \description{
-return_N_veff: utility function to find the number of parameters with varying effects
+Helper function to find the number of parameters with varying effects
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/STb_compare.R
 \name{STb_compare}
 \alias{STb_compare}
-\title{STb_compare() automates the workflow of loo-psis or waic elpd comparisons. Relies on loo to do this.}
+\title{STb_compare()}
 \usage{
 STb_compare(..., model_names = NULL, method = "loo-psis")
 }
@@ -17,5 +17,43 @@ STb_compare(..., model_names = NULL, method = "loo-psis")
 list containing loo_objects, comparison, and pareto_diagnostics if using loo-psis.
 }
 \description{
-STb_compare() automates the workflow of loo-psis or waic elpd comparisons. Relies on loo to do this.
+Convenience function for model comparison using either loo-psis or waic methods.
+Returns list with relevant output from loo functions.
+}
+\examples{
+data_list <- import_user_STb(STbayes::event_data, STbayes::edge_list)
+# fit full model (intrinsic rate + social transmission)
+model_full <- generate_STb_model(data_list, gq = TRUE, model_type = "full")
+fit_full <- fit_STb(data_list,
+    model_full,
+    parallel_chains = 5,
+    chains = 5,
+    cores = 5,
+    iter = 5000
+)
+
+# fit asocial model (intrinsic rate only)
+model_asoc <- generate_STb_model(data_list, gq = TRUE, model_type = "asocial")
+fit_asoc <- fit_STb(data_list,
+    model_asoc,
+    parallel_chains = 5,
+    chains = 5,
+    cores = 5,
+    iter = 5000
+)
+
+mc <- STb_compare(fit_full, fit_asoc, method = "loo-psis")
+
+# view comparison table
+print(mc$comparison, simplify = FALSE)
+
+# plot pareto-k diagnostics
+pareto_df <- as.data.frame(mc$pareto_diagnostics)
+ggplot(pareto_df, aes(x = observation, y = pareto_k, color = model)) +
+    geom_point() +
+    scale_color_viridis_d(begin = 0.2, end = 0.7) +
+    geom_hline(yintercept = 0.7, linetype = "dashed", color = "orange") +
+    geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+    labs(x = "observation", y = "pareto k value", title = "Pareto-k diagnostics") +
+    theme_minimal()
 }

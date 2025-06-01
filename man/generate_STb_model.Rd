@@ -2,7 +2,7 @@
 % Please edit documentation in R/generate_STb_model.R
 \name{generate_STb_model}
 \alias{generate_STb_model}
-\title{generate_STb_model: Dynamically generate STAN model based on input data}
+\title{generate_STb_model()}
 \usage{
 generate_STb_model(
   STb_data,
@@ -23,7 +23,7 @@ generate_STb_model(
 
 \item{data_type}{string specifying the type of data you have ("continuous_time" for cTADA, "discrete_time" for dTADA or "order" for OADA). continuous_time assumes you know precisely when events happened. discrete_time assumes you know roughly when individuals learned (within some discrete period), and order assumes that you have no time information.}
 
-\item{model_type}{string specifying the model type: "asocial" or "full"}
+\item{model_type}{string specifying the model type: "full" or "asocial"}
 
 \item{intrinsic_rate}{Define shape of intrinsic rate (either "constant" or "weibull"). Weibull fits extra parameter (gamma) that allows for time-varying event rates.}
 
@@ -40,15 +40,17 @@ generate_STb_model(
 \item{priors}{named list with strings containing the prior for log(lambda_0), log(s'), log(f), k, z_id, sigma_id, rho_id.}
 }
 \value{
-A STAN model (character) that is customized to the input data.
+A STAN model string.
 }
 \description{
-generate_STb_model: Dynamically generate STAN model based on input data
+Second step of analysis pipeline: dynamically generates a STAN model based on
+input data. After saving the output to a variable, you can preview a
+formatted version in the R console using cat().
 }
 \examples{
 # very mock data
 event_data <- data.frame(
-    id = c("A", "B", "C", "D", "E", "F"),
+    id = LETTERS[1:6],
     trial = c(1, 1, 1, 2, 2, 2),
     time = c(0, 1, 2, 0, 1, 4),
     max_time = c(3, 3, 3, 4, 4, 4)

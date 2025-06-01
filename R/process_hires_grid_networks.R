@@ -1,14 +1,12 @@
-#' Title
+#' grid_networks()
 #'
-#' @param networks
-#' @param event_data
+#' Helper function that completes network df with all dyad & trial combinations.
 #'
-#' @export
+#' @param networks network df
+#' @param event_data event df
+#'
 #' @importFrom data.table as.data.table setkey merge.data.table
-#' @return
-#'
-#' @examples
-
+#' @return network dataframe
 grid_networks <- function(event_data, networks) {
     networks <- data.table::as.data.table(networks)
     event_data <- data.table::as.data.table(event_data)
@@ -17,7 +15,7 @@ grid_networks <- function(event_data, networks) {
     networks[, `:=`(
         trial = as.integer(factor(trial)),
         from = as.integer(factor(from)),
-        to   = as.integer(factor(to))
+        to = as.integer(factor(to))
     )]
 
     expected_rows <- sum(sapply(split(event_data, event_data$trial_numeric), function(df) {
@@ -35,13 +33,14 @@ grid_networks <- function(event_data, networks) {
         trials <- unique(event_data$trial_numeric)
         trial_id_dt <- data.table::data.table(
             trial_numeric = trials,
-            trial = seq_along(trials)  # ensure consistent trial ids
+            trial = seq_along(trials) # ensure consistent trial ids
         )
 
         from_to <- data.table::CJ(from = ids, to = ids)[from != to]
         full_grid <- data.table::CJ(trial_numeric = trials, time = 1, sorted = FALSE)[, time := NULL]
         full_grid <- event_data[, .(t_max = max(t_end)), by = trial_numeric][
-            , .(time = seq_len(t_max)), by = trial_numeric
+            , .(time = seq_len(t_max)),
+            by = trial_numeric
         ]
 
         # add dummy column to both
@@ -51,7 +50,7 @@ grid_networks <- function(event_data, networks) {
         # Cartesian join on dummy
         full_net_grid <- data.table::merge.data.table(full_grid, from_to, by = "dummy", allow.cartesian = TRUE)[, dummy := NULL]
         full_net_grid <- data.table::merge.data.table(full_net_grid, trial_id_dt, by = "trial_numeric")
-        full_net_grid[, trial_numeric := NULL]  # match final format
+        full_net_grid[, trial_numeric := NULL] # match final format
 
         # merge with existing network data
         networks <- data.table::merge.data.table(

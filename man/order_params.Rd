@@ -2,13 +2,16 @@
 % Please edit documentation in R/order_params.R
 \name{order_params}
 \alias{order_params}
-\title{order_params}
+\title{Order params}
 \usage{
 order_params(p)
 }
 \arguments{
-\item{p}{}
+\item{p}{name of parameter}
+}
+\value{
+integer indicating order
 }
 \description{
-order_params
+Helper function for ordering params for STb_summary()
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/remove_duplicate_columns.R
 \name{remove_duplicate_columns}
 \alias{remove_duplicate_columns}
-\title{Utility function to remove duplicated rows}
+\title{remove_duplicate_columns()}
 \usage{
 remove_duplicate_columns(df)
 }
@@ -13,5 +13,5 @@ remove_duplicate_columns(df)
 dataframe
 }
 \description{
-Utility function to remove duplicated rows
+Helper function to remove duplicated rows
 }

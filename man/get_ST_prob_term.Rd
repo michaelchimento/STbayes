@@ -2,7 +2,7 @@
 % Please edit documentation in R/get_ST_prob_term.R
 \name{get_ST_prob_term}
 \alias{get_ST_prob_term}
-\title{Generate Stan code to compute P(e via ST) for \%ST calculation}
+\title{get_ST_prob_term()}
 \usage{
 get_ST_prob_term(
   transmission_func,
@@ -31,17 +31,25 @@ get_ST_prob_term(
 
 \item{num_networks}{Integer: Number of networks}
 
-\item{id_var}{String: e.g., "id"}
+\item{s_var}{String to use for s variable: e.g. "s_prime"}
 
-\item{trial_var}{String: e.g., "trial"}
+\item{id_var}{String for id indexes: e.g., "id"}
+
+\item{trial_var}{String for trial indexes: e.g., "trial"}
 
 \item{time_var}{String: e.g., "time_step"}
 
 \item{net_var}{String: e.g., "A"}
+
+\item{ILVs_variable_effects}{String containing ILV effects on s}
+
+\item{weibull_term}{String containing gamma etc}
+
+\item{high_res}{boolean indicating if high_res}
 }
 \value{
 String of Stan code for GQ block to accumulate psoc and psocn
 }
 \description{
-Generate Stan code to compute P(e via ST) for \%ST calculation
+Helper function that generates Stan code to compute P(e via ST) for \%ST calculation
 }

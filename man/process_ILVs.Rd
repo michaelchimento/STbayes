@@ -2,7 +2,7 @@
 % Please edit documentation in R/process_ILVs_for_generate_model.R
 \name{process_ILVs}
 \alias{process_ILVs}
-\title{Helper function for generating ctada}
+\title{process_ILVs()}
 \usage{
 process_ILVs(
   ilv_vars,
@@ -15,8 +15,23 @@ process_ILVs(
 )
 }
 \arguments{
-\item{count_start}{}
+\item{ilv_vars}{names of ilvs with prefixes}
+
+\item{ilv_vars_clean}{"clean" names of ilvs without prefixes}
+
+\item{veff_ID}{vector of parameters that need veffs}
+
+\item{suffix}{character "i" or "j"}
+
+\item{STb_data}{user imported data}
+
+\item{count_start}{integer count variable for indexing}
+
+\item{prior_beta}{string defining prior eg "normal(0,1)"}
+}
+\value{
+list containing different bits of stan declarations
 }
 \description{
-Helper function for generating ctada
+Helper function that takes ilv_vars and creates appropriately formatted stan code
 }

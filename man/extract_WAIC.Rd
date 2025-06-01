@@ -2,7 +2,7 @@
 % Please edit documentation in R/extract_WAIC.R
 \name{extract_WAIC}
 \alias{extract_WAIC}
-\title{Convenience to extract WAIC scores}
+\title{extract_WAIC()}
 \usage{
 extract_WAIC(fit)
 }
@@ -13,5 +13,5 @@ extract_WAIC(fit)
 WAIC estimate
 }
 \description{
-Convenience to extract WAIC scores
+Convenience function to extract WAIC scores. You should really be using \code{\link[=STb_compare]{STb_compare()}}.
 }

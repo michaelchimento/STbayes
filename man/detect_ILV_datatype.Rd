@@ -2,13 +2,16 @@
 % Please edit documentation in R/detect_ILV_datatype.R
 \name{detect_ILV_datatype}
 \alias{detect_ILV_datatype}
-\title{helper function for importing ILVs}
+\title{Detect ILV datatype}
 \usage{
 detect_ILV_datatype(x)
 }
 \arguments{
 \item{x}{column or vector of data}
 }
+\value{
+string with category of variable
+}
 \description{
-helper function for importing ILVs
+Helper function for importing ILVs
 }

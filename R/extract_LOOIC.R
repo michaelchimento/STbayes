@@ -1,4 +1,6 @@
-#' Convenience to extract LOOIC scores
+#' extract_LOOIC()
+#'
+#' Convenience to quickly extract LOOIC scores. You should really be using [STb_compare()].
 #'
 #' @param fit A STb model fit
 #'
@@ -6,11 +8,11 @@
 #' @importFrom loo loo
 #' @export
 extract_LOOIC <- function(fit) {
-  if (inherits(fit, "CmdStanMCMC")) {
-    ll <- fit$draws("log_lik", format = "draws_matrix")
-  } else {
-    stop("please provide CmdStanMCMC object, rather than ", class(fit)[1])
-  }
-  loo_obj <- loo::loo(ll)
-  return(loo_obj$estimates["looic", "Estimate"])
+    if (inherits(fit, "CmdStanMCMC")) {
+        ll <- fit$draws("log_lik", format = "draws_matrix")
+    } else {
+        stop("please provide CmdStanMCMC object, rather than ", class(fit)[1])
+    }
+    loo_obj <- loo::loo(ll)
+    return(loo_obj$estimates["looic", "Estimate"])
 }

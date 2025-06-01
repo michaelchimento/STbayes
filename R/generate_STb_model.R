@@ -1,7 +1,12 @@
-#' generate_STb_model: Dynamically generate STAN model based on input data
+#' generate_STb_model()
+#'
+#' Second step of analysis pipeline: dynamically generates a STAN model based on
+#'  input data. After saving the output to a variable, you can preview a
+#'  formatted version in the R console using cat().
+#'
 #' @param STb_data a list of formatted data returned from the STbayes_data() function
 #' @param data_type string specifying the type of data you have ("continuous_time" for cTADA, "discrete_time" for dTADA or "order" for OADA). continuous_time assumes you know precisely when events happened. discrete_time assumes you know roughly when individuals learned (within some discrete period), and order assumes that you have no time information.
-#' @param model_type string specifying the model type: "asocial" or "full"
+#' @param model_type string specifying the model type: "full" or "asocial"
 #' @param intrinsic_rate Define shape of intrinsic rate (either "constant" or "weibull"). Weibull fits extra parameter (gamma) that allows for time-varying event rates.
 #' @param transmission_func string specifying transmission function: "standard", "freqdep_f" or "freqdep_k" for frequency dependent complex contagion. Defaults to "standard".
 #' @param multinetwork_s string specifying how multi-network models are generated. "separate" estimates an s value for each network. "shared" generates model with single s and a vector of weights for each network.
@@ -10,12 +15,12 @@
 #' @param est_acqTime Boolean to indicate whether gq block includes estimates for acquisition time. At the moment this uses 'one weird trick' to accomplish this and does not support estimates for non-integer learning times.
 #' @param priors named list with strings containing the prior for log(lambda_0), log(s'), log(f), k, z_id, sigma_id, rho_id.
 #' @export
-#' @return A STAN model (character) that is customized to the input data.
+#' @return A STAN model string.
 #'
 #' @examples
 #' # very mock data
 #' event_data <- data.frame(
-#'     id = c("A", "B", "C", "D", "E", "F"),
+#'     id = LETTERS[1:6],
 #'     trial = c(1, 1, 1, 2, 2, 2),
 #'     time = c(0, 1, 2, 0, 1, 4),
 #'     max_time = c(3, 3, 3, 4, 4, 4)
@@ -75,10 +80,6 @@ generate_STb_model <- function(STb_data,
     if (data_type == "order" && "lambda_0" %in% veff_ID) {
         stop("lambda_0 cannot be veff_ID when using OADA.")
     }
-    #
-    #     if (transmission_func != "standard" && length(STb_data$network_names)>1) {
-    #         stop('Complex transmission can only be used with single network models. Please use transmission_func="standard"')
-    #     }
 
     default_priors <- list(
         log_lambda0 = "normal(-4, 2)",

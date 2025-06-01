@@ -2,13 +2,18 @@
 % Please edit documentation in R/process_hires_grid_networks.R
 \name{grid_networks}
 \alias{grid_networks}
-\title{Title}
+\title{grid_networks()}
 \usage{
 grid_networks(event_data, networks)
 }
 \arguments{
-\item{event_data}{}
+\item{event_data}{event df}
+
+\item{networks}{network df}
+}
+\value{
+network dataframe
 }
 \description{
-Title
+Helper function that completes network df with all dyad & trial combinations.
 }

@@ -16,10 +16,9 @@ import_NBDA_STb <- function(nbda_object,
                             network_names = c("default"),
                             ILVi = NULL,
                             ILVs = NULL,
-                            ILVm = NULL,
-                            high_res = F) {
+                            ILVm = NULL) {
     if (!.pkg_state$nbda_msg_shown) {
-        message("👉 This function is convenient, but there's more flexibility and functionality available using the import_user_STb() function.")
+        message("\U0001F449 This function is convenient, but there's more flexibility and functionality available using the import_user_STb() function.")
         .pkg_state$nbda_msg_shown <- TRUE
     }
 
@@ -28,11 +27,11 @@ import_NBDA_STb <- function(nbda_object,
 
     #### Validate Input ####
     if (!inherits(nbda_object, "nbdaData")) {
-        stop("😔 The provided object is not a valid nbdaData object.")
+        stop("\U0001F614 The provided object is not a valid nbdaData object.")
     }
 
     if (is.na(sum(nbda_object@timeAcq))) {
-        message("🤔 This NBDA object is likely in OADA format.")
+        message("\U0001F914 This NBDA object is likely in OADA format.")
         event_data <- data.frame(
             id = nbda_object@orderAcq,
             trial = 1, # NBDA assumes a single trial (adjust if multi-trial support is added)
@@ -40,7 +39,7 @@ import_NBDA_STb <- function(nbda_object,
             max_time = max(nbda_object@orderAcq) + 1 # Maximum acquisition time
         )
     } else {
-        message("🤔 This NBDA object is likely in TADA format.")
+        message("\U0001F914 This NBDA object is likely in TADA format.")
         event_data <- data.frame(
             id = nbda_object@orderAcq,
             trial = 1, # NBDA assumes a single trial (adjust if multi-trial support is added)
@@ -291,7 +290,6 @@ import_NBDA_STb <- function(nbda_object,
         data_list[[paste0("A_", nm)]] <- NULL
     }
 
-    data_list$high_res <- F
     data_list$N_networks <- num_networks
 
     #### Output Messages ####

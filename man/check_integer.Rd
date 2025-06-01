@@ -2,7 +2,7 @@
 % Please edit documentation in R/check_integer.R
 \name{check_integer}
 \alias{check_integer}
-\title{check_integer: private function to check whether or not number is integer or integer-like. can't believe there's not a base function for this!}
+\title{check_integer()}
 \usage{
 check_integer(x)
 }
@@ -13,5 +13,5 @@ check_integer(x)
 boolean values of whether a number is integer or integer-like
 }
 \description{
-check_integer: private function to check whether or not number is integer or integer-like. can't believe there's not a base function for this!
+Helper function to check whether or not number is integer or integer-like. can't believe there's not a base function for this!
 }

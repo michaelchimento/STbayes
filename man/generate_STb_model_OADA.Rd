@@ -2,7 +2,7 @@
 % Please edit documentation in R/generate_STb_model_OADA.R
 \name{generate_STb_model_OADA}
 \alias{generate_STb_model_OADA}
-\title{Dynamically generate STAN model based on input data}
+\title{generate_STb_model_OADA()}
 \usage{
 generate_STb_model_OADA(
   STb_data,
@@ -30,40 +30,5 @@ generate_STb_model_OADA(
 A STAN model (character) that is customized to the input data.
 }
 \description{
-Dynamically generate STAN model based on input data
-}
-\examples{
-# very mock data
-event_data <- data.frame(
-  id = c("A", "B", "C", "D", "E", "F"),
-  trial = c(1, 1, 1, 2, 2, 2),
-  time = c(0, 1, 2, 0, 1, 4),
-  max_time = c(3, 3, 3, 4, 4, 4)
-)
-networks <- data.frame(
-  trial = c(1, 1, 1, 2, 2, 2),
-  from = c("A", "A", "B", "D", "D", "E"),
-  to = c("B", "C", "C", "E", "F", "F"),
-  kin = c(1, 0, 1, 0, 1, 1),
-  inverse_distance = c(0, 1, .5, .25, .1, 0)
-)
-ILV_metadata <- data.frame(
-  id = c("A", "B", "C", "D", "E", "F"),
-  age = c(2, 3, 4, 2, 5, 6),
-  sex = c(0, 1, 1, 0, 1, 0), # Factor ILVs must be input as numeric
-  weight = c(0.5, .25, .3, 0, -.2, -.4)
-)
-data_list <- import_user_STb(
-  event_data = event_data,
-  networks = networks,
-  ILV_metadata = ILV_metadata,
-  ILVi = c("age"), # Use only 'age' for asocial learning
-  ILVs = c("sex"), # Use only 'sex' for social learning
-  ILVm = c("weight") # Use weight for multiplicative effect on asocial and social learning
-)
-
-model <- generate_STb_model_OADA(data_list) # no varying effects
-model <- generate_STb_model_OADA(data_list, veff_ID = c("s")) # estimate varying effects by ID for strength of social transmission. Baseline is not estimated for OADA type models.
-print(model)
-
+Helper function that creates stan code for OADA type models.
 }

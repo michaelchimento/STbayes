@@ -2,7 +2,7 @@
 % Please edit documentation in R/check_required_cols.R
 \name{check_required_cols}
 \alias{check_required_cols}
-\title{Check required cols}
+\title{check_required_cols()}
 \usage{
 check_required_cols(df, required_cols, df_name = "dataframe")
 }
@@ -11,8 +11,11 @@ check_required_cols(df, required_cols, df_name = "dataframe")
 
 \item{required_cols}{vector of col names}
 
-\item{df_name}{}
+\item{df_name}{string for name of df}
+}
+\value{
+nothing, just errors if something wrong
 }
 \description{
-Check required cols
+Helper function that makes sure user has put in all of the reqd cols
 }
