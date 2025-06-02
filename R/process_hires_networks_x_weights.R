@@ -1,4 +1,8 @@
-#' Helper function for preprocessing "high resolution" data
+utils::globalVariables(c(
+    ":=", ".SD", ".",
+    "t_weight", "trial", "time", "duration",
+    "from", "to", "discrete_time"
+))
 #' process_networks_x_weights_hires()
 #'
 #' Helper function that pre-processes networks cxn x t_weights for fast high-res models.

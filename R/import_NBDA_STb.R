@@ -10,7 +10,7 @@
 #' @export
 #'
 #' @examples
-#' nbda_object <- nbdaData_cTADA <- STbayes::nbdaData_cTADA
+#' nbda_object <- STbayes::tutorial4_1
 #' data_list <- import_NBDA_STb(nbda_object, network_names = "assoc")
 import_NBDA_STb <- function(nbda_object,
                             network_names = c("default"),

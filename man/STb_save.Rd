@@ -21,14 +21,17 @@ Save STbayes fits easily, rather than having to save the fit and chain csvs sepa
 Will provide a message with the command to re-load the fit for convenience.
 }
 \examples{
+\dontrun{
 data_list <- import_user_STb(STbayes::event_data, STbayes::edge_list)
 model_obj <- generate_STb_model(data_list, gq = TRUE)
-fit <- fit_STb(data_list_user,
+fit <- fit_STb(data_list,
     model_obj,
-    parallel_chains = 5,
-    chains = 5,
-    cores = 5,
-    iter = 5000
+    parallel_chains = 4,
+    chains = 4,
+    cores = 4,
+    iter = 4000,
+    refresh = 2000
 )
 STb_save(fit, output_dir = "../data/stan_fits", name = "my_fit")
+}
 }

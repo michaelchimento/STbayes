@@ -13,12 +13,13 @@
 #' @examples
 #' data_list <- import_user_STb(STbayes::event_data, STbayes::edge_list)
 #' model_obj <- generate_STb_model(data_list)
-#' fit <- fit_STb(data_list_user,
+#' fit <- fit_STb(data_list,
 #'     model_obj,
-#'     parallel_chains = 5,
-#'     chains = 5,
-#'     cores = 5,
-#'     iter = 5000
+#'     parallel_chains = 4,
+#'     chains = 4,
+#'     cores = 4,
+#'     iter = 4000,
+#'     refresh = 1000
 #' )
 fit_STb <- function(data_list, model_obj, ...) {
     extra_args <- list(...)
@@ -80,7 +81,7 @@ fit_STb <- function(data_list, model_obj, ...) {
 
     fit <- do.call(mod$sample, valid_args)
 
-    message("\U0001FAF4 Use STb_save() to save both the fit and chain csvs in a single, convenient RDS file. Or don't!")
+    message("\U0001FAF4 Use STb_save() to save the fit and chain csvs to a single RDS file. Or don't!")
 
     return(fit)
 }

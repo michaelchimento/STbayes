@@ -3,3 +3,6 @@
 *.key
 /deprecated
 inst/doc
+/doc/
+/Meta/
+docs

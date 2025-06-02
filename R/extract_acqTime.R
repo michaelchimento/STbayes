@@ -11,7 +11,7 @@
 #' @export
 extract_acqTime <- function(fit, data_list, prob = .95, var_name = "acquisition_time") {
     if (!inherits(fit, c("CmdStanMCMC"))) {
-        stop(sprintf("Model '%s' must be a CmdStanMCMC model fit.", name))
+        stop("Model must be a CmdStanMCMC model fit.")
     }
 
     posterior_matrix <- fit$draws(variables = var_name, format = "draws_matrix")

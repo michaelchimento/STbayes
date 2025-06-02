@@ -22,38 +22,27 @@ Returns list with relevant output from loo functions.
 }
 \examples{
 data_list <- import_user_STb(STbayes::event_data, STbayes::edge_list)
-# fit full model (intrinsic rate + social transmission)
 model_full <- generate_STb_model(data_list, gq = TRUE, model_type = "full")
 fit_full <- fit_STb(data_list,
     model_full,
-    parallel_chains = 5,
-    chains = 5,
-    cores = 5,
-    iter = 5000
+    parallel_chains = 4,
+    chains = 4,
+    cores = 4,
+    iter = 4000,
+    refresh = 2000
 )
-
-# fit asocial model (intrinsic rate only)
+# fit asocial model
 model_asoc <- generate_STb_model(data_list, gq = TRUE, model_type = "asocial")
 fit_asoc <- fit_STb(data_list,
     model_asoc,
-    parallel_chains = 5,
-    chains = 5,
-    cores = 5,
-    iter = 5000
+    parallel_chains = 4,
+    chains = 4,
+    cores = 4,
+    iter = 4000,
+    refresh = 2000
 )
-
 mc <- STb_compare(fit_full, fit_asoc, method = "loo-psis")
-
 # view comparison table
-print(mc$comparison, simplify = FALSE)
+print(mc$comparison)
 
-# plot pareto-k diagnostics
-pareto_df <- as.data.frame(mc$pareto_diagnostics)
-ggplot(pareto_df, aes(x = observation, y = pareto_k, color = model)) +
-    geom_point() +
-    scale_color_viridis_d(begin = 0.2, end = 0.7) +
-    geom_hline(yintercept = 0.7, linetype = "dashed", color = "orange") +
-    geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
-    labs(x = "observation", y = "pareto k value", title = "Pareto-k diagnostics") +
-    theme_minimal()
 }

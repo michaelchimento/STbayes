@@ -1,3 +1,6 @@
+utils::globalVariables(c(
+    "trial", "from", "to", ".", "t_end", "trial_numeric", "time", "t_max", "dummy"
+))
 #' grid_networks()
 #'
 #' Helper function that completes network df with all dyad & trial combinations.

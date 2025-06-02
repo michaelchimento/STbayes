@@ -4,16 +4,8 @@
 #'
 #' @param t_weights dataframe with t_weight. all ids across all trials must be present.
 #' @param max_time end of the observation period
+#' @importFrom stats setNames
 #' @return W dimensions k,t,n
-#'
-#' @examples
-#' t_weights <- data.frame(
-#'     trial = c(rep(1, each = 9), rep(2, each = 9)),
-#'     id = c(rep(LETTERS[1:3], each = 3), rep(LETTERS[4:6], each = 3)),
-#'     time = c(rep(1:3, times = 3), rep(1:3, times = 3)),
-#'     t_weight = exp(rnorm(18))
-#' )
-#' create_W_matrix(t_weights)
 create_W_matrix <- function(t_weights, max_time) {
     t_weights$trial_numeric <- as.numeric(as.factor(t_weights$trial))
     # t_weights$id_numeric <- as.numeric(as.factor(t_weights$id))

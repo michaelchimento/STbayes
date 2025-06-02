@@ -37,7 +37,9 @@ generate_STb_model(
 
 \item{est_acqTime}{Boolean to indicate whether gq block includes estimates for acquisition time. At the moment this uses 'one weird trick' to accomplish this and does not support estimates for non-integer learning times.}
 
-\item{priors}{named list with strings containing the prior for log(lambda_0), log(s'), log(f), k, z_id, sigma_id, rho_id.}
+\item{priors}{named list with strings containing priors.}
+
+\item{direct_s}{This argument is here for a fun time, not a long time. Don't use it!}
 }
 \value{
 A STAN model string.
@@ -53,7 +55,7 @@ event_data <- data.frame(
     id = LETTERS[1:6],
     trial = c(1, 1, 1, 2, 2, 2),
     time = c(0, 1, 2, 0, 1, 4),
-    max_time = c(3, 3, 3, 4, 4, 4)
+    t_end = c(3, 3, 3, 4, 4, 4)
 )
 networks <- data.frame(
     trial = c(1, 1, 1, 2, 2, 2),
@@ -64,7 +66,7 @@ networks <- data.frame(
 )
 ILV_c <- data.frame(
     id = LETTERS[1:6],
-    age = c(-1, -2, 0, 1, 2), # continuous variables should be normalized
+    age = c(-1, -2, 0, 1, 2, 3), # continuous variables should be normalized
     sex = c(0, 1, 1, 0, 1, 0), # Factor ILVs must be input as numeric
     weight = c(0.5, .25, .3, 0, -.2, -.4)
 )
@@ -72,14 +74,21 @@ data_list <- import_user_STb(
     event_data = event_data,
     networks = networks,
     ILV_c = ILV_c,
-    ILVi = c("age"), # Use only 'age' for asocial learning
-    ILVs = c("sex"), # Use only 'sex' for social learning
-    ILVm = c("weight") # Use weight for multiplicative effect on asocial and social learning
+    ILVi = c("age"), # Use only 'age' for asocial rate
+    ILVs = c("sex"), # Use only 'sex' for social rate
+    ILVm = c("weight") # Use weight for multiplicative effect on both
 )
-
-model <- generate_STb_model(data_list) # creates full specification of cTADA model, no varying effects and default priors.
-model <- generate_STb_model(data_list, veff_ID = c("lambda_0", "s")) # estimate varying effects by ID for baseline learning rate and strength of social transmission.
-model <- generate_STb_model(data_list, data = "order") # creates OADA specification
-model <- generate_STb_model(data_list, priors = list(log_lambda_0 = "normal(-2, 3)", log_sprime = "uniform(-7, 3)")) # adjust priors
-print(model)
+# creates full specification of cTADA model, no varying effects and default priors.
+model <- generate_STb_model(data_list)
+# estimate varying effects by ID for intrinsic and social rates.
+model <- generate_STb_model(data_list, veff_ID = c("lambda_0", "s"))
+# creates OADA specification
+model <- generate_STb_model(data_list, data = "order")
+# adjust priors
+model <- generate_STb_model(data_list, priors = list(
+    log_lambda0 = "normal(-2, 3)",
+    log_sprime = "uniform(-7, 3)"
+))
+# quickly inspect model code
+cat(model)
 }

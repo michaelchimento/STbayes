@@ -1,4 +1,4 @@
-![banner](docs/stbayes_banner2.png)
+![banner](man/figures/stbayes_banner2.png)
 <!-- badges: start -->
 <!-- badges: end -->
 
@@ -63,19 +63,20 @@ data_list_user = import_user_STb(event_data, edge_list)
 model_obj = generate_STb_model(data_list_user, gq=T, est_acqTime = T)
 
 # fit model
-fit = fit_STb(data_list_user, model_obj, chains = 5, cores = 5, parallel_chains=5, iter=2000, control = list(adapt_delta=0.99))
+fit = fit_STb(data_list_user, model_obj, chains = 5, cores = 5, parallel_chains=5, iter=2000)
 
 # check estimates
-STb_summary(fit, digits=4)
+STb_summary(fit, digits=3)
 ```
 STb_summary outputs a formatted table of key values for parameters (incl back-transformation of variables fitted on the log scale).
 
 ```r
-             Parameter   Mean Median HPDI_Lower HPDI_Upper    n_eff   Rhat
-1    log_lambda_0_mean 6.8992 6.8873     6.1755     7.6616 5000.000 1.0008
-2           log_s_mean 1.6120 1.6082     0.6746     2.4828 5000.000 1.0011
-3 transformed_baserate 0.0011 0.0010     0.0004     0.0019 5000.000 1.0008
-4        transformed_s 5.5959 4.9939     1.6104    11.2023 4339.186 1.0011
+          Parameter Median   MAD CI_Lower CI_Upper ess_bulk ess_tail  Rhat
+1 log_lambda_0_mean -6.894 0.448   -7.832   -6.065 2623.409 2429.397 1.002
+2  log_s_prime_mean -5.366 0.170   -5.730   -5.041 2910.030 2599.204 1.002
+3          lambda_0  0.001 0.000    0.000    0.002 2623.412 2429.397 1.002
+4                 s  4.610 2.348    1.103   11.798 2339.627 2555.383 1.003
+5     percent_ST[1]  0.819 0.046    0.716    0.896 2339.627 2555.383 1.003
 ```
 Estimates are not far off from the parameter values used for simulation, but depend on network density and stochastic processes of each simulation. See vignette ```simulate_data_manytimes.R``` to quench your thirst for model validation.
 
@@ -94,7 +95,7 @@ edge_list = STbayes::edge_list
 data_list_user = import_user_STb(event_data, edge_list)
 
 # reusable function to generate and fit a model
-generate_and_fit_model <- function(data, model_type, chains = 5, cores = 5, parallel_chains=5, iter = 2000, control = list(adapt_delta = 0.99)) {
+generate_and_fit_model <- function(data, model_type, chains = 5, cores = 5, parallel_chains=5, iter = 2000) {
     model = generate_STb_model(data, model_type=model_type, est_acqTime = TRUE)
     fit = fit_STb(data, model, chains, cores, iter, control)
     return(fit)
@@ -109,7 +110,7 @@ asocial_fit = generate_and_fit_model(data_list_user, "asocial")
 STb_summary(full_fit, digits = 4)
 STb_summary(asocial_fit, digits = 4)
 ```
-Next we can extract the LOO-PSIS scores and add them to our plots of the estimated times:
+We can extract the LOOIC and add them to our plots of the estimated times:
 ``` r
 # extract WAIC and labels
 loo_output = STb_compare(full_fit, asocial_fit, method="loo-psis")
@@ -143,7 +144,7 @@ plot_acq_time <- function(fit, data, title, label) {
 p1 = plot_acq_time(asocial_fit, data_list_user, "Asocial (null) model estimates", label_null)
 p2 = plot_acq_time(full_fit, data_list_user, "Full model estimates", label_full)
 ```
-![comparison plot](docs/compare_social_asocial.png)
+![comparison plot](man/figures/compare_social_asocial.png)
 
 The full model describes the data much better and obtains a better (lower) LOO-PSIS score. Estimated learning times are the point estimate (mean in this case) from posterior distribution of learning times, and since individuals learn in random orders in the asocial model according to a static rate, the average time of each learner cluster around a similar time. Meanwhile, including time-varying social information allows for a better prediction of when individuals have acquired the behavior.
 
@@ -238,10 +239,12 @@ model = generate_STb_model(data_list, veff_ID = c("lambda_0", "s"))
 
 This can be used if you have multiple trials with the same individuals, and you expect there are consistent individual differences in effects. For lambda_0 and s, varying effects are added onto the main effect prior to transformation from log scale back to linear. For example, if we apply a varying effect for lambda_0, the model will calculate a vector of lambda_0 values for each individual in the ```transformed parameters``` block:
 
-<img src="https://latex.codecogs.com/svg.latex?\boldsymbol{\lambda}_0%20=%20\frac{1}{\exp(\mu_{\log%20\lambda_0}%20+%20\boldsymbol{v}_{\text{ID},%20\lambda_0})}" alt="\boldsymbol{\lambda}_0 = \frac{1}{\exp(\mu_{\log \lambda_0} + \boldsymbol{v}_{\text{ID}, \lambda_0})}" />
+$$
+\exp\left(\mu_{\log \lambda_0} + \boldsymbol{v}_{\text{ID}, \lambda_0}\right)
+$$
 
 
-and use those values when calculating the likelihood in the ```model``` block. If you specify varying effects and the models have convergence issues, you probably do not have enough data to meaningfully estimate these. For a worked example please see the vignette "simulate_ID_veff.R".
+and use those values when calculating the likelihood in the ```model``` block. If you specify varying effects and the models have convergence issues, you probably do not have enough data to meaningfully estimate these. For a worked example please see the advanced recipes vignette.
 
 ### Import data from NBDA object<a name="Import-NBDA"></a>
 
@@ -260,7 +263,7 @@ data_list = import_NBDA_STb(nbdaData_cTADA)
 model_obj = generate_STb_model(data_list)
 
 #fit model
-fit = fit_STb(data_list, model_obj, chains = 5, cores = 5, parallel_chains=5, iter=2000, control = list(adapt_delta=0.99) )
+fit = fit_STb(data_list, model_obj, chains = 5, cores = 5, parallel_chains=5, iter=2000)
 
 STb_summary(fit, depth=2)
 
@@ -316,6 +319,6 @@ The package defaults to the model of frequency-dependent bias as:
 
 But also includes an alternative parameterization based on a scaled version of Dino Dini's normalized tunable sigmoid function. In the first case, f<1 would be evidence of an anti-conformist transmission bias, f=1 would be proportional, and f>1 would be conformist. In the second case, the shape parameter k < 0 is conformist, k=0 proportional, and k>0 anti-conformist. Both parameterizations create a relationship betwen the proportion of neighbors that are knowledgable and the weight of that information on the rate of an event happening for a given individual:
 
-![dini plot](docs/diniplot.png)
+![dini plot](man/figures/complex_transmission.png)
 
 You might find that one or the other has convergence issues, so we provide both. Complex transmission can be implemented with varying effects, ilvs, oada and ctada type models, etc.

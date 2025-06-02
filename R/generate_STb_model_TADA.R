@@ -434,8 +434,8 @@ transformed parameters {{
             )
 
             log_lik_statement <- glue::glue(
-                "// dTADA: probability of learning within interval\n" %+%
-                    "log_lik_matrix[trial, n] = lambda + log1m_exp(-lambda) - cum_hazard;"
+                "// dTADA: probability of learning within interval\n",
+                "log_lik_matrix[trial, n] = lambda + log1m_exp(-lambda) - cum_hazard;"
             )
         } else {
             target_increment_statement <- glue::glue(

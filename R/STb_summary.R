@@ -16,14 +16,15 @@
 #' @importFrom bayestestR hdi
 #' @export
 #' @examples
-#' data_list_user <- import_user_STb(STbayes::event_data, STbayes::edge_list)
-#' model_obj <- generate_STb_model(data_list_user)
-#' fit <- fit_STb(data_list_user,
+#' data_list <- import_user_STb(STbayes::event_data, STbayes::edge_list)
+#' model_obj <- generate_STb_model(data_list)
+#' fit <- fit_STb(data_list,
 #'     model_obj,
-#'     parallel_chains = 5,
-#'     chains = 5,
-#'     cores = 5,
-#'     iter = 5000
+#'     parallel_chains = 4,
+#'     chains = 4,
+#'     cores = 4,
+#'     iter = 4000,
+#'     refresh = 2000
 #' )
 #' STb_summary(fit, prob = 0.95, digits = 3, CI_method = "HPDI")
 STb_summary <- function(fit, depth = 1, prob = 0.95,
@@ -34,7 +35,7 @@ STb_summary <- function(fit, depth = 1, prob = 0.95,
                         digits = 3,
                         CI_method = c("HPDI", "PI")) {
     if (!inherits(fit, c("CmdStanMCMC"))) {
-        stop(sprintf("Model '%s' must be a CmdStanMCMC model fit.", name))
+        stop("Model must be a CmdStanMCMC model fit.")
     }
 
     CI_method <- match.arg(CI_method)

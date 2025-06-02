@@ -2,8 +2,7 @@
 % Please edit documentation in R/process_hires_networks_x_weights.R
 \name{process_networks_x_weights_hires}
 \alias{process_networks_x_weights_hires}
-\title{Helper function for preprocessing "high resolution" data
-process_networks_x_weights_hires()}
+\title{process_networks_x_weights_hires()}
 \usage{
 process_networks_x_weights_hires(event_data, t_weights, networks, D_data)
 }
