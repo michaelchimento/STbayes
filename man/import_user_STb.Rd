@@ -20,11 +20,11 @@ import_user_STb(
 \arguments{
 \item{event_data}{dataframe with columns id, trial, time, t_end}
 
-\item{networks}{Either a dataframe, a bisonr fit, or a list of bisonr fits.
+\item{networks}{Either a dataframe, a bisonr/STRAND fit, or a list of bisonr/STRAND fits.
 If dataframe: with columns trial, from, to, and one or more columns of edge
 weights named descriptively. Optionally an integer time column can be
 provided for dynamic network analysis, although networks must be provided for
-each time period between transmission events.}
+each inter-event interval.}
 
 \item{network_type}{"undirected" or "directed".}
 

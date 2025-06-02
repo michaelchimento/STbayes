@@ -4,11 +4,11 @@
 #' supplied data to be used for generating and fitting models.
 #'
 #' @param event_data dataframe with columns id, trial, time, t_end
-#' @param networks Either a dataframe, a bisonr fit, or a list of bisonr fits.
+#' @param networks Either a dataframe, a bisonr/STRAND fit, or a list of bisonr/STRAND fits.
 #' If dataframe: with columns trial, from, to, and one or more columns of edge
 #' weights named descriptively. Optionally an integer time column can be
 #' provided for dynamic network analysis, although networks must be provided for
-#'  each time period between transmission events.
+#' each inter-event interval.
 #' @param network_type "undirected" or "directed".
 #' @param ILV_c optional dataframe with columns id, and any constant
 #' individual-level variables

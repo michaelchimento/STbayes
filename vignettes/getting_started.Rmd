@@ -55,10 +55,12 @@ This edge list gives the network connections of each individual in a long format
 
 Any remaining columns are descriptively named integer or float edge weights. If you were making a multi-network model, you could add as many columns as you want. Here, there is only one network named ```assoc```.
 
-Let's import the data into a format that can be used with other STbayes functions. I've tried to abstract away as much complexity as possible, but please check the function arguments before sending in the data. The default values might not be what you want! In this case, it's simple---we have no covariates and a single trial with a static network.
+Let's import the data into a format that can be used with other STbayes functions. I've tried to abstract away as much complexity as possible, but please check the function arguments before sending in the data. The default values might not be what you want! In this case, it's simple---we have no covariates and a single trial with a static network. You can specify whether the network is directed or undirected using ```network_type```. This defaults to undirected.
 
 ```{r import}
-data_list <- import_user_STb(event_data, edge_list)
+data_list <- import_user_STb(event_data = event_data, 
+                             networks = edge_list,
+                             network_type = "undirected")
 ```
 
 This function does quite a bit behind the scenes to process the raw observational data into a named list of variables. I've tried to optimize as much as possible so it shouldn't take more than a second or two unless you're using gigantic networks. Important bits include:

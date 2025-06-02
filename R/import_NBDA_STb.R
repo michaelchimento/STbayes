@@ -1,4 +1,6 @@
-#' import_NBDA_STb: create STbayes_data object from nbda object
+#' import_NBDA_STb()
+#'
+#' Create STbayes_data object from nbda object
 #'
 #' @param nbda_object object of NBDAdata class
 #' @param network_names character vector of descriptive names of networks you're importing.

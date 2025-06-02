@@ -2,7 +2,7 @@
 % Please edit documentation in R/extract_ILV.R
 \name{extract_ILV}
 \alias{extract_ILV}
-\title{extract_ILV: private function to extract the ILV matrix and back transform into vectors for STb format}
+\title{extract_ILV()}
 \usage{
 extract_ILV(nbda_object, ILV_type)
 }
@@ -15,5 +15,5 @@ extract_ILV(nbda_object, ILV_type)
 List of vectors for each ILV
 }
 \description{
-extract_ILV: private function to extract the ILV matrix and back transform into vectors for STb format
+Helper function to extract the ILV matrix and back transform into vectors for STb format
 }

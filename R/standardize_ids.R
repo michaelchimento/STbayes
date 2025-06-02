@@ -35,6 +35,26 @@ standardize_ids <- function(networks, event_data, ILV_c = NULL, ILV_tv = NULL, t
             id_numeric = as.integer(id_factor),
             stringsAsFactors = FALSE
         )
+    } else if (inherits(networks, "STRAND Results Object")) {
+        ass_matrix <- networks[[1]]$samples$predicted_network_sample # [draws, from, to]
+        P <- dim(ass_matrix)[2]
+        net_ids <- c(1:P)
+        id_factor <- as.factor(net_ids)
+        id_map <- data.frame(
+            id = net_ids,
+            id_numeric = as.integer(id_factor),
+            stringsAsFactors = FALSE
+        )
+    } else if (is.list(networks) && all(sapply(networks, function(x) inherits(x, "STRAND Results Object")))) {
+        ass_matrix <- networks[[1]]$samples$predicted_network_sample # [draws, from, to]
+        P <- dim(ass_matrix)[2]
+        net_ids <- c(1:P)
+        id_factor <- as.factor(net_ids)
+        id_map <- data.frame(
+            id = net_ids,
+            id_numeric = as.integer(id_factor),
+            stringsAsFactors = FALSE
+        )
     }
 
     if (!all(event_data$id %in% id_map$id)) {

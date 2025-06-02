@@ -14,7 +14,6 @@
 #' @param gq Boolean to indicate whether the generated quantities block is added (incl. ll for WAIC)
 #' @param est_acqTime Boolean to indicate whether gq block includes estimates for acquisition time. At the moment this uses 'one weird trick' to accomplish this and does not support estimates for non-integer learning times.
 #' @param priors named list with strings containing priors.
-#' @param direct_s This argument is here for a fun time, not a long time. Don't use it!
 #' @export
 #' @return A STAN model string.
 #'
@@ -69,8 +68,7 @@ generate_STb_model <- function(STb_data,
                                veff_ID = c(),
                                gq = TRUE,
                                est_acqTime = FALSE,
-                               priors = list(),
-                               direct_s = F) {
+                               priors = list()) {
     data_type <- match.arg(data_type)
     model_type <- match.arg(model_type)
     intrinsic_rate <- match.arg(intrinsic_rate)
@@ -103,29 +101,12 @@ generate_STb_model <- function(STb_data,
     priors <- utils::modifyList(default_priors, priors)
 
 
-    if (data_type == "continuous_time" & direct_s == F) {
+    if (data_type == "continuous_time") {
         message("Creating cTADA type model with the following default priors:")
         for (p in names(priors)) {
             message(paste(p, "~", priors[[p]]))
         }
         return(generate_STb_model_TADA(
-            STb_data = STb_data,
-            model_type = model_type,
-            intrinsic_rate = intrinsic_rate,
-            transmission_func = transmission_func,
-            dTADA = F,
-            veff_ID = veff_ID,
-            gq = gq,
-            est_acqTime = est_acqTime,
-            priors = priors
-        ))
-    } else if (data_type == "continuous_time" & direct_s == T) {
-        priors <- utils::modifyList(priors, list(log_sprime = "normal(0,3)"))
-        message("Creating cTADA type model (s modelled directly) with the following default priors:")
-        for (p in names(priors)) {
-            message(paste(p, "~", priors[[p]]))
-        }
-        return(generate_STb_model_TADA_sdirect(
             STb_data = STb_data,
             model_type = model_type,
             intrinsic_rate = intrinsic_rate,

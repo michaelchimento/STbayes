@@ -52,8 +52,19 @@
 </nav><div class="container template-home">
 <div class="row">
   <main id="main" class="col-md-9"><p><img src="reference/figures/stbayes_banner2.png" alt="banner"><!-- badges: start --><!-- badges: end --></p>
-<p><strong>STbayes</strong> (SocialTransmissionbayes[ian]) is a package for building and running Bayesian inferential models of social transmission across static or dynamic networks. Users may supply their own data in formats given below, or import nbdaData objects directly from the <a href="https://github.com/whoppitt/NBDA" class="external-link">NBDA package</a>.</p>
-<p>STbayes can currently accomodate: - cTADA (acquisition time known) and OADA (only acquisition order known) model types. - static and dynamic networks. - multi-network comparison (with static or dynamic networks). - multiple trials with the same set, subsets, or different sets of individuals. - constant and time-varying ILVs for additive and multiplicative transmission models. - varying effects by individual for strength of social transmission, baseline hazard rates, and other user defined ILVs. - Easy workflow for ELPD (loo-psis, waic) model comparison. - propagation of uncertainty from network measures to transmission model - modeling of complex transmission and contagion</p>
+<p><strong>STbayes</strong> (ST standing for social transmission) is a package for building and running Bayesian inferential models of social transmission across static or dynamic networks. Users may supply their own data in formats given below, or import nbdaData objects directly from the <a href="https://github.com/whoppitt/NBDA" class="external-link">NBDA package</a>.</p>
+<p>STbayes can currently accomodate:</p>
+<ul>
+<li>cTADA (acquisition time known) and OADA (only acquisition order known) model types.</li>
+<li>static and dynamic networks.</li>
+<li>multi-network comparison (with static or dynamic networks).</li>
+<li>multiple trials with the same set, subsets, or different sets of individuals.</li>
+<li>constant and time-varying ILVs for additive and multiplicative transmission models.</li>
+<li>varying effects by individual for strength of social transmission, baseline hazard rates, and other user defined ILVs.</li>
+<li>Easy workflow for ELPD (loo-psis, waic) model comparison.</li>
+<li>propagation of uncertainty from network measures to transmission model</li>
+<li>modeling of complex transmission and contagion</li>
+</ul>
 <p>This package is under development and is not guaranteed to work.</p>
 <p><strong>Table of contents:</strong></p>
 <ol style="list-style-type: decimal">
@@ -89,7 +100,7 @@
 </h3>
 <p>An example dataset is provided where data was simulated on a random-regular network where k=4, s=5 and the base rate was set to 0.001. You can run your own simulation in the <code>simulate_data.R</code> vignette.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">STbayes</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://michaelchimento.github.io/STbayes">STbayes</a></span><span class="op">)</span></span>
 <span><span class="va">event_data</span> <span class="op">=</span> <span class="fu">STbayes</span><span class="fu">::</span><span class="va">event_data</span></span>
 <span><span class="va">edge_list</span> <span class="op">=</span> <span class="fu">STbayes</span><span class="fu">::</span><span class="va">edge_list</span></span>
 <span></span>
@@ -119,7 +130,7 @@
 </h3>
 <p>Like NBDA, we can compare a full model with both a social and asocial component, to a model restricted to estimating only an asocial rate. We can compare models using either LOO-PSIS or WAIC with <code>STb_compare</code> (really a convenient wrapper that automates a workflow using package <code>loo</code>) and compare the estimated learning times from both models. First let’s load and fit both models with a convenience function.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">STbayes</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://michaelchimento.github.io/STbayes">STbayes</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">event_data</span> <span class="op">=</span> <span class="fu">STbayes</span><span class="fu">::</span><span class="va">event_data</span></span>
@@ -190,7 +201,7 @@
 <p>Optionally, the user may supply dynamic networks <strong>if time is measured with integer values</strong>. At the moment, the user must organize the data so that each discrete timestep is represented in this dataframe. For example, if your observation period was 7 days, you should supply a network to be used for each day. If the network is a static representation to be used for the entire diffusion, this column is not required. - <code>time</code>: This is an integer column indicating which time step the networks belong to.</p>
 <p>Finally, the user must supply at least one descriptively named column of integer or float edge weights. The column names will be carried forward in naming variables in the output of the model. In the example code below, I have provided a binary kin network and an inverse distance network (higher values = closer together). - <code>network_name1</code>: a column of integer or float edge weights - <code>network_name2</code>: another column of integer or float edge weights - etc…</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">STbayes</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://michaelchimento.github.io/STbayes">STbayes</a></span><span class="op">)</span></span>
 <span></span>
 <span> <span class="va">event_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>   id <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>, <span class="st">"B"</span>, <span class="st">"C"</span>, <span class="st">"D"</span>, <span class="st">"E"</span>, <span class="st">"F"</span><span class="op">)</span>, <span class="co">#this can be character or numeric</span></span>
@@ -266,7 +277,7 @@
 </h3>
 <p>Create and fit model from NBDA object (taken from Tutorial 4.1 from <a href="https://doi.org/10.1111/1365-2656.13307" class="external-link">Hasenjager et al. 2021</a>). Also see vignette “import_from_nbda_obj.R”.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">STbayes</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://michaelchimento.github.io/STbayes">STbayes</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co">#load example NBDAdata object </span></span>
 <span><span class="va">nbdaData_cTADA</span> <span class="op">&lt;-</span> <span class="fu">STbayes</span><span class="fu">::</span><span class="va">tutorial4_1</span></span>
@@ -294,7 +305,7 @@
 </h3>
 <p>Rather than using point estimates for edge weights, it is possible to import posterior distributions of edge weights from bayesian network models, such as those fit by the <a href="https://github.com/JHart96/bisonR/tree/main" class="external-link">bisonr package</a> or the <a href="https://github.com/ctross/STRAND/tree/main" class="external-link">STRAND package</a>. This is done by providing single fits (or a list of fits) to <code><a href="reference/import_user_STb.html">import_user_STb()</a></code>:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">STbayes</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://michaelchimento.github.io/STbayes">STbayes</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># load example bisonr fit object</span></span>
 <span><span class="va">bisonr_fit</span> <span class="op">=</span> <span class="fu">STbayes</span><span class="fu">::</span><span class="va">bisonr_fit</span></span>

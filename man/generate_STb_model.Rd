@@ -14,8 +14,7 @@ generate_STb_model(
   veff_ID = c(),
   gq = TRUE,
   est_acqTime = FALSE,
-  priors = list(),
-  direct_s = F
+  priors = list()
 )
 }
 \arguments{
@@ -38,8 +37,6 @@ generate_STb_model(
 \item{est_acqTime}{Boolean to indicate whether gq block includes estimates for acquisition time. At the moment this uses 'one weird trick' to accomplish this and does not support estimates for non-integer learning times.}
 
 \item{priors}{named list with strings containing priors.}
-
-\item{direct_s}{This argument is here for a fun time, not a long time. Don't use it!}
 }
 \value{
 A STAN model string.

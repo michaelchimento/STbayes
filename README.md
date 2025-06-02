@@ -2,9 +2,10 @@
 <!-- badges: start -->
 <!-- badges: end -->
 
-**STbayes** (SocialTransmissionbayes[ian]) is a package for building and running Bayesian inferential models of social transmission across static or dynamic networks. Users may supply their own data in formats given below, or import nbdaData objects directly from the [NBDA package](https://github.com/whoppitt/NBDA).
+**STbayes** (ST standing for social transmission) is a package for building and running Bayesian inferential models of social transmission across static or dynamic networks. Users may supply their own data in formats given below, or import nbdaData objects directly from the [NBDA package](https://github.com/whoppitt/NBDA).
 
 STbayes can currently accomodate:
+
  - cTADA (acquisition time known) and OADA (only acquisition order known) model types.
  - static and dynamic networks.
  - multi-network comparison (with static or dynamic networks).

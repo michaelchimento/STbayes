@@ -2,7 +2,7 @@
 % Please edit documentation in R/import_NBDA_STb.R
 \name{import_NBDA_STb}
 \alias{import_NBDA_STb}
-\title{import_NBDA_STb: create STbayes_data object from nbda object}
+\title{import_NBDA_STb()}
 \usage{
 import_NBDA_STb(
   nbda_object,
@@ -27,7 +27,7 @@ import_NBDA_STb(
 A list containing properly formatted data to run social transmission models.
 }
 \description{
-import_NBDA_STb: create STbayes_data object from nbda object
+Create STbayes_data object from nbda object
 }
 \examples{
 nbda_object <- STbayes::tutorial4_1
