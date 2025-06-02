@@ -24,22 +24,22 @@ devtools::install_github("michaelchimento/STbayes")
 
 ## Getting started
 
-- [Importing data](https://yourusername.github.io/yourpackagename/articles/getting_started.html#step-1-importing-data)
-- [Generate a model](https://yourusername.github.io/yourpackagename/articles/getting_started.html#step-2-generate-a-model)
-- [Fit and save the model](https://yourusername.github.io/yourpackagename/articles/getting_started.html#step-3-fit-and-save-the-model)
-- [Viewing model output](https://yourusername.github.io/yourpackagename/articles/getting_started.html#step-4-viewing-model-output)
-- [Posterior predictive checks](https://yourusername.github.io/yourpackagename/articles/getting_started.html#step-5-posterior-predictive-checks)
-- [Model comparison](https://yourusername.github.io/yourpackagename/articles/getting_started.html#step-6-model-comparison)
+- [Importing data](https://michaelchimento.github.io/STbayes/articles/getting_started.html#step-1-importing-data)
+- [Generate a model](https://michaelchimento.github.io/STbayes/articles/getting_started.html#step-2-generate-a-model)
+- [Fit and save the model](https://michaelchimento.github.io/STbayes/articles/getting_started.html#step-3-fit-and-save-the-model)
+- [Viewing model output](https://michaelchimento.github.io/STbayes/articles/getting_started.html#step-4-viewing-model-output)
+- [Posterior predictive checks](https://michaelchimento.github.io/STbayes/articles/getting_started.html#step-5-posterior-predictive-checks)
+- [Model comparison](https://michaelchimento.github.io/STbayes/articles/getting_started.html#step-6-model-comparison)
 
 ## Advanced recipes
 
 - [Multi-network models](https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#multi-network-models)
 - [Individual-level variables](https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#individual-level-variables-ilvs)
 - [Transmission weights](https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#transmission-weights)
-- [Varying effects](https://yourusername.github.io/yourpackagename/articles/getting_started.html#varying-effects-by-individual)
-- [Other model types: OADA and dTADA](https://yourusername.github.io/yourpackagename/articles/getting_started.html#other-model-types-oada-and-dtada)
-- [Edge weight uncertainty](https://yourusername.github.io/yourpackagename/articles/getting_started.html#edge-weight-uncertainty)
-- [Complex Transmission](https://yourusername.github.io/yourpackagename/articles/getting_started.html#complex-transmission)
+- [Varying effects](https://michaelchimento.github.io/STbayes/articles/getting_started.html#varying-effects-by-individual)
+- [Other model types: OADA and dTADA](https://michaelchimento.github.io/STbayes/articles/getting_started.html#other-model-types-oada-and-dtada)
+- [Edge weight uncertainty](https://michaelchimento.github.io/STbayes/articles/getting_started.html#edge-weight-uncertainty)
+- [Complex Transmission](https://michaelchimento.github.io/STbayes/articles/getting_started.html#complex-transmission)
 - [Setting priors](https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#setting-priors)
 - [Import NBDA Objects](https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#import-nbda-data-objects)
 
