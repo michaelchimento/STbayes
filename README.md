@@ -1,20 +1,9 @@
+
 ![banner](man/figures/stbayes_banner2.png)
 <!-- badges: start -->
 <!-- badges: end -->
 
 **STbayes** (ST standing for social transmission) is a package for building and running Bayesian inferential models of social transmission across static or dynamic networks. Users may supply their own data in formats given below, or import nbdaData objects directly from the [NBDA package](https://github.com/whoppitt/NBDA).
-
-STbayes can currently accomodate:
-
- - cTADA (acquisition time known) and OADA (only acquisition order known) model types.
- - static and dynamic networks.
- - multi-network comparison (with static or dynamic networks).
- - multiple trials with the same set, subsets, or different sets of individuals.
- - constant and time-varying ILVs for additive and multiplicative transmission models.
- - varying effects by individual for strength of social transmission, baseline hazard rates, and other user defined ILVs.
- - easy workflow for ELPD (loo-psis, waic) model comparison.
- - propagation of uncertainty from network measures to transmission model
- - modeling of complex transmission and contagion
    
 This package is under development and is not guaranteed to work.
 
@@ -53,3 +42,15 @@ devtools::install_github("michaelchimento/STbayes")
 - [Complex Transmission](https://yourusername.github.io/yourpackagename/articles/getting_started.html#complex-transmission)
 - [Setting priors](https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#setting-priors)
 - [Import NBDA Objects](https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#import-nbda-data-objects)
+
+## Features:
+
+ - TADA (acquisition time known) and OADA (only acquisition order known) model types.
+ - static and dynamic networks.
+ - multi-network comparison (with static or dynamic networks).
+ - multiple trials with the same set, subsets, or different sets of individuals.
+ - constant and time-varying ILVs for additive and multiplicative transmission models.
+ - varying effects by individual for strength of social transmission, baseline hazard rates, and other user defined ILVs.
+ - easy workflow for ELPD (loo-psis, waic) model comparison.
+ - propagation of uncertainty from network measures to transmission model
+ - modeling of complex transmission and contagion

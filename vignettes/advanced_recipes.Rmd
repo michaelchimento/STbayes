@@ -193,7 +193,7 @@ $$
      {(\text{n knowledgeable associates})^f + (\text{n naive associates})^f}
 $$
 
-STbayes also includes an _alternative parameterization_ "freqdep_k" based on a scaled version of (Dino Dini's normalized tunable sigmoid function)[https://dinodini.wordpress.com/2010/04/05/normalized-tunable-sigmoid-functions/]. In the first case, f<1 would be evidence of an anti-conformist transmission bias, f=1 would be proportional, and f>1 would be conformist. In the second case, the shape parameter k < 0 is conformist, k=0 proportional, and k>0 anti-conformist. Both parameterizations create a similar relationship between the proportion of informed neighbours and the weight of that information on the rate of an event happening for a given individual:
+STbayes also includes an _alternative parameterization_ "freqdep_k" based on a scaled version of Dino Dini's [normalized tunable sigmoid function](https://dinodini.wordpress.com/2010/04/05/normalized-tunable-sigmoid-functions/). In the first case, f<1 would be evidence of an anti-conformist transmission bias, f=1 would be proportional, and f>1 would be conformist. In the second case, the shape parameter k < 0 is conformist, k=0 proportional, and k>0 anti-conformist. Both parameterizations create a similar relationship between the proportion of informed neighbours and the weight of that information on the rate of an event happening for a given individual:
 
 ![dini plot](../man/figures/complex_transmission.png)
 
