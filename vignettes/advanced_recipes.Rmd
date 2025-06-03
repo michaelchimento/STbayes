@@ -60,10 +60,10 @@ ILV_c <- data.frame(
 
 The data-frame ILV_c holds the values for each individual. The formatting of ```id``` should match the event_data and networks data-frames. At the moment, ILVs can be continuous or binary. You should normalize continuous variables, and binary variables should be coded as 0, 1. I plan to expand this to multi-category factors, but for the moment you must directly edit the Stan code to use these.
 
-We need to explicitly tell STbayes which variables are additive (acting independently on intrinsic or social rates) and multiplicative (same effect estimated for intrinsic and social rates). Below, I have specified age as acting independently on the intrinsic and social rate, sex as acting only on the social rate, and weight as a multiplicative effect. Thus, two betas will be estimated for age, and a single beta will be estimated for sex and weight.
+We need to explicitly tell STbayes which variables are additive (acting independently on intrinsic or social rates) and multiplicative (same effect estimated for intrinsic and social rates). Below, I have specified age as acting independently on the intrinsic and social rate, sex as acting only on the social rate, and weight as a multiplicative effect. Two betas will be estimated for age, and a single beta will be estimated for sex and weight.
 
 ```{r ILV2}
-STb_data <- import_user_STb(
+data_list <- import_user_STb(
     event_data = event_data,
     networks = networks,
     ILV_c = ILV_c,
@@ -71,8 +71,6 @@ STb_data <- import_user_STb(
     ILVs = c( "age", "sex"),
     ILVm = c("weight")
 )
-
-model_obj = generate_STb_model(STb_data)
 ```
 
 ### Time-varying ILVs
@@ -87,7 +85,7 @@ ILV_tv <- data.frame(
     dist_from_resource = rnorm(18)
 )
 
-STb_data <- import_user_STb(
+data_list <- import_user_STb(
     event_data = event_data,
     networks = networks,
     ILV_c = ILV_c,
@@ -96,8 +94,6 @@ STb_data <- import_user_STb(
     ILVs = c("sex"),
     ILVm = c("weight")
 )
-
-model_obj = generate_STb_model(STb_data)
 ```
 
 Here, we will include it as an additive effect on the intrinsic rate along with age.
@@ -109,7 +105,7 @@ Transmission weights are vital information that can dramatically improve how the
 ```{r t_weights}
 t_weights_static <- data.frame(
     id = LETTERS[1:6],
-    t_weight = exp(rnorm(6))
+    t_weight = rbeta(6, 1, 5)
 )
 ```
 
@@ -120,14 +116,14 @@ t_weights_dynamic <- data.frame(
     trial = c(rep(1, each = 9),rep(2, each = 9)),
     id = c(rep(LETTERS[1:3], each=3), rep(LETTERS[4:6], each=3)),
     time = c(rep(1:3, times = 3), rep(1:3, times=3)),
-    t_weight = exp(rnorm(18))
+    t_weight = rbeta(18, 1, 5)
 )
 ```
 
 These can be included in the model by:
 
 ```{r t_weights3}
-STb_data <- import_user_STb(
+data_list <- import_user_STb(
     event_data = event_data,
     networks = networks,
     t_weights = t_weights_dynamic
@@ -153,6 +149,16 @@ and use those values when calculating the likelihood in the ```model``` block.
 
 ## Other model types: OADA and dTADA
 
+So far we have been building continuous time of acquisition models---we have measured when individuals experienced an event. You might be less certain about the timing of events. If you have coarser data where you know that individuals learned within a given time period, but are uncertain of exactly when, you can create a discrete TADA (dTADA) model. If you have no time information, but only the order of acquisition, you can also create an OADA model. The ```data_type``` argument allows you to choose between these options:
+
+```{r oada1}
+model_cTADA = generate_STb_model(data_list, data_type = "continuous_time") #default
+model_dTADA = generate_STb_model(data_list, data_type = "discrete_time")
+model_OADA = generate_STb_model(data_list, data_type = "order")
+```
+
+A flow chart for deciding between models can be found in [Hasenjager et al. 2021](https://doi.org/10.1111/1365-2656.13307).
+
 ## Edge weight uncertainty
 
 Rather than using point estimates for edge weights, it is possible to import posterior distributions of edge weights from bayesian network models, such as those fit by the [bisonr package](https://github.com/JHart96/bisonR/tree/main) or the [STRAND package](https://github.com/ctross/STRAND/tree/main). This is done by providing single fits (or a list of fits) to ```import_user_STb()```.
@@ -163,7 +169,8 @@ bisonr_fit <- STbayes::bisonr_fit
 # network has 10 individuals, create mock diffusion data
 event_data <- data.frame(
     trial = 1,
-    id = as.character(c(1:10)), #bison fits record ids as characters, even if numeric
+    #bison stores ids as characters, ids should match across dataframes
+    id = as.character(c(1:10)),
     time = sample(1:101, 10, replace = FALSE),
     t_end = 100
 )
@@ -182,6 +189,7 @@ STbayes can be used to fit and create models of complex transmission. You can cr
 
 ```{r complex_transmission}
 data_list = import_user_STb(STbayes::event_data, STbayes::edge_list)
+model_standard = generate_STb_model(data_list, transmission_func="standard") # default
 model_f = generate_STb_model(data_list, transmission_func="freqdep_f")
 model_k = generate_STb_model(data_list, transmission_func="freqdep_k")
 ```
@@ -230,9 +238,35 @@ model <- generate_STb_model(data_list, priors = list(
 
 At the moment, the function will always print all priors that are possible to specify, regardless of the type of model you are creating. At least this makes it easy to reference the names when you need them.
 
+## High-resolution data mode
+
+If you have very high-frequency sampling of behaviour (e.g. from a motion capture system), you can take advantage of it to create a model with dynamic networks and dynamic transmission weights that can change in value frequently between events. Sampling intervals should be regular (e.g. 30 fps). Below is a dataset where networks and transmission weights are recorded every time-step, rather than summarized per inter-event interval. If fitting a model with standard transmission, STbayes preprocesses the data for efficient fitting.
+
+```{r}
+data_hires <- import_user_STb(
+    event_data = STbayes::events_hires,
+    networks = STbayes::networks_hires,
+    t_weights = STbayes::t_weights_hires,
+    high_res = T
+)
+model_hires <- generate_STb_model(data_hires, transmission_func = "standard")
+```
+
+If you plan to fit a model with complex transmission, it's not possible to pre-process the data because of the non-linearity of the transmission rule. You should use ```import_user_STb2()```. High-res complex transmission models will take significantly longer to fit as they loop through each time-step, rather than inter-event intervals.
+
+```{r}
+data_hires <- import_user_STb2(
+    event_data = STbayes::events_hires,
+    networks = STbayes::networks_hires,
+    t_weights = STbayes::t_weights_hires,
+    high_res = T
+)
+model_hires <- generate_STb_model(data_hires, transmission_func = "freqdep_k")
+```
+
 ## Import NBDA data objects
 
-STbayes is compatible with most NBDA objects. The function will try to figure out what was meant to be done with ILVs. However, some features of STbayes require using import_user_STb and I generally encourage you to use the new data format. Read in an NBDA object (taken from Tutorial 4.1 from [Hasenjager et al. 2021](https://doi.org/10.1111/1365-2656.13307)) like so:
+STbayes is compatible with most NBDA objects. The function will try to figure out what was meant to be done with ILVs. However, some features of STbayes require using ```import_user_STb```. Below we read in an NBDA object (taken from Tutorial 4.1 from [Hasenjager et al. 2021](https://doi.org/10.1111/1365-2656.13307)):
 
 ```{r}
 nbdaData_cTADA <- STbayes::tutorial4_1

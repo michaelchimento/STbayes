@@ -41,6 +41,7 @@ devtools::install_github("michaelchimento/STbayes")
 - [Edge weight uncertainty](https://michaelchimento.github.io/STbayes/articles/getting_started.html#edge-weight-uncertainty)
 - [Complex Transmission](https://michaelchimento.github.io/STbayes/articles/getting_started.html#complex-transmission)
 - [Setting priors](https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#setting-priors)
+- [High resolution data mode](https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#high-resolution-data-mode)
 - [Import NBDA Objects](https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#import-nbda-data-objects)
 
 ## Features:
