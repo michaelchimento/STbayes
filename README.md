@@ -1,11 +1,11 @@
-
+<br><br>
 ![banner](man/figures/stbayes_banner2.png)
 <!-- badges: start -->
 <!-- badges: end -->
 
 **STbayes** (ST standing for social transmission) is a package for building and running Bayesian inferential models of social transmission across static or dynamic networks. Users may supply their own data in formats given below, or import nbdaData objects directly from the [NBDA package](https://github.com/whoppitt/NBDA).
    
-This package is under development and is not guaranteed to work.
+There is now an associated [preprint](https://doi.org/10.1101/2025.06.07.658152). The package is still under development, so if you run into a bug, please open an issue or contact me directly!
 
 ## Installation<a name="Installation"></a>
 
