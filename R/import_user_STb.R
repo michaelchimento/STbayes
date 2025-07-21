@@ -5,8 +5,8 @@
 #'
 #' @param event_data dataframe with columns id, trial, time, t_end
 #' @param networks Either a dataframe, a bisonr/STRAND fit, or a list of bisonr/STRAND fits.
-#' If dataframe: with columns trial, from, to, and one or more columns of edge
-#' weights named descriptively. Optionally an integer time column can be
+#' If dataframe: with columns trial, focal, other, and one or more columns of edge
+#' weights named descriptively. Edge weights describe the influence that other has on focal. Optionally an integer time column can be
 #' provided for dynamic network analysis, although networks must be provided for
 #' each inter-event interval.
 #' @param network_type "undirected" or "directed".
@@ -43,8 +43,8 @@
 #' )
 #' networks <- data.frame(
 #'     trial = rep(1:2, each = 3),
-#'     from = c("A", "A", "B", "D", "D", "E"),
-#'     to = c("B", "C", "C", "E", "F", "F"),
+#'     focal = c("A", "A", "B", "D", "D", "E"),
+#'     other = c("B", "C", "C", "E", "F", "F"),
 #'     kin = c(1, 0, 1, 0, 1, 1),
 #'     inverse_distance = c(0, 1, .5, .25, .1, 0)
 #' )
@@ -98,7 +98,8 @@ import_user_STb <- function(event_data,
     }
 
     if (inherits(networks, "data.frame")) {
-        check_required_cols(networks, required_cols = c("trial", "from", "to"), df_name = "networks")
+        check_network_colnames(networks)
+        check_required_cols(networks, required_cols = c("trial", "focal", "other"), df_name = "networks")
     }
 
     # other warnings
@@ -120,6 +121,7 @@ import_user_STb <- function(event_data,
         message("\U0001F914 You have provided ILVs, yet did not specify whether they should be additive or multiplicative (missing arguments ILVi, ILVs, ILVm). They will not be included in the model.")
     }
 
+    check_trials(event_data, networks, ILV_tv, t_weights)
     id_check <- standardize_ids(networks, event_data, ILV_c, ILV_tv, t_weights)
     event_data <- id_check$event_data
     ILV_c <- id_check$ILV_c
@@ -133,7 +135,7 @@ import_user_STb <- function(event_data,
     # event_data should be in format id, trial, time, t_end
     # if time==0, assume to be trained demonstrator, if time>t_end, assume to be censored
     # create numeric variables in case user has supplied strings
-    # event_data$id_numeric <- as.numeric(as.factor(event_data$id))
+
     event_data$trial_numeric <- as.numeric(as.factor(event_data$trial))
     # order in case user has not, assign indexes per trial
     event_data <- event_data[order(event_data$trial_numeric, event_data$time), ]
@@ -317,7 +319,7 @@ import_user_STb <- function(event_data,
     }
 
     if (!is_distribution) {
-        if (data_list$P != length(unique(c(networks$from, networks$to)))) {
+        if (data_list$P != length(unique(c(networks$focal, networks$other)))) {
             stop("\U0001F614 Networks and event data do not contain the same number of unique individuals. If individuals did not experience an event, please include them with column time = t_end+1.")
         }
         if (data_list$K != length(unique(networks$trial))) {
@@ -328,15 +330,15 @@ import_user_STb <- function(event_data,
             message("User input indicates static network(s). If dynamic, include 'time' column.")
             networks$time <- 1
         }
-        exclude_cols <- c("trial", "time", "from", "to")
+        exclude_cols <- c("trial", "time", "focal", "other")
         network_cols <- setdiff(names(networks), exclude_cols)
 
         temp_names <- data.frame(
-            name = sort(unique(c(networks$from, networks$to))),
-            numeric = seq_along(sort(unique(c(networks$from, networks$to))))
+            name = sort(unique(c(networks$focal, networks$other))),
+            numeric = seq_along(sort(unique(c(networks$focal, networks$other))))
         )
-        networks$from_numeric <- temp_names$numeric[match(networks$from, temp_names$name)]
-        networks$to_numeric <- temp_names$numeric[match(networks$to, temp_names$name)]
+        networks$focal_numeric <- temp_names$numeric[match(networks$focal, temp_names$name)]
+        networks$other_numeric <- temp_names$numeric[match(networks$other, temp_names$name)]
         networks$trial_numeric <- as.numeric(as.factor(networks$trial))
 
         networks$discrete_time <- with(networks, ave(time, trial_numeric, FUN = function(x) as.numeric(as.factor(x))))
@@ -355,14 +357,14 @@ import_user_STb <- function(event_data,
             column <- network_cols[n]
             for (k in 1:data_list$K) {
                 temp_df <- networks[networks$trial_numeric == k, ]
-                from <- temp_df$from_numeric
-                to <- temp_df$to_numeric
+                focal <- temp_df$focal_numeric
+                other <- temp_df$other_numeric
                 time <- temp_df$discrete_time
                 value <- temp_df[[column]]
 
                 fill_array(
                     A_flat, dims,
-                    from, to, time, value,
+                    focal, other, time, value,
                     n - 1, k - 1,
                     (!is_symmetric && network_type == "undirected")
                 )
@@ -411,41 +413,41 @@ import_user_STb <- function(event_data,
 
                 dyad_matrix <- do.call(rbind, dyads)
                 dyad_df <- data.frame(
-                    from = as.integer(dyad_matrix[, 1]),
-                    to = as.integer(dyad_matrix[, 2]),
+                    focal = as.integer(dyad_matrix[, 1]),
+                    other = as.integer(dyad_matrix[, 2]),
                     stringsAsFactors = FALSE
                 )
 
                 # Drop self-loops
-                edge_samples <- net_obj$edge_samples[, dyad_df$from != dyad_df$to, drop = FALSE]
-                dyad_df <- dyad_df[dyad_df$from != dyad_df$to, ]
-                data_list$from_ID <- dyad_df$from
-                data_list$to_ID <- dyad_df$to
+                edge_samples <- net_obj$edge_samples[, dyad_df$focal != dyad_df$other, drop = FALSE]
+                dyad_df <- dyad_df[dyad_df$focal != dyad_df$other, ]
+                data_list$focal_ID <- dyad_df$focal
+                data_list$other_ID <- dyad_df$other
 
                 if (net_obj$directed) {
                     # Use samples as-is
                     edges <- edge_samples
                 } else {
                     # Duplicate edges to simulate directed version
-                    # from_ids <- c(dyad_df$from, dyad_df$to)
-                    # to_ids   <- c(dyad_df$to, dyad_df$from)
-                    # dyad_df <- data.frame(from = from_ids, to = to_ids)
+                    # focal_ids <- c(dyad_df$focal, dyad_df$other)
+                    # to_ids   <- c(dyad_df$other, dyad_df$focal)
+                    # dyad_df <- data.frame(focal = focal_ids, other = other_ids)
                     # edges <- cbind(edge_samples, edge_samples)
                     edges <- edge_samples
                 }
             } else if (inherits(net_obj, "STRAND Results Object")) {
                 # STRAND handling
-                ass_matrix <- net_obj$samples$predicted_network_sample # [draws, from, to]
+                ass_matrix <- net_obj$samples$predicted_network_sample # [draws, focal, other]
                 draws <- dim(ass_matrix)[1]
                 P <- dim(ass_matrix)[2]
 
                 # Create edge sample matrix: [draws, dyads]
                 edge_mat <- matrix(NA, nrow = draws, ncol = P * (P - 1))
                 idx <- 1
-                for (i_from in 1:P) {
-                    for (i_to in 1:P) {
-                        if (i_from != i_to) {
-                            edge_mat[, idx] <- ass_matrix[, i_from, i_to]
+                for (i_focal in 1:P) {
+                    for (i_other in 1:P) {
+                        if (i_focal != i_other) {
+                            edge_mat[, idx] <- ass_matrix[, i_focal, i_other]
                             idx <- idx + 1
                         }
                     }

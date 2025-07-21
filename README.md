@@ -33,13 +33,14 @@ devtools::install_github("michaelchimento/STbayes")
 
 ## Advanced recipes
 
+- [Dynamic network models](https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#dynamic-network-models)
 - [Multi-network models](https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#multi-network-models)
 - [Individual-level variables](https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#individual-level-variables-ilvs)
 - [Transmission weights](https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#transmission-weights)
-- [Varying effects](https://michaelchimento.github.io/STbayes/articles/getting_started.html#varying-effects-by-individual)
-- [Other model types: OADA and dTADA](https://michaelchimento.github.io/STbayes/articles/getting_started.html#other-model-types-oada-and-dtada)
-- [Edge weight uncertainty](https://michaelchimento.github.io/STbayes/articles/getting_started.html#edge-weight-uncertainty)
-- [Complex Transmission](https://michaelchimento.github.io/STbayes/articles/getting_started.html#complex-transmission)
+- [Varying effects](https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#varying-effects-by-individual)
+- [Other model types: OADA and dTADA](https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#other-model-types-oada-and-dtada)
+- [Edge weight uncertainty](https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#edge-weight-uncertainty)
+- [Complex Transmission](https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#complex-transmission)
 - [Setting priors](https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#setting-priors)
 - [High resolution data mode](https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#high-resolution-data-mode)
 - [Import NBDA Objects](https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#import-nbda-data-objects)

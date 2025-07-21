@@ -6,24 +6,24 @@ using namespace Rcpp;
 // [[Rcpp::export]]
 void fill_array(NumericVector A_array,
                 IntegerVector dims,
-                IntegerVector from,
-                IntegerVector to,
+                IntegerVector focal,
+                IntegerVector other,
                 IntegerVector time,
                 NumericVector value,
                 int net_idx,
                 int trial_idx,
                 bool symmetric) {
 
-    int N = from.size();
+    int N = focal.size();
     int D0 = dims[0]; // networks
     int D1 = dims[1]; // trials
     int D2 = dims[2]; // timesteps
-    int D3 = dims[3]; // from
-    int D4 = dims[4]; // to
+    int D3 = dims[3]; // focal
+    int D4 = dims[4]; // other
 
     for (int i = 0; i < N; ++i) {
-        int f = from[i] - 1;
-        int t_ = to[i] - 1;
+        int f = focal[i] - 1;
+        int t_ = other[i] - 1;
         int ts = time[i] - 1;
         int k = trial_idx;
         int n = net_idx;

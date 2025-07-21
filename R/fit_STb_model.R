@@ -18,8 +18,8 @@
 #'     parallel_chains = 4,
 #'     chains = 4,
 #'     cores = 4,
-#'     iter = 4000,
-#'     refresh = 1000
+#'     iter = 2000,
+#'     refresh = 100
 #' )
 fit_STb <- function(data_list, model_obj, ...) {
     extra_args <- list(...)
@@ -41,6 +41,16 @@ fit_STb <- function(data_list, model_obj, ...) {
     #    valid_args$init <- function(chain_id) list(log_lambda_0_mean = -4, log_s_prime_mean = -4)
     #  }
     # }
+
+    if (!"iter" %in% names(extra_args)) {
+        iter <- 1000
+        valid_args$iter_warmup <- floor(iter / 2)
+        valid_args$iter_sampling <- ceiling(iter / 2)
+    }
+
+    if (!"chains" %in% names(extra_args)) {
+        valid_args$chains <- 1
+    }
 
 
     if (!"iter_warmup" %in% names(valid_args) && !"iter_sampling" %in% names(valid_args) && "iter" %in% names(extra_args)) {

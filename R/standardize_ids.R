@@ -3,7 +3,7 @@
 #' Helper function that maps IDs across data with networks as reference
 #'
 #' @param event_data dataframe with columns id, trial, time, t_end
-#' @param networks networks dataframe with columns trial, from, to, and one or more columns of edge weights named descriptively.
+#' @param networks networks dataframe with columns trial, focal, other, and one or more columns of edge weights named descriptively.
 #' @param ILV_c optional dataframe with columns id, and any constant individual-level variables that might be of interest
 #' @param ILV_tv optional dataframe with columns trial, id, time and any time-varying variables.
 #' @param t_weights Optional dataframe with columns trial, id, time and t_weight.
@@ -12,7 +12,7 @@
 standardize_ids <- function(networks, event_data, ILV_c = NULL, ILV_tv = NULL, t_weights = NULL) {
     if (inherits(networks, "data.frame")) {
         # Extract all unique ids from networks
-        net_ids <- unique(c(networks$from, networks$to))
+        net_ids <- unique(c(networks$focal, networks$other))
         id_factor <- as.factor(net_ids)
         id_map <- data.frame(
             id = as.character(id_factor),
@@ -36,7 +36,7 @@ standardize_ids <- function(networks, event_data, ILV_c = NULL, ILV_tv = NULL, t
             stringsAsFactors = FALSE
         )
     } else if (inherits(networks, "STRAND Results Object")) {
-        ass_matrix <- networks[[1]]$samples$predicted_network_sample # [draws, from, to]
+        ass_matrix <- networks[[1]]$samples$predicted_network_sample # [draws, focal, other]
         P <- dim(ass_matrix)[2]
         net_ids <- c(1:P)
         id_factor <- as.factor(net_ids)
@@ -46,7 +46,7 @@ standardize_ids <- function(networks, event_data, ILV_c = NULL, ILV_tv = NULL, t
             stringsAsFactors = FALSE
         )
     } else if (is.list(networks) && all(sapply(networks, function(x) inherits(x, "STRAND Results Object")))) {
-        ass_matrix <- networks[[1]]$samples$predicted_network_sample # [draws, from, to]
+        ass_matrix <- networks[[1]]$samples$predicted_network_sample # [draws, focal, other]
         P <- dim(ass_matrix)[2]
         net_ids <- c(1:P)
         id_factor <- as.factor(net_ids)

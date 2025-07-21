@@ -1,6 +1,7 @@
 test_that("complicated data gets imported correctly (pigeons)", {
     # Load test data from testdata/
     load(test_path("testdata", "pigeon_events.rda")) # loads pigeon_events
+    pigeon_events$trial <- as.integer(as.factor(pigeon_events$trial))
     load(test_path("testdata", "pigeon_networks.rda")) # loads pigeon_networks
     load(test_path("testdata", "pigeon_tweights.rda")) # loads pigeon_tweights
     load(test_path("testdata", "pigeon_ILVtv.rda")) # loads pigeon_ILVtv

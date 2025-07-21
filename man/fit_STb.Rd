@@ -28,7 +28,7 @@ fit <- fit_STb(data_list,
     parallel_chains = 4,
     chains = 4,
     cores = 4,
-    iter = 4000,
-    refresh = 1000
+    iter = 2000,
+    refresh = 100
 )
 }

@@ -8,8 +8,8 @@
 <title>Organize, Generate, Fit, and Analyze Bayesian Models of Social Transmission • STbayes</title>
 <script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.4.2/css/all.min.css" rel="stylesheet">
-<link href="deps/font-awesome-6.4.2/css/v4-shims.min.css" rel="stylesheet">
+<script src="deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Organize, Generate, Fit, and Analyze Bayesian Models of Social Transmission">
 <meta name="description" content="STbayes is a flexible tool for building and running Bayesian models of social transmission over networks, inspired by the network-based diffusion analysis (NBDA) framework. STbayes builds and compiles customized STAN programs based on the user's input. These models estimate rates of asocial and social transmission that can be affected by individual level variables. Models can be optionally fitted with random effects to account for inter-individual variation. The model can accept static or dynamic networks, and can compare multiple networks if supplied. Furthermore, networks may be supplied with point-estimate edge weights, or posterior distributions of edgeweights, allowing for propagation of uncertainty from network inference. The package accepts either raw data supplied by the user, or NBDA objects exported from the NBDA package.">
 <meta property="og:description" content="STbayes is a flexible tool for building and running Bayesian models of social transmission over networks, inspired by the network-based diffusion analysis (NBDA) framework. STbayes builds and compiles customized STAN programs based on the user's input. These models estimate rates of asocial and social transmission that can be affected by individual level variables. Models can be optionally fitted with random effects to account for inter-individual variation. The model can accept static or dynamic networks, and can compare multiple networks if supplied. Furthermore, networks may be supplied with point-estimate edge weights, or posterior distributions of edgeweights, allowing for propagation of uncertainty from network inference. The package accepts either raw data supplied by the user, or NBDA objects exported from the NBDA package.">
@@ -82,13 +82,14 @@
 <h2 id="advanced-recipes">Advanced recipes<a class="anchor" aria-label="anchor" href="#advanced-recipes"></a>
 </h2>
 <ul>
+<li><a href="https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#dynamic-network-models">Dynamic network models</a></li>
 <li><a href="https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#multi-network-models">Multi-network models</a></li>
 <li><a href="https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#individual-level-variables-ilvs">Individual-level variables</a></li>
 <li><a href="https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#transmission-weights">Transmission weights</a></li>
-<li><a href="https://michaelchimento.github.io/STbayes/articles/getting_started.html#varying-effects-by-individual">Varying effects</a></li>
-<li><a href="https://michaelchimento.github.io/STbayes/articles/getting_started.html#other-model-types-oada-and-dtada">Other model types: OADA and dTADA</a></li>
-<li><a href="https://michaelchimento.github.io/STbayes/articles/getting_started.html#edge-weight-uncertainty">Edge weight uncertainty</a></li>
-<li><a href="https://michaelchimento.github.io/STbayes/articles/getting_started.html#complex-transmission">Complex Transmission</a></li>
+<li><a href="https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#varying-effects-by-individual">Varying effects</a></li>
+<li><a href="https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#other-model-types-oada-and-dtada">Other model types: OADA and dTADA</a></li>
+<li><a href="https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#edge-weight-uncertainty">Edge weight uncertainty</a></li>
+<li><a href="https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#complex-transmission">Complex Transmission</a></li>
 <li><a href="https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#setting-priors">Setting priors</a></li>
 <li><a href="https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#high-resolution-data-mode">High resolution data mode</a></li>
 <li><a href="https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#import-nbda-data-objects">Import NBDA Objects</a></li>

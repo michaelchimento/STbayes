@@ -1,8 +1,8 @@
 test_that("IDs are properly mapped and filled", {
     networks <- data.frame(
         trial = c(1, 1, 1),
-        from = c("A", "A", "B"),
-        to = c("B", "C", "C")
+        focal = c("A", "A", "B"),
+        other = c("B", "C", "C")
     )
 
     event_data <- data.frame(

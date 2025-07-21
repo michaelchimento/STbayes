@@ -8,8 +8,8 @@
 <title>Getting started with STbayes • STbayes</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.4.2/css/all.min.css" rel="stylesheet">
-<link href="../deps/font-awesome-6.4.2/css/v4-shims.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Getting started with STbayes">
 </head>
 <body>
@@ -102,28 +102,33 @@ information and must contain columns:</p>
 trial the event belongs to. There is only one trial in this
 data-set.</li>
 <li>
-<code>time</code>: Integer or float indicating when the individual
-was recorded as first informed/knowledgeable. If an individual
-<strong>never learned during the observation period, set its value to
-the duration of the observation period</strong>. These will be treated
-as right-censored individuals in the likelihood calculation. There are
-no right censored individuals in this simulated data-set.</li>
+<code>time</code>: Integer or float values indicating the time
+(TADA) or order (OADA) in which the individual was recorded as first
+informed/knowledgable. If an individual had the event occur prior to the
+start of the observation period (e.g. pre-trained demonstrator), set as
+0. These left censored individuals will not contribute to the likelihood
+calculation. If an individual never learned during the observation
+period, set its value
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>t</mi><mtext mathvariant="normal">end</mtext></msub><mo>+</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">t_{\text{end}}+1</annotation></semantics></math>.
+These will be treated as right-censored individuals in the likelihood
+calculation.</li>
 <li>
-<code>t_end</code>: Integer or float indicating the end of the
-observation period for each trial, denominated in the same units as
-time.</li>
+<code>t_end</code>: Integer or float value representing the duration
+of the observation period for each trial. If the user observed a
+population for 30 days, . If there are no censored individuals set
+.</li>
 </ul>
 <p>Next let’s look at the network data:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">edge_list</span> <span class="op">&lt;-</span> <span class="fu">STbayes</span><span class="fu">::</span><span class="va">edge_list</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">edge_list</span><span class="op">)</span></span>
-<span><span class="co">#&gt;   from to trial assoc</span></span>
-<span><span class="co">#&gt; 1    1  4     1     1</span></span>
-<span><span class="co">#&gt; 2    1 11     1     1</span></span>
-<span><span class="co">#&gt; 3    1 15     1     1</span></span>
-<span><span class="co">#&gt; 4    1 17     1     1</span></span>
-<span><span class="co">#&gt; 5    2  6     1     1</span></span>
-<span><span class="co">#&gt; 6    2  7     1     1</span></span></code></pre></div>
+<span><span class="co">#&gt;   focal other trial assoc</span></span>
+<span><span class="co">#&gt; 1     1     4     1     1</span></span>
+<span><span class="co">#&gt; 2     1    11     1     1</span></span>
+<span><span class="co">#&gt; 3     1    15     1     1</span></span>
+<span><span class="co">#&gt; 4     1    17     1     1</span></span>
+<span><span class="co">#&gt; 5     2     6     1     1</span></span>
+<span><span class="co">#&gt; 6     2     7     1     1</span></span></code></pre></div>
 <p>This edge list gives the network connections of each individual in a
 long format. You can give a sparse edge list that doesn’t include all
 dyads, but importantly, all individuals must be accounted for in the
@@ -133,16 +138,26 @@ edge list. The first three columns must be:</p>
 <code>trial</code>: Character or numeric column indicating which
 trial the networks belong to.</li>
 <li>
-<code>from</code>: Character or numeric column of individual
+<code>focal</code>: Character or numeric column of individual
 identities.</li>
 <li>
-<code>to</code>: Character or numeric column of individual
+<code>other</code>: Character or numeric column of individual
 identities.</li>
 </ul>
 <p>Any remaining columns are descriptively named integer or float edge
 weights. If you were making a multi-network model, you could add as many
 columns as you want. Here, there is only one network named
-<code>assoc</code>.</p>
+<code>assoc</code>. <strong>Important: for directed networks, the edge
+weight describes the influence that <code>other</code> may have on
+<code>focal</code> experiencing the target event. For example, if you
+wish to model vertical transmission from parent to offspring, this
+should contain rows <code>mother, daughter, 0</code>,
+<code>daughter, mother, 1</code></strong>. Naming conventions for
+identities and trials must be consistent between these two dataframes
+(i.e. integers, or matching character strings). The networks dataframe
+is used as the reference for all unique IDs, thus each ID must be
+included at least once in either the focal or other column. If a dyad is
+absent, their connection is assumed to be zero.</p>
 <p>Let’s import the data into a format that can be used with other
 STbayes functions. I’ve tried to abstract away as much complexity as
 possible, but please check the function arguments before sending in the
@@ -241,6 +256,54 @@ cleaning before it’s readable:</p>
 file path of the model rather than <code>model_obj</code> in the next
 call to <code><a href="../reference/fit_STb.html">fit_STb()</a></code>. Here, we’ll just use the model stored in
 the variable.</p>
+<div class="section level3">
+<h3 id="function-arguments">Function arguments<a class="anchor" aria-label="anchor" href="#function-arguments"></a>
+</h3>
+<p>Here is a summary of each argument to <code>generate_STb_model</code>
+for easy reference:</p>
+<ul>
+<li>
+<code>data_type=c("continuous_time", "discrete_time", "order")</code>
+distinguishes between cases where the times of events are known (TADA
+type models) or only the order of events is known (OADA type models). If
+exact times of acquisition are known the user can select
+<code>"continuous_time"</code>, creating a cTADA model. If a population
+was regularly (or irregularly) sampled, so the exact time of events are
+unknown but the rough interval they occurred in is known, the user
+should select <code>"discrete_time"</code>, which creates a dTADA
+model.</li>
+<li> is used to specify which variables should receive varying effects
+by individual. For example, will create a model that will attempt to fit
+varying effects for both intrinsic rate and strength of social
+transmission. It is possible to include other ILVs, if desired.</li>
+<li> specifies whether to create a full model or an asocial model
+constrained to the intrinsic rate only</li>
+<li> specifies whether or not the user wishes to use a constant
+intrinsic rate, or a Weibull shaped rate that can increase or decrease
+over time. This fits an additional parameter
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>γ</mi><annotation encoding="application/x-tex">\gamma</annotation></semantics></math>,
+where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>γ</mi><mo>&lt;</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\gamma&lt;1</annotation></semantics></math>
+indicates a decreasing hazard over time, and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>γ</mi><mo>&gt;</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\gamma&gt;1</annotation></semantics></math>
+indicates an increasing hazard over time.
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>γ</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\gamma=1</annotation></semantics></math>
+indicates a constant hazard.</li>
+<li> specifies whether the model uses simple or complex
+transmission.</li>
+<li> specifies whether or not a generated quantities block is created in
+the Stan model. This defaults to true, as the log-likelihood of
+observations is output using generated quantities and is needed for
+model comparison.</li>
+<li> specifies whether estimated acquisition times are also output by
+the generated quantities block. These are useful for posterior
+predictive checks, but this argument defaults to false for efficiency in
+fitting.</li>
+<li> allows users to specify priors for parameters in the format of a
+named list. Please see the advanced recipes vignette for more
+details</li>
+</ul>
+</div>
 </div>
 <div class="section level2">
 <h2 id="step-3-fit-and-save-the-model">Step 3: Fit and save the model<a class="anchor" aria-label="anchor" href="#step-3-fit-and-save-the-model"></a>
@@ -263,34 +326,34 @@ the variable.</p>
 <span><span class="co">#&gt; Chain 2 Iteration:    1 / 4000 [  0%]  (Warmup) </span></span>
 <span><span class="co">#&gt; Chain 3 Iteration:    1 / 4000 [  0%]  (Warmup) </span></span>
 <span><span class="co">#&gt; Chain 4 Iteration:    1 / 4000 [  0%]  (Warmup) </span></span>
-<span><span class="co">#&gt; Chain 1 Iteration: 1000 / 4000 [ 25%]  (Warmup) </span></span>
 <span><span class="co">#&gt; Chain 2 Iteration: 1000 / 4000 [ 25%]  (Warmup) </span></span>
-<span><span class="co">#&gt; Chain 3 Iteration: 1000 / 4000 [ 25%]  (Warmup) </span></span>
 <span><span class="co">#&gt; Chain 4 Iteration: 1000 / 4000 [ 25%]  (Warmup) </span></span>
-<span><span class="co">#&gt; Chain 1 Iteration: 2000 / 4000 [ 50%]  (Warmup) </span></span>
-<span><span class="co">#&gt; Chain 1 Iteration: 2001 / 4000 [ 50%]  (Sampling) </span></span>
-<span><span class="co">#&gt; Chain 2 Iteration: 2000 / 4000 [ 50%]  (Warmup) </span></span>
-<span><span class="co">#&gt; Chain 2 Iteration: 2001 / 4000 [ 50%]  (Sampling) </span></span>
-<span><span class="co">#&gt; Chain 3 Iteration: 2000 / 4000 [ 50%]  (Warmup) </span></span>
-<span><span class="co">#&gt; Chain 3 Iteration: 2001 / 4000 [ 50%]  (Sampling) </span></span>
+<span><span class="co">#&gt; Chain 1 Iteration: 1000 / 4000 [ 25%]  (Warmup) </span></span>
+<span><span class="co">#&gt; Chain 3 Iteration: 1000 / 4000 [ 25%]  (Warmup) </span></span>
 <span><span class="co">#&gt; Chain 4 Iteration: 2000 / 4000 [ 50%]  (Warmup) </span></span>
 <span><span class="co">#&gt; Chain 4 Iteration: 2001 / 4000 [ 50%]  (Sampling) </span></span>
+<span><span class="co">#&gt; Chain 2 Iteration: 2000 / 4000 [ 50%]  (Warmup) </span></span>
+<span><span class="co">#&gt; Chain 2 Iteration: 2001 / 4000 [ 50%]  (Sampling) </span></span>
+<span><span class="co">#&gt; Chain 1 Iteration: 2000 / 4000 [ 50%]  (Warmup) </span></span>
+<span><span class="co">#&gt; Chain 1 Iteration: 2001 / 4000 [ 50%]  (Sampling) </span></span>
+<span><span class="co">#&gt; Chain 3 Iteration: 2000 / 4000 [ 50%]  (Warmup) </span></span>
+<span><span class="co">#&gt; Chain 3 Iteration: 2001 / 4000 [ 50%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 1 Iteration: 3000 / 4000 [ 75%]  (Sampling) </span></span>
-<span><span class="co">#&gt; Chain 2 Iteration: 3000 / 4000 [ 75%]  (Sampling) </span></span>
-<span><span class="co">#&gt; Chain 3 Iteration: 3000 / 4000 [ 75%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 4 Iteration: 3000 / 4000 [ 75%]  (Sampling) </span></span>
+<span><span class="co">#&gt; Chain 3 Iteration: 3000 / 4000 [ 75%]  (Sampling) </span></span>
+<span><span class="co">#&gt; Chain 2 Iteration: 3000 / 4000 [ 75%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 1 Iteration: 4000 / 4000 [100%]  (Sampling) </span></span>
-<span><span class="co">#&gt; Chain 1 finished in 18.6 seconds.</span></span>
-<span><span class="co">#&gt; Chain 2 Iteration: 4000 / 4000 [100%]  (Sampling) </span></span>
-<span><span class="co">#&gt; Chain 3 Iteration: 4000 / 4000 [100%]  (Sampling) </span></span>
-<span><span class="co">#&gt; Chain 2 finished in 19.0 seconds.</span></span>
-<span><span class="co">#&gt; Chain 3 finished in 19.0 seconds.</span></span>
+<span><span class="co">#&gt; Chain 1 finished in 19.2 seconds.</span></span>
 <span><span class="co">#&gt; Chain 4 Iteration: 4000 / 4000 [100%]  (Sampling) </span></span>
-<span><span class="co">#&gt; Chain 4 finished in 19.7 seconds.</span></span>
+<span><span class="co">#&gt; Chain 4 finished in 19.9 seconds.</span></span>
+<span><span class="co">#&gt; Chain 3 Iteration: 4000 / 4000 [100%]  (Sampling) </span></span>
+<span><span class="co">#&gt; Chain 3 finished in 19.9 seconds.</span></span>
+<span><span class="co">#&gt; Chain 2 Iteration: 4000 / 4000 [100%]  (Sampling) </span></span>
+<span><span class="co">#&gt; Chain 2 finished in 20.3 seconds.</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; All 4 chains finished successfully.</span></span>
-<span><span class="co">#&gt; Mean chain execution time: 19.1 seconds.</span></span>
-<span><span class="co">#&gt; Total execution time: 19.9 seconds.</span></span>
+<span><span class="co">#&gt; Mean chain execution time: 19.8 seconds.</span></span>
+<span><span class="co">#&gt; Total execution time: 20.6 seconds.</span></span>
 <span><span class="co">#&gt; 🫴 Use STb_save() to save the fit and chain csvs to a single RDS file. Or don't!</span></span></code></pre></div>
 <p>This function calls cmdstanr’s $sample(), and you can add any extra
 valid arguments to pass on here. In this call, I’ve made sure that we
@@ -321,23 +384,26 @@ below:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/STb_summary.html">STb_summary</a></span><span class="op">(</span><span class="va">full_fit</span>, digits <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt;           Parameter Median   MAD CI_Lower CI_Upper ess_bulk ess_tail  Rhat</span></span>
-<span><span class="co">#&gt; 1 log_lambda_0_mean -6.890 0.449   -7.861   -6.098 4282.822 4278.253 1.000</span></span>
-<span><span class="co">#&gt; 2  log_s_prime_mean -5.362 0.171   -5.702   -5.023 4088.823 3882.340 1.001</span></span>
-<span><span class="co">#&gt; 3          lambda_0  0.001 0.000    0.000    0.002 4282.816 4278.253 1.000</span></span>
-<span><span class="co">#&gt; 4                 s  4.658 2.357    1.200   12.194 3653.557 4211.818 1.000</span></span>
-<span><span class="co">#&gt; 5     percent_ST[1]  0.820 0.045    0.713    0.891 3653.560 4211.818 1.000</span></span></code></pre></div>
+<span><span class="co">#&gt; 1 log_lambda_0_mean -6.871 0.453   -7.798   -6.007 4289.196 4170.766 1.000</span></span>
+<span><span class="co">#&gt; 2  log_s_prime_mean -5.372 0.173   -5.728   -5.033 4222.179 4073.156 1.001</span></span>
+<span><span class="co">#&gt; 3          lambda_0  0.001 0.000    0.000    0.002 4289.223 4170.766 1.000</span></span>
+<span><span class="co">#&gt; 4                 s  4.536 2.386    1.280   12.016 3745.039 4147.067 1.001</span></span>
+<span><span class="co">#&gt; 5     percent_ST[1]  0.818 0.047    0.712    0.892 3745.049 4147.067 1.001</span></span></code></pre></div>
 <p>The most important output are the intrinsic rate (lambda_0), and the
 relative strength of social transmission (s), whose interpretations are
 the same as the NBDA package. The relative strength of social
-transmission (s = s_prime / lambda_0) is generally what we’re after.
-percent_ST[1] is the estimated percentage of events that occurred
-through social transmission. The [1] refers to the “assoc” network, as
-we’ve only given a single network. If you fit a multi-network model, all
-networks will have an estimate. For a number of reasons, STbayes
-actually fits lambda_0 and social transmission rate (s_prime) on the log
-scale. The linear transformation of s_prime itself usually isn’t
-reported and is excluded from the output, but you could calculate it
-yourself from the fit.</p>
+transmission (s = s_prime / lambda_0) is generally what we’re after. %ST
+for network
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>n</mi><annotation encoding="application/x-tex">n</annotation></semantics></math>
+is reported as <code>percent_ST[n]</code>. This is a single-network
+model, thus <code>percent_ST[1]</code> is the estimated percentage of
+events that occurred through social transmission. The [1] refers to the
+“assoc” network, as we’ve only given a single network. If you fit a
+multi-network model, all networks will have an estimate. For a number of
+reasons, STbayes actually fits lambda_0 and social transmission rate
+(s_prime) on the log scale. The linear transformation of s_prime itself
+usually isn’t reported and is excluded from the output, but you could
+calculate it yourself from the fit.</p>
 <p>At this point, you are just dealing with a cmdstanr fit, so if you
 have your own pipeline, adios! However, I have provided a few more
 useful functions for posterior predictive checks and model
@@ -509,20 +575,20 @@ to the full model fit.</p>
 <span><span class="co">#&gt; Chain 3 Iteration: 2000 / 4000 [ 50%]  (Warmup) </span></span>
 <span><span class="co">#&gt; Chain 3 Iteration: 2001 / 4000 [ 50%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 4 Iteration: 1000 / 4000 [ 25%]  (Warmup) </span></span>
+<span><span class="co">#&gt; Chain 4 Iteration: 2000 / 4000 [ 50%]  (Warmup) </span></span>
+<span><span class="co">#&gt; Chain 4 Iteration: 2001 / 4000 [ 50%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 1 Iteration: 3000 / 4000 [ 75%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 2 Iteration: 3000 / 4000 [ 75%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 3 Iteration: 3000 / 4000 [ 75%]  (Sampling) </span></span>
-<span><span class="co">#&gt; Chain 4 Iteration: 2000 / 4000 [ 50%]  (Warmup) </span></span>
-<span><span class="co">#&gt; Chain 4 Iteration: 2001 / 4000 [ 50%]  (Sampling) </span></span>
-<span><span class="co">#&gt; Chain 1 Iteration: 4000 / 4000 [100%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 4 Iteration: 3000 / 4000 [ 75%]  (Sampling) </span></span>
-<span><span class="co">#&gt; Chain 1 finished in 0.5 seconds.</span></span>
+<span><span class="co">#&gt; Chain 1 Iteration: 4000 / 4000 [100%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 2 Iteration: 4000 / 4000 [100%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 3 Iteration: 4000 / 4000 [100%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 4 Iteration: 4000 / 4000 [100%]  (Sampling) </span></span>
+<span><span class="co">#&gt; Chain 1 finished in 0.5 seconds.</span></span>
 <span><span class="co">#&gt; Chain 2 finished in 0.5 seconds.</span></span>
 <span><span class="co">#&gt; Chain 3 finished in 0.5 seconds.</span></span>
-<span><span class="co">#&gt; Chain 4 finished in 0.4 seconds.</span></span>
+<span><span class="co">#&gt; Chain 4 finished in 0.5 seconds.</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; All 4 chains finished successfully.</span></span>
 <span><span class="co">#&gt; Mean chain execution time: 0.5 seconds.</span></span>
@@ -539,10 +605,10 @@ want, here we just compare these two.</p>
 <span><span class="co">#&gt; Calculating pareto-k diagnostic (only for loo-psis).</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">loo_output</span><span class="op">$</span><span class="va">comparison</span>, simplify <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt;             elpd_diff se_diff elpd_loo se_elpd_loo p_loo  se_p_loo looic </span></span>
-<span><span class="co">#&gt; full_fit       0.0       0.0  -290.7      6.3         2.0    0.5    581.4</span></span>
-<span><span class="co">#&gt; asocial_fit  -21.3       5.3  -312.0      3.8         0.3    0.0    624.0</span></span>
+<span><span class="co">#&gt; full_fit       0.0       0.0  -290.7      6.2         2.0    0.5    581.5</span></span>
+<span><span class="co">#&gt; asocial_fit  -21.3       5.3  -312.0      3.9         0.3    0.0    624.1</span></span>
 <span><span class="co">#&gt;             se_looic</span></span>
-<span><span class="co">#&gt; full_fit      12.5  </span></span>
+<span><span class="co">#&gt; full_fit      12.4  </span></span>
 <span><span class="co">#&gt; asocial_fit    7.7</span></span></code></pre></div>
 <p>If you are not familiar with leave-out-out cross validation, I
 strongly suggest reading up on it, but the TLDR is that you should pay

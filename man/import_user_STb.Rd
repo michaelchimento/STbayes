@@ -21,8 +21,8 @@ import_user_STb(
 \item{event_data}{dataframe with columns id, trial, time, t_end}
 
 \item{networks}{Either a dataframe, a bisonr/STRAND fit, or a list of bisonr/STRAND fits.
-If dataframe: with columns trial, from, to, and one or more columns of edge
-weights named descriptively. Optionally an integer time column can be
+If dataframe: with columns trial, focal, other, and one or more columns of edge
+weights named descriptively. Edge weights describe the influence that other has on focal. Optionally an integer time column can be
 provided for dynamic network analysis, although networks must be provided for
 each inter-event interval.}
 
@@ -69,8 +69,8 @@ event_data <- data.frame(
 )
 networks <- data.frame(
     trial = rep(1:2, each = 3),
-    from = c("A", "A", "B", "D", "D", "E"),
-    to = c("B", "C", "C", "E", "F", "F"),
+    focal = c("A", "A", "B", "D", "D", "E"),
+    other = c("B", "C", "C", "E", "F", "F"),
     kin = c(1, 0, 1, 0, 1, 1),
     inverse_distance = c(0, 1, .5, .25, .1, 0)
 )

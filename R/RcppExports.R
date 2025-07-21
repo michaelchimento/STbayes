@@ -3,7 +3,7 @@
 
 #' @useDynLib STbayes, .registration = TRUE
 #' @export
-fill_array <- function(A_array, dims, from, to, time, value, net_idx, trial_idx, symmetric) {
-    invisible(.Call(`_STbayes_fill_array`, A_array, dims, from, to, time, value, net_idx, trial_idx, symmetric))
+fill_array <- function(A_array, dims, focal, other, time, value, net_idx, trial_idx, symmetric) {
+    invisible(.Call(`_STbayes_fill_array`, A_array, dims, focal, other, time, value, net_idx, trial_idx, symmetric))
 }
 

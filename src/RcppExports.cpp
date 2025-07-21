@@ -11,20 +11,20 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // fill_array
-void fill_array(NumericVector A_array, IntegerVector dims, IntegerVector from, IntegerVector to, IntegerVector time, NumericVector value, int net_idx, int trial_idx, bool symmetric);
-RcppExport SEXP _STbayes_fill_array(SEXP A_arraySEXP, SEXP dimsSEXP, SEXP fromSEXP, SEXP toSEXP, SEXP timeSEXP, SEXP valueSEXP, SEXP net_idxSEXP, SEXP trial_idxSEXP, SEXP symmetricSEXP) {
+void fill_array(NumericVector A_array, IntegerVector dims, IntegerVector focal, IntegerVector other, IntegerVector time, NumericVector value, int net_idx, int trial_idx, bool symmetric);
+RcppExport SEXP _STbayes_fill_array(SEXP A_arraySEXP, SEXP dimsSEXP, SEXP focalSEXP, SEXP otherSEXP, SEXP timeSEXP, SEXP valueSEXP, SEXP net_idxSEXP, SEXP trial_idxSEXP, SEXP symmetricSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericVector >::type A_array(A_arraySEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type dims(dimsSEXP);
-    Rcpp::traits::input_parameter< IntegerVector >::type from(fromSEXP);
-    Rcpp::traits::input_parameter< IntegerVector >::type to(toSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type focal(focalSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type other(otherSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type time(timeSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type value(valueSEXP);
     Rcpp::traits::input_parameter< int >::type net_idx(net_idxSEXP);
     Rcpp::traits::input_parameter< int >::type trial_idx(trial_idxSEXP);
     Rcpp::traits::input_parameter< bool >::type symmetric(symmetricSEXP);
-    fill_array(A_array, dims, from, to, time, value, net_idx, trial_idx, symmetric);
+    fill_array(A_array, dims, focal, other, time, value, net_idx, trial_idx, symmetric);
     return R_NilValue;
 END_RCPP
 }

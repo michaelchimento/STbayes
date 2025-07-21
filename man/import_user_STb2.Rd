@@ -21,7 +21,7 @@ import_user_STb2(
 \item{event_data}{dataframe with columns id, trial, time, t_end}
 
 \item{networks}{Either a dataframe, a bisonr fit, or a list of bisonr fits.
-If dataframe: with columns trial, from, to, and one or more columns of edge weights named descriptively.}
+If dataframe: with columns trial, focal, other, and one or more columns of edge weights named descriptively.}
 
 \item{network_type}{"undirected" or "directed".}
 

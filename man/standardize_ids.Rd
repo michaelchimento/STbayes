@@ -13,7 +13,7 @@ standardize_ids(
 )
 }
 \arguments{
-\item{networks}{networks dataframe with columns trial, from, to, and one or more columns of edge weights named descriptively.}
+\item{networks}{networks dataframe with columns trial, focal, other, and one or more columns of edge weights named descriptively.}
 
 \item{event_data}{dataframe with columns id, trial, time, t_end}
 
