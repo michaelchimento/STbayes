@@ -31,4 +31,4 @@ Suggests:
 Depends: 
     R (>= 3.5)
 VignetteBuilder: knitr
-URL: https://michaelchimento.github.io/STbayes
+URL: https://michaelchimento.github.io/STbayes, https://michaelchimento.github.io/STbayes/

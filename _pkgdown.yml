@@ -1,6 +1,4 @@
-url: https://michaelchimento.github.io/STbayes
+url: https://michaelchimento.github.io/STbayes/
 template:
   bootstrap: 5
-  bootswatch: flatly
-  bslib:
-    pkgdown-nav-height: 60px
+
