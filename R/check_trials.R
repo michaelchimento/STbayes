@@ -4,6 +4,8 @@
 #'
 #' @param event_data dataframe with columns id, trial, time, t_end
 #' @param networks networks dataframe with columns trial, focal, other, and one or more columns of edge weights named descriptively.
+#' @param ILV_tv dataframe of time-varying ILVs
+#' @param t_weights dataframe of transmission weights, can be timevarying
 #'
 #' @returns error message if trials are missing from dataframes
 check_trials <- function(event_data, networks, ILV_tv = NULL, t_weights = NULL) {

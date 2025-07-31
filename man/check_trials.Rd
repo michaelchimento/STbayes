@@ -10,6 +10,10 @@ check_trials(event_data, networks, ILV_tv = NULL, t_weights = NULL)
 \item{event_data}{dataframe with columns id, trial, time, t_end}
 
 \item{networks}{networks dataframe with columns trial, focal, other, and one or more columns of edge weights named descriptively.}
+
+\item{ILV_tv}{dataframe of time-varying ILVs}
+
+\item{t_weights}{dataframe of transmission weights, can be timevarying}
 }
 \value{
 error message if trials are missing from dataframes

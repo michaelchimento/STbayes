@@ -49,6 +49,7 @@ STb_summary <- function(fit, depth = 1, prob = 0.95,
     s_mean_params <- grep("^s_mean\\[", param_names, value = TRUE)
     s_params <- grep("^s\\[", param_names, value = TRUE)
     ST_params <- grep("^percent_ST\\[", param_names, value = TRUE)
+    beta_params <- grep("^beta\\_", param_names, value = TRUE)
     keep_params <- param_names[!param_names %in% c(ignore_params)]
 
     # Optionally filter by depth (unchanged)
@@ -63,7 +64,8 @@ STb_summary <- function(fit, depth = 1, prob = 0.95,
         s_mean_params,
         s_params,
         sigma_ID_params,
-        ST_params
+        ST_params,
+        beta_params
     ))
     # Subset
     draws_df <- posterior::subset_draws(draws_df, variable = keep_params)

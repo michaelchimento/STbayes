@@ -29,7 +29,7 @@ each inter-event interval.}
 \item{network_type}{"undirected" or "directed".}
 
 \item{ILV_c}{optional dataframe with columns id, and any constant
-individual-level variables}
+individual-level variables. Variables can be binary, categorical or continuous. Categorical variables must be factors.}
 
 \item{ILV_tv}{optional dataframe with columns trial, id, time and any
 time-varying variables. Variable values should summarize the variable for

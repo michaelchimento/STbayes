@@ -159,31 +159,54 @@ import_NBDA_STb <- function(nbda_object,
     dim(data_list$D_int) <- dim(data_list$D) # why is r so annoying
     data_list$Z <- sweep(data_list$Zn, MARGIN = 3, STATS = nbda_object@weights, FUN = "*") # mult with weights
 
-    #### ILV Metadata ####
-
+    #### ILV extractions ####
+    ILV_datatypes <- c()
+    ILV_names <- c()
+    ILV_n_levels <- c()
+    ILV_timevarying <- c()
     if (nbda_object@asocialTreatment == "constant") {
-        ILV_metadata <- data.frame(id = nbda_object@idname)
+        ILV_c <- data.frame(id = nbda_object@idname)
         if (nbda_object@asoc_ilv != "ILVabsent") {
-            ILV_metadata <- cbind(ILV_metadata, extract_ILV(nbda_object, "asocILVdata"))
+            ILV_c <- cbind(ILV_c, extract_ILV(nbda_object, "asocILVdata"))
         }
         if (nbda_object@int_ilv != "ILVabsent") {
-            ILV_metadata <- cbind(ILV_metadata, extract_ILV(nbda_object, "intILVdata"))
+            ILV_c <- cbind(ILV_c, extract_ILV(nbda_object, "intILVdata"))
         }
         if (nbda_object@multi_ilv != "ILVabsent") {
-            ILV_metadata <- cbind(ILV_metadata, extract_ILV(nbda_object, "multiILVdata"))
+            ILV_c <- cbind(ILV_c, extract_ILV(nbda_object, "multiILVdata"))
         }
 
-        ILV_metadata <- ILV_metadata[, !(names(ILV_metadata) %in% "id")]
-        ILV_metadata <- remove_duplicate_columns(ILV_metadata)
-        ILV_cols <- names(ILV_metadata)
+        message("Constant ILV supplied.")
+        rownames(ILV_c) <- NULL
+
+        # get column names
+        exclude_cols <- c("id", "id_numeric")
+        ILV_cols <- setdiff(names(ILV_c), exclude_cols)
+        ILV_names <- append(ILV_names, ILV_cols)
+        # loop through each ILV_c column and add to datalist
         for (col in ILV_cols) {
-            data_list[[paste0("ILV_", col)]] <- ILV_metadata[[col]]
+            # get datatype
+            datatype <- detect_ILV_datatype(ILV_c[[col]])
+            ILV_datatypes[[paste0("ILV_", col)]] <- datatype
+            # note that its constant
+            ILV_timevarying[[paste0("ILV_", col)]] <- FALSE
+            # get number of unique levels
+            if (datatype != "continuous") {
+                ILV_c[[col]] <- as.numeric(as.factor(ILV_c[[col]]))
+                n_levels <- length(unique(ILV_c[[col]]))
+                ILV_n_levels[[paste0("ILV_", col)]] <- n_levels
+                data_list[[paste0("ILV_", col)]] <- generate_X_matrix(ILV_c[[col]], col, n_levels)
+            } else {
+                data_list[[paste0("ILV_", col)]] <- ILV_c[[col]]
+            }
         }
     } else {
         #### Time-varying ILV ####
         message("Time-varying ILV supplied.")
         ILV_tv <- data.frame(id = rep(nbda_object@idname, times = max(nbda_object@orderAcq)), time = rep(1:max(nbda_object@orderAcq), each = data_list$P))
         ILV_tv$trial <- 1
+
+        # extract values from nbda object
         if (!"ILVabsent" %in% nbda_object@asoc_ilv) {
             ILV_tv <- cbind(ILV_tv, extract_tv_ILV(nbda_object, "asocILVdata"))
         }
@@ -194,25 +217,67 @@ import_NBDA_STb <- function(nbda_object,
             ILV_tv <- cbind(ILV_tv, extract_tv_ILV(nbda_object, "multiILVdata"))
         }
 
+        # remove duplicate cols from multiple extraction
         ILV_tv <- remove_duplicate_columns(ILV_tv)
-        # convert to numeric if not
-        ILV_tv$id_numeric <- as.numeric(as.factor(ILV_tv$id))
         ILV_tv$trial_numeric <- as.numeric(as.factor(ILV_tv$trial))
+        ILV_tv$id_numeric <- as.numeric(as.factor(ILV_tv$id))
+
+        # assign discrete time index per trial
         ILV_tv$discrete_time <- with(
             ILV_tv, ave(time, trial_numeric, FUN = function(x) as.numeric(as.factor(x)))
         )
-        # order in case user has not
-        ILV_tv <- ILV_tv[order(ILV_tv$trial_numeric, ILV_tv$id_numeric, ILV_tv$discrete_time), ]
+
         rownames(ILV_tv) <- NULL
-        # Get the ILV column names
+
         exclude_cols <- c("id", "id_numeric", "time", "discrete_time", "trial", "trial_numeric")
         ILV_cols <- setdiff(names(ILV_tv), exclude_cols)
-        # loop through each ILV column and add to datalist
+        ILV_names <- append(ILV_names, ILV_cols)
+
+        N_trials <- max(ILV_tv$trial_numeric)
+        P <- max(ILV_tv$id_numeric)
+        T_max <- max(ILV_tv$discrete_time)
+
         for (col in ILV_cols) {
-            # reshape data into matrix
-            mat <- with(ILV_tv, tapply(ILV_tv[[col]], list(trial, discrete_time, id), FUN = mean, simplify = TRUE))
-            mat[is.na(mat)] <- 0
-            data_list[[paste0("ILV_", col)]] <- mat
+            datatype <- detect_ILV_datatype(ILV_tv[[col]])
+            ILV_datatypes[[paste0("ILV_", col)]] <- datatype
+            ILV_timevarying[[paste0("ILV_", col)]] <- TRUE
+
+            if (datatype == "continuous") {
+                mat <- array(0, dim = c(N_trials, T_max, P))
+                for (i in seq_len(nrow(ILV_tv))) {
+                    tr <- ILV_tv$trial_numeric[i]
+                    t <- ILV_tv$discrete_time[i]
+                    id <- ILV_tv$id_numeric[i]
+                    mat[tr, t, id] <- ILV_tv[[col]][i]
+                }
+                data_list[[paste0("ILV_", col)]] <- mat
+            } else {
+                ILV_tv[[col]] <- as.numeric(as.factor(ILV_tv[[col]]))
+                n_levels <- length(unique(ILV_tv[[col]]))
+                ILV_n_levels[[paste0("ILV_", col)]] <- n_levels
+                X_array <- array(0, dim = c(N_trials, T_max, P, n_levels - 1)) # one level dropped
+
+                # split by trial and timestep (each group is a data.frame)
+                split_groups <- split(ILV_tv, list(ILV_tv$trial_numeric, ILV_tv$discrete_time), drop = TRUE)
+
+                for (g in split_groups) {
+                    # arrange by id_numeric
+                    g <- g[order(g$id_numeric), ]
+                    # get trials and times
+                    tr <- unique(g$trial_numeric)
+                    t <- unique(g$discrete_time)
+                    # create x matrix
+                    X_t <- generate_X_matrix(ilv_vector = g[[col]], ilv_name = col, n_levels = n_levels)
+
+                    if (ncol(X_t) == 0) next
+                    # fill in X_array
+                    for (l in seq_len(ncol(X_t))) {
+                        X_array[tr, t, , l] <- X_t[, l]
+                    }
+                }
+                # store in data_list
+                data_list[[paste0("ILV_", col)]] <- X_array
+            }
         }
     }
 
@@ -229,6 +294,13 @@ import_NBDA_STb <- function(nbda_object,
     data_list$ILVi_names <- ILVi
     data_list$ILVs_names <- ILVs
     data_list$ILVm_names <- ILVm
+
+    # write datatypes
+    data_list$ILV_datatypes <- ILV_datatypes
+    # write n_levels
+    data_list$ILV_n_levels <- ILV_n_levels
+    # write tv boolean
+    data_list$ILV_timevarying <- ILV_timevarying
 
     #### Networks ####
     # extract network from nbdaData object

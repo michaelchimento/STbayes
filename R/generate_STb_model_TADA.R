@@ -173,36 +173,7 @@ generate_STb_model_TADA <- function(STb_data,
         network_term <- ""
     }
 
-    # Process ILVs, differing by model type
-    ILVi_vars <- STb_data$ILVi_names[!STb_data$ILVi_names %in% "ILVabsent"]
-    ILVs_vars <- if (model_type == "full") STb_data$ILVs_names[!STb_data$ILVs_names %in% "ILVabsent"] else character(0)
-    ILVm_vars <- if (model_type == "full") STb_data$ILVm_names[!STb_data$ILVm_names %in% "ILVabsent"] else character(0)
 
-    ILVi_vars_clean <- ILVi_vars
-    ILVs_vars_clean <- ILVs_vars
-    ILVm_vars_clean <- ILVm_vars
-
-    # placeholders for dynamic components
-    num_ILVi <- length(ILVi_vars)
-    num_ILVs <- length(ILVs_vars)
-    num_ILVm <- length(ILVm_vars)
-
-    combined_ILV_vars <- unique(c(ILVi_vars, ILVs_vars, ILVm_vars))
-
-    # create declaration for data block, check dimensions of ILVs for timevarying or constant
-    ILV_declaration <- ""
-    if (length(combined_ILV_vars) > 0) {
-        ILV_declaration <- paste0(
-            sapply(combined_ILV_vars, function(var) {
-                if (!is.null(dim(STb_data[[paste0("ILV_", var)]]))) {
-                    paste0("array[K,T_max,P] real ILV_", var, ";")
-                } else {
-                    paste0("array[P] real ILV_", var, ";")
-                }
-            }),
-            collapse = "\n"
-        )
-    }
     # deal with varying effects in transformed parameters
     N_veff <- length(veff_ID)
     # start w empty list
@@ -250,19 +221,19 @@ generate_STb_model_TADA <- function(STb_data,
                 # s[n, id] as exp(log_s_prime_mean[n, id] + v_ID[,i])
                 transformed_params <- append(transformed_params, glue::glue(
                     "matrix<lower=0>[N_networks, P] s_prime;
-for (n in 1:N_networks) {{
-  for (id in 1:P) {{
-    s_prime[n, id] = exp(log_s_prime_mean[n] + v_ID[id, n]);
-  }}
-}}"
+                for (n in 1:N_networks) {{
+                  for (id in 1:P) {{
+                    s_prime[n, id] = exp(log_s_prime_mean[n] + v_ID[id, n]);
+                  }}
+                }}"
                 ))
                 gq_transformed_params <- append(gq_transformed_params, glue::glue(
                     "matrix<lower=0>[N_networks, P] s_id;
-for (n in 1:N_networks) {{
-  for (id in 1:P) {{
-    s_id[n, id] = s_prime[n, id] / lambda_0[id];
-  }}
-}}"
+                    for (n in 1:N_networks) {{
+                      for (id in 1:P) {{
+                        s_id[n, id] = s_prime[n, id] / lambda_0[id];
+                      }}
+                    }}"
                 ))
                 gq_transformed_params <- append(gq_transformed_params, "vector[N_networks] s_mean = exp(log_s_prime_mean) / exp(log_lambda_0_mean);")
                 count <- count + num_networks
@@ -298,8 +269,51 @@ for (n in 1:N_networks) {{
         }
     }
 
+    #### Process ILVs ####
+    ILVi_vars <- STb_data$ILVi_names[!STb_data$ILVi_names %in% "ILVabsent"]
+    ILVs_vars <- if (model_type == "full") STb_data$ILVs_names[!STb_data$ILVs_names %in% "ILVabsent"] else character(0)
+    ILVm_vars <- if (model_type == "full") STb_data$ILVm_names[!STb_data$ILVm_names %in% "ILVabsent"] else character(0)
+
+    ILVi_vars_clean <- ILVi_vars
+    ILVs_vars_clean <- ILVs_vars
+    ILVm_vars_clean <- ILVm_vars
+
+    # placeholders for dynamic components
+    num_ILVi <- length(ILVi_vars)
+    num_ILVs <- length(ILVs_vars)
+    num_ILVm <- length(ILVm_vars)
+
+    combined_ILV_vars <- unique(c(ILVi_vars, ILVs_vars, ILVm_vars))
+
+    ilv_datatypes <- STb_data$ILV_datatypes
+    ilv_n_levels <- STb_data$ILV_n_levels
+    ilv_timevarying <- STb_data$ILV_timevarying
+
+    # create declaration for data block, check dimensions of ILVs for timevarying or constant
+    ILV_declaration <- ""
+    if (length(combined_ILV_vars) > 0) {
+        ILV_declaration <- paste0(
+            sapply(combined_ILV_vars, function(var) {
+                if (!ilv_timevarying[[paste0("ILV_", var)]]) {
+                    if (ilv_datatypes[[paste0("ILV_", var)]] == "continuous") {
+                        paste0("vector[P] ILV_", var, ";")
+                    } else {
+                        paste0("matrix[P,", ilv_n_levels[[paste0("ILV_", var)]] - 1, "] ILV_", var, ";")
+                    }
+                } else {
+                    if (ilv_datatypes[[paste0("ILV_", var)]] == "continuous") {
+                        paste0("array[K, T_max] vector[P] ILV_", var, ";")
+                    } else {
+                        paste0("array[K,T_max] matrix[P, ", ilv_n_levels[[paste0("ILV_", var)]] - 1, "] ILV_", var, ";")
+                    }
+                }
+            }),
+            collapse = "\n"
+        )
+    }
+
     # Handle asocial ILV (ILVi)
-    ilvi_result <- process_ILVs(ILVi_vars, ILVi_vars_clean, veff_ID, "i", STb_data, count, prior_beta)
+    ilvi_result <- process_ILVs(ILVi_vars, ILVi_vars_clean, ilv_datatypes, ilv_n_levels, ilv_timevarying, veff_ID, "i", STb_data, count, prior_beta)
     ILVi_param <- ilvi_result$param
     ILVi_prior <- ilvi_result$prior
     ILVi_variable_effects <- ilvi_result$term
@@ -308,7 +322,7 @@ for (n in 1:N_networks) {{
 
 
     # Handle social ILV (ILVs)
-    ilvs_result <- process_ILVs(ILVs_vars, ILVs_vars_clean, veff_ID, "s", STb_data, count, prior_beta)
+    ilvs_result <- process_ILVs(ILVs_vars, ILVs_vars_clean, ilv_datatypes, ilv_n_levels, ilv_timevarying, veff_ID, "s", STb_data, count, prior_beta)
     ILVs_param <- ilvs_result$param
     ILVs_prior <- ilvs_result$prior
     ILVs_variable_effects <- ilvs_result$term
@@ -317,7 +331,7 @@ for (n in 1:N_networks) {{
 
 
     # Handle multiplicative ILV
-    ilvm_result <- process_ILVs(ILVm_vars, ILVm_vars_clean, veff_ID, "m", STb_data, count, prior_beta)
+    ilvm_result <- process_ILVs(ILVm_vars, ILVm_vars_clean, ilv_datatypes, ilv_n_levels, ilv_timevarying, veff_ID, "m", STb_data, count, prior_beta)
     ILVm_param <- ilvm_result$param
     ILVm_prior <- ilvm_result$prior
     ILVm_variable_effects <- ilvm_result$term

@@ -38,7 +38,7 @@ import_user_STb2 <- function(event_data,
     }
 
     if (inherits(networks, "data.frame")) {
-        check_network_colnames(networks)
+        networks <- check_network_colnames(networks)
         check_required_cols(networks, required_cols = c("trial", "focal", "other"), df_name = "networks")
     }
 
@@ -188,15 +188,17 @@ import_user_STb2 <- function(event_data,
         # data_list$Z <- data_list$W
     }
 
-    #### Constant ILV ####
+    # ILV processing BEGINS HERE
     ILV_datatypes <- c()
     ILV_names <- c()
-    # identify ILVs from ILV_c
+    ILV_n_levels <- c()
+    ILV_timevarying <- c()
+    #### Constant ILV ####
     if (!is.null(ILV_c)) {
         message("Constant ILV supplied.")
         # ILV_c$id_numeric <- as.numeric(as.factor(ILV_c$id))
         # order in case user has not
-        # ILV_c <- ILV_c[order(ILV_c$id_numeric), ]
+        ILV_c <- ILV_c[order(ILV_c$id_numeric), ]
         rownames(ILV_c) <- NULL
 
         # get column names
@@ -205,39 +207,92 @@ import_user_STb2 <- function(event_data,
         ILV_names <- append(ILV_names, ILV_cols)
         # loop through each ILV_c column and add to datalist
         for (col in ILV_cols) {
-            ILV_datatypes[[paste0("ILV_", col)]] <- detect_ILV_datatype(ILV_c$col)
-            data_list[[paste0("ILV_", col)]] <- ILV_c[[col]]
+            # get datatype
+            datatype <- detect_ILV_datatype(ILV_c[[col]])
+            ILV_datatypes[[paste0("ILV_", col)]] <- datatype
+            # note that its constant
+            ILV_timevarying[[paste0("ILV_", col)]] <- FALSE
+            # get number of unique levels
+            if (datatype != "continuous") {
+                ILV_c[[col]] <- as.numeric(as.factor(ILV_c[[col]]))
+                n_levels <- length(unique(ILV_c[[col]]))
+                ILV_n_levels[[paste0("ILV_", col)]] <- n_levels
+                data_list[[paste0("ILV_", col)]] <- generate_X_matrix(ILV_c[[col]], col, n_levels)
+            } else {
+                data_list[[paste0("ILV_", col)]] <- ILV_c[[col]]
+            }
         }
     }
 
     #### Time-varying ILV ####
-    # identify ILVs from ILV_tv
     if (!is.null(ILV_tv)) {
         message("Time-varying ILV supplied.")
-        # convert to numeric if not
-        # ILV_tv$id_numeric <- as.numeric(as.factor(ILV_tv$id))
+
         ILV_tv$trial_numeric <- as.numeric(as.factor(ILV_tv$trial))
-        ILV_tv$discrete_time <- with(
-            ILV_tv, ave(time, trial_numeric, FUN = function(x) as.numeric(as.factor(x)))
-        )
-        # order in case user has not
-        # ILV_tv <- ILV_tv[order(ILV_tv$trial_numeric, ILV_tv$id_numeric, ILV_tv$discrete_time), ]
+        ILV_tv$id_numeric <- as.numeric(as.factor(ILV_tv$id))
+
+        # assign discrete time index per trial
+        if (!high_res) {
+            ILV_tv$discrete_time <- with(
+                ILV_tv, ave(time, trial_numeric, FUN = function(x) as.numeric(as.factor(x)))
+            )
+        } else {
+            ILV_tv$discrete_time <- ILV_tv$time
+        }
+
         rownames(ILV_tv) <- NULL
-        # Get the ILV column names
+
         exclude_cols <- c("id", "id_numeric", "time", "discrete_time", "trial", "trial_numeric")
         ILV_cols <- setdiff(names(ILV_tv), exclude_cols)
         ILV_names <- append(ILV_names, ILV_cols)
-        # loop through each ILV column and add to datalist
+
+        N_trials <- max(ILV_tv$trial_numeric)
+        P <- max(ILV_tv$id_numeric)
+        T_max <- max(ILV_tv$discrete_time)
+
         for (col in ILV_cols) {
-            # get data type
-            ILV_datatypes[[paste0("ILV_", col)]] <- detect_ILV_datatype(ILV_tv$col)
-            # reshape data into matrix
-            mat <- with(ILV_tv, tapply(ILV_tv[[col]], list(trial, discrete_time, id), FUN = mean, simplify = TRUE))
-            mat[is.na(mat)] <- 0
-            data_list[[paste0("ILV_", col)]] <- mat
+            datatype <- detect_ILV_datatype(ILV_tv[[col]])
+            ILV_datatypes[[paste0("ILV_", col)]] <- datatype
+            ILV_timevarying[[paste0("ILV_", col)]] <- TRUE
+
+            if (datatype == "continuous") {
+                mat <- array(0, dim = c(N_trials, T_max, P))
+                for (i in seq_len(nrow(ILV_tv))) {
+                    tr <- ILV_tv$trial_numeric[i]
+                    t <- ILV_tv$discrete_time[i]
+                    id <- ILV_tv$id_numeric[i]
+                    mat[tr, t, id] <- ILV_tv[[col]][i]
+                }
+                data_list[[paste0("ILV_", col)]] <- mat
+            } else {
+                ILV_tv[[col]] <- as.numeric(as.factor(ILV_tv[[col]]))
+                n_levels <- length(unique(ILV_tv[[col]]))
+                ILV_n_levels[[paste0("ILV_", col)]] <- n_levels
+                X_array <- array(0, dim = c(N_trials, T_max, P, n_levels - 1)) # one level dropped
+
+                # split by trial and timestep (each group is a data.frame)
+                split_groups <- split(ILV_tv, list(ILV_tv$trial_numeric, ILV_tv$discrete_time), drop = TRUE)
+
+                for (g in split_groups) {
+                    # arrange by id_numeric
+                    g <- g[order(g$id_numeric), ]
+                    # get trials and times
+                    tr <- unique(g$trial_numeric)
+                    t <- unique(g$discrete_time)
+                    # create x matrix
+                    X_t <- generate_X_matrix(ilv_vector = g[[col]], ilv_name = col, n_levels = n_levels)
+
+                    if (ncol(X_t) == 0) next
+                    # fill in X_array
+                    for (l in seq_len(ncol(X_t))) {
+                        X_array[tr, t, , l] <- X_t[, l]
+                    }
+                }
+                # store in data_list
+                data_list[[paste0("ILV_", col)]] <- X_array
+            }
         }
     }
-
     # write names
     if (!is.null(ILV_c) | !is.null(ILV_tv)) {
         if (is.null(ILVi)) {
@@ -252,9 +307,15 @@ import_user_STb2 <- function(event_data,
         }
         if (is.null(ILVm)) {
             data_list$ILVm_names <- "ILVabsent"
+        } else {
+            data_list$ILVm_names <- ILVm
         }
         # write datatypes
         data_list$ILV_datatypes <- ILV_datatypes
+        # write n_levels
+        data_list$ILV_n_levels <- ILV_n_levels
+        # write tv boolean
+        data_list$ILV_timevarying <- ILV_timevarying
     } else {
         message("No ILV supplied.")
         data_list$ILVi_names <- "ILVabsent"

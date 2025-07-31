@@ -27,7 +27,8 @@ Suggests:
     ggplot2,
     knitr,
     NBDA,
-    rmarkdown
+    rmarkdown,
+    igraph
 Depends: 
     R (>= 3.5)
 VignetteBuilder: knitr

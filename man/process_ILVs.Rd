@@ -7,6 +7,9 @@
 process_ILVs(
   ilv_vars,
   ilv_vars_clean,
+  ilv_datatypes,
+  ilv_n_levels,
+  ilv_timevarying,
   veff_ID,
   suffix,
   STb_data,
@@ -18,6 +21,12 @@ process_ILVs(
 \item{ilv_vars}{names of ilvs with prefixes}
 
 \item{ilv_vars_clean}{"clean" names of ilvs without prefixes}
+
+\item{ilv_datatypes}{named vector of data types "boolean", "continuous" or "categorical}
+
+\item{ilv_n_levels}{named vector of number of levels for categorical data types}
+
+\item{ilv_timevarying}{named vector of boolean vals for whether or not the ILV is timevarying}
 
 \item{veff_ID}{vector of parameters that need veffs}
 

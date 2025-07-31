@@ -20,6 +20,7 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/advanced_recipes.html">Advanced recipes</a></li>
     <li><a class="dropdown-item" href="../articles/getting_started.html">Getting started with STbayes</a></li>
+    <li><a class="dropdown-item" href="../articles/simulate_data_for_power_analyses.html">Simulate data for power analyses</a></li>
   </ul></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -45,6 +46,9 @@
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">process_ILVs</span><span class="op">(</span></span>
 <span>  <span class="va">ilv_vars</span>,</span>
 <span>  <span class="va">ilv_vars_clean</span>,</span>
+<span>  <span class="va">ilv_datatypes</span>,</span>
+<span>  <span class="va">ilv_n_levels</span>,</span>
+<span>  <span class="va">ilv_timevarying</span>,</span>
 <span>  <span class="va">veff_ID</span>,</span>
 <span>  <span class="va">suffix</span>,</span>
 <span>  <span class="va">STb_data</span>,</span>
@@ -63,6 +67,18 @@
 
 <dt id="arg-ilv-vars-clean">ilv_vars_clean<a class="anchor" aria-label="anchor" href="#arg-ilv-vars-clean"></a></dt>
 <dd><p>"clean" names of ilvs without prefixes</p></dd>
+
+
+<dt id="arg-ilv-datatypes">ilv_datatypes<a class="anchor" aria-label="anchor" href="#arg-ilv-datatypes"></a></dt>
+<dd><p>named vector of data types "boolean", "continuous" or "categorical</p></dd>
+
+
+<dt id="arg-ilv-n-levels">ilv_n_levels<a class="anchor" aria-label="anchor" href="#arg-ilv-n-levels"></a></dt>
+<dd><p>named vector of number of levels for categorical data types</p></dd>
+
+
+<dt id="arg-ilv-timevarying">ilv_timevarying<a class="anchor" aria-label="anchor" href="#arg-ilv-timevarying"></a></dt>
+<dd><p>named vector of boolean vals for whether or not the ILV is timevarying</p></dd>
 
 
 <dt id="arg-veff-id">veff_ID<a class="anchor" aria-label="anchor" href="#arg-veff-id"></a></dt>

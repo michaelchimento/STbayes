@@ -1,58 +1,74 @@
 test_that("process_ILVs produces identical output to original ILV handling", {
-  # Mock inputs
-  STb_data <- list(
-    ILV_age = matrix(0.5, nrow = 2, ncol = 3), # time-varying
-    ILV_sex = rep(1, 3), # constant
-    ILV_weight = rep(0.25, 3) # constant
-  )
+    # Mock inputs
+    STb_data <- list(
+        ILV_age = matrix(0.5, nrow = 2, ncol = 3), # time-varying
+        ILV_sex = c(1, 2, 1), # constant
+        ILV_weight = rep(0.25, 3), # constant
+        ILV_timevarying = c(TRUE, FALSE, FALSE),
+        ILV_datatypes = c("continuous", "categorical", "continuous"),
+        ILV_n_levels = c(2)
+    )
 
-  veff_ID <- c("age", "sex") # only age and sex have varying effects
-  count_start <- 1
+    names(STb_data$ILV_timevarying) <- c("ILV_age", "ILV_sex", "ILV_weight")
+    names(STb_data$ILV_datatypes) <- c("ILV_age", "ILV_sex", "ILV_weight")
+    names(STb_data$ILV_n_levels) <- c("ILV_sex")
 
-  # Run refactored version
-  result_ILVi <- process_ILVs(
-    ilv_vars = c("age"),
-    ilv_vars_clean = c("age"),
-    veff_ID = veff_ID,
-    suffix = "i",
-    STb_data = STb_data,
-    count_start = count_start,
-    prior_beta = "normal(0, 1)"
-  )
+    veff_ID <- c("age", "sex") # only age and sex have varying effects
+    count_start <- 1
 
-  result_ILVs <- process_ILVs(
-    ilv_vars = c("sex"),
-    ilv_vars_clean = c("sex"),
-    veff_ID = veff_ID,
-    suffix = "s",
-    STb_data = STb_data,
-    count_start = result_ILVi$count,
-    prior_beta = "normal(0, 1)"
-  )
+    # Run refactored version
+    result_ILVi <- process_ILVs(
+        ilv_vars = c("age"),
+        ilv_vars_clean = c("age"),
+        ilv_datatypes = STb_data$ILV_datatypes,
+        ilv_n_levels = STb_data$ILV_n_levels,
+        ilv_timevarying = STb_data$ILV_timevarying,
+        veff_ID = veff_ID,
+        suffix = "i",
+        STb_data = STb_data,
+        count_start = count_start,
+        prior_beta = "normal(0, 1)"
+    )
 
-  result_ILVm <- process_ILVs(
-    ilv_vars = c("weight"),
-    ilv_vars_clean = c("weight"),
-    veff_ID = veff_ID,
-    suffix = "m",
-    STb_data = STb_data,
-    count_start = result_ILVs$count,
-    prior_beta = "normal(0, 1)"
-  )
+    result_ILVs <- process_ILVs(
+        ilv_vars = c("sex"),
+        ilv_vars_clean = c("sex"),
+        ilv_datatypes = STb_data$ILV_datatypes,
+        ilv_n_levels = STb_data$ILV_n_levels,
+        ilv_timevarying = STb_data$ILV_timevarying,
+        veff_ID = veff_ID,
+        suffix = "s",
+        STb_data = STb_data,
+        count_start = result_ILVi$count,
+        prior_beta = "normal(0, 1)"
+    )
 
-  # Hardcoded expected outputs
-  expect_equal(result_ILVi$param, "real beta_ILVi_age;")
-  expect_equal(result_ILVi$prior, "beta_ILVi_age ~ normal(0, 1);")
-  expect_true(any(grepl("vector\\[P\\] age_i =", result_ILVi$transformed)))
-  expect_true(grepl("exp\\(age_i\\[id\\] \\* ILV_age\\[trial,time_step,id\\]\\)", result_ILVi$term))
+    result_ILVm <- process_ILVs(
+        ilv_vars = c("weight"),
+        ilv_vars_clean = c("weight"),
+        ilv_datatypes = STb_data$ILV_datatypes,
+        ilv_n_levels = STb_data$ILV_n_levels,
+        ilv_timevarying = STb_data$ILV_timevarying,
+        veff_ID = veff_ID,
+        suffix = "m",
+        STb_data = STb_data,
+        count_start = result_ILVs$count,
+        prior_beta = "normal(0, 1)"
+    )
 
-  expect_equal(result_ILVs$param, "real beta_ILVs_sex;")
-  expect_equal(result_ILVs$prior, "beta_ILVs_sex ~ normal(0, 1);")
-  expect_true(any(grepl("vector\\[P\\] sex_s =", result_ILVs$transformed)))
-  expect_true(grepl("\\* exp\\(sex_s\\[id\\] \\* ILV_sex\\[id\\]\\)", result_ILVs$term))
+    # Hardcoded expected outputs
+    expect_equal(result_ILVi$param, "real beta_ILVi_age;")
+    expect_equal(result_ILVi$prior, "beta_ILVi_age ~ normal(0, 1);")
+    expect_equal(result_ILVi$transformed, "array[K, T_max] vector[P] age_i;\nfor (trial in 1:K) for (timestep in 1:T_max) age_i[trial][timestep] = ILV_age[trial][timestep] * beta_ILVi_age + v_ID[,1];")
+    expect_equal(result_ILVi$term, "exp(age_i[trial,time_step,id])")
 
-  expect_equal(result_ILVm$param, "real beta_ILVm_weight;")
-  expect_equal(result_ILVm$prior, "beta_ILVm_weight ~ normal(0, 1);")
-  expect_equal(result_ILVm$transformed, NULL) # not in veff_ID
-  expect_true(grepl("exp\\(beta_ILVm_weight \\* ILV_weight\\[id\\]\\) \\*", result_ILVm$term))
+    expect_equal(result_ILVs$param, "vector[1] beta_ILVs_sex;")
+    expect_equal(result_ILVs$prior, "beta_ILVs_sex ~ normal(0, 1);")
+    expect_equal(result_ILVs$transformed, "vector[P] sex_s = ILV_sex * beta_ILVs_sex + v_ID[,2];")
+    expect_equal(result_ILVs$term, "* exp(sex_s[id])")
+
+    expect_equal(result_ILVm$param, "real beta_ILVm_weight;")
+    expect_equal(result_ILVm$prior, "beta_ILVm_weight ~ normal(0, 1);")
+    expect_equal(result_ILVm$transformed, "vector[P] weight_m = ILV_weight * beta_ILVm_weight;") # not in veff_ID
+    expect_equal(result_ILVm$term, "exp(weight_m[id]) *")
 })

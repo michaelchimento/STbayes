@@ -45,6 +45,11 @@ devtools::install_github("michaelchimento/STbayes")
 - [High resolution data mode](https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#high-resolution-data-mode)
 - [Import NBDA Objects](https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#import-nbda-data-objects)
 
+## Simulating data for power analyses
+
+- [Basic simulation](https://michaelchimento.github.io/STbayes/articles/simulate_data_for_power_analyses.html)
+- [Include ILVs](https://michaelchimento.github.io/STbayes/articles/simulate_data_for_power_analyses.html#include-ilvs)
+
 ## Features:
 
  - TADA (acquisition time known) and OADA (only acquisition order known) model types.

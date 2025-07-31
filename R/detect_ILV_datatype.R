@@ -8,19 +8,14 @@
 detect_ILV_datatype <- function(x) {
     x <- stats::na.omit(x)
 
-    if (is.logical(x) || (is.numeric(x) && all(x %in% c(0, 1)))) {
-        return("binary")
-    }
-
-    # multi-level categorical: integer-like with > 2 unique values
-    if (is.numeric(x) && all(x == floor(x)) && length(unique(x)) > 2) {
+    if (is.logical(x)) {
+        return("boolean")
+    } else if (is.character(x) || is.factor(x)) {
         return("categorical")
-    }
-
-    if (is.numeric(x)) {
+    } else if (is.numeric(x)) {
         return("continuous")
+    } else {
+        # catch-all
+        stop("Please input boolean, continuous or categorical variables for ILVs. Categorical variables should be input as factors or characters.")
     }
-
-    # catch-all for factors or characters
-    return("categorical")
 }

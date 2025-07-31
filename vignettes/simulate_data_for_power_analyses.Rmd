@@ -1,0 +1,210 @@
+---
+title: "Simulate data for power analyses"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Simulate data for power analyses}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(STbayes)
+library(igraph)
+library(dplyr)
+```
+
+This vignette will introduce functions to simulate $n\geq1$ diffusion trials. This can be used as a basis for power analyses. Afterwards, you can fit STbayes models to the stimulate data to ask, given a population size, relative effect of social transmission, and ILV effects, how many trials are necessary to reliably support a full model over an asocial model, or detect any of the effects?
+
+First, let's define a the simulation function for a single diffusion trial:
+
+```{r}
+diffusion_trial <- function(trial_num, obs_duration, g, parameter_values) {
+  # Initialize dataframe to store the time of acquisition data
+    results <- data.frame(id = 1:N, time = obs_duration + 1, t_end = obs_duration, trial = trial_num)
+
+    # Simulate the diffusion
+    for (t in 1:obs_duration) {
+        # identify knowledgeable individuals
+        informed <- results[results$time <= obs_duration, "id"]
+
+        # identify naive individuals
+        potential_learners <- c(1:N)
+        potential_learners <- potential_learners[!(potential_learners %in% informed)]
+
+        # break the loop if no one left to learn
+        if (length(potential_learners) == 0) {
+            results$t_end <- t - 1 # minus 1 so t_end=last learner
+            break
+        }
+
+        # calculate the hazard for potential learners
+        learning_rates <- sapply(potential_learners, function(x) {
+            neighbors <- neighbors(g, x)
+            C <- sum(neighbors$name %in% informed)
+            lambda <- parameter_values[parameter_values$id == x, "lambda_0"] +
+                (parameter_values[parameter_values$id == x, "s_prime"] * C)
+            return(lambda)
+        })
+
+        # convert hazard to probability
+        learning_probs <- 1 - exp(-learning_rates)
+
+        # for each potential learner, determine whether they learn the behavior
+        learners_this_step <- rbinom(n = length(potential_learners), size = 1, prob = learning_probs)
+
+        # update their time of acquisition
+        new_learners <- potential_learners[learners_this_step == 1]
+        results[results$id %in% new_learners, "time"] <- t
+    }
+    return(results)
+}
+```
+
+The function accepts an integer representing the trial number, an integer representing the length of the observation period, an igraph object defining the social network, and a data-frame containing learning parameter values. It first creates a data-frame to hold the results of when each individual experienced an event. Then it loops through time-steps, This is a pre-determined observation time to prevent infinite loops, in case you set learning rates to 0. Any individual who doesn't learn within the observation period will be recorded as censored. Each time step, we check who is already informed (experienced the event), and then who is still a potential learner (hasn't experienced the event). If all individuals have experienced the event, the loop breaks and the function returns the data-frame. Otherwise, we calculate learning rates, transform them into probabilities, and the potential learners might experience the event according to Bernoulli trials using those probabilities. Finally, we record the times of those events.
+
+We want to run more than one trial, so we can embed this function in a larger one that lets us conveniently run many trials:
+
+```{r}
+run_sims <- function(num_trials, obs_duration, parameter_values, N, k) {
+    # storage for all trials
+    all_event_data <- data.frame(
+        id = integer(),
+        time = numeric(),
+        t_end = numeric(),
+        trial = integer()
+    )
+    all_edge_list <- data.frame(
+        focal = integer(),
+        other = integer(),
+        trial = integer(),
+        assoc = numeric()
+    )
+    for (trial in 1:num_trials) {
+        # create random regular graph
+        g <- sample_k_regular(N, k, directed = FALSE, multiple = FALSE)
+        V(g)$name <- 1:N
+
+        results = diffusion_trial(trial, obs_duration, g, parameter_values)
+
+        # create event + network data and append to cumulative dataframes
+        event_data <- results %>%
+            arrange(time)
+        all_event_data <- rbind(all_event_data, event_data)
+
+        edge_list <- as.data.frame(as_edgelist(g))
+        names(edge_list) <- c("focal", "other")
+        edge_list$trial <- trial
+        edge_list$assoc <- 1 # assign e_ij=1 since this is just an edge list
+        all_edge_list <- rbind(all_edge_list, edge_list)
+        message("Trial", trial, "completed.\n")
+    }
+    
+    # package up data into list and return it
+    final_results <- list(
+        "event_data" = all_event_data,
+        "networks" = all_edge_list
+    )
+    return(final_results)
+}
+```
+
+This function creates data-frames to accumulate the results in, and then for each trial, generates a random-regular network using arguments `N` (pop size) and `k` (degree). It then runs the diffusion trial, accumulates the results, and returns a list of two data-frames, one with the event data, and the other with networks. These are already formatted for use with STbayes.
+
+Let's define our parameters:
+
+```{r}
+set.seed(123)
+
+# Parameters
+N <- 30 # population size
+k <- 5 # degree
+log_lambda_0 <- -6
+log_sprime <- -4 
+obs_duration <- 1000
+num_trials <- 10
+
+#learning parameters
+parameter_values <- data.frame(
+    id = 1:N,
+    lambda_0 = exp(log_lambda_0),
+    s_prime = exp(log_sprime)
+)
+
+parameter_values$s = parameter_values$s_prime/parameter_values$lambda_0
+
+```
+
+Note that we are defining the parameters on the log scale. Furthermore, we do not define the strength of social information ($s$) directly, but rather define the log intrinsic rate ($\lambda_0$), and the log social transmission rate ($s'$). We can then derive s by dividing the two. If we set `log_lambda_0==s'`, then the relative strength of social transmission would be 1. Now, we can run the simulations:
+
+```{r}
+results <- run_sims(num_trials, obs_duration, parameter_values, N, k)
+```
+
+Now that we have our results, we can feed these into STbayes and fit models to them. Let's test that we correctly support the social transmission model over the asocial constrained model:
+
+```{r}
+# import data
+data_list <- import_user_STb(
+    event_data = results[["event_data"]],
+    networks = results[["networks"]]
+)
+
+# fit full model
+model_full <- generate_STb_model(data_list)
+fit_full <- fit_STb(data_list, model_full)
+
+# fit constrained model
+model_asoc <- generate_STb_model(data_list, model_type = "asocial")
+fit_asoc <- fit_STb(data_list, model_asoc)
+
+#compare
+loo_output = STb_compare(fit_full, fit_asoc)
+print(loo_output$comparison)
+```
+
+Given enough trials, and a large enough population size, the social model should be correctly supported. A power analysis table with differing numbers of individuals and trials is available in the manuscript.
+
+## Include ILVs
+
+Finally, let's add a constant ILV effect. First, let's create a few different types of ILVs. STbayes supports boolean, continuous and categorical ILVs. We will apply an effect of the continuous ILV to social transmission and re-run the simulations. Note that now we inc
+
+```{r}
+ILVconstant <- data.frame(
+    id = 1:N,
+    bool_ILV = as.logical(rbinom(N, 1, 0.5)), # boolean ILV
+    cont_ILV = rnorm(N, 0, 1), # continuous ILV
+    cat_ILV = as.factor(sample(1:4, N, replace = TRUE)) # categorical with 4 levels
+)
+ilv_beta = 1.5 #effect 
+parameter_values <- data.frame(
+        id = 1:N,
+        lambda_0 = exp(log_lambda_0),
+        s_prime = exp(log_sprime) * exp(ilv_beta * ILVconstant$cont_ILV)  #apply continuous ILV to SL
+    )
+parameter_values$s = parameter_values$s_prime/parameter_values$lambda_0
+results <- run_sims(num_trials, obs_duration, parameter_values, N, k)
+```
+
+Now we can import the data into STbayes. Note that we need to include ILV_c data-frame, and specify that the continuous ILV should be applied as an additive effect to social learning.
+
+```{r}
+data_list <- import_user_STb(
+    event_data = results[["event_data"]],
+    networks = results[["networks"]],
+    ILV_c = ILVconstant,
+    ILVs = c("cont_ILV")
+)
+
+model <- generate_STb_model(data_list)
+fit <- fit_STb(data_list, model)
+STb_summary(fit)
+```
+
+The estimated beta should be in the neighborhood of the effect that we defined. There will be shrinkage, as the default prior for ILV betas is `normal(0,1)`. This can be adjusted using the priors argument of `generate_STb_model()`. We suggest not to use a very uninformative prior, as this can quickly cause model identification problems. If you find that you're unable to recover the parameter value, a larger sample size is probably needed. This vignette is just a starting point, but you could equally apply the other types of variables, or even add varying effects to either rates or ILVs using the veff_ID argument in `generate_STb_model()`.
