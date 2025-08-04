@@ -76,7 +76,7 @@ Individual-level variables can be either constant (e.g. age, sex) or time-varyin
 ILV_c <- data.frame(
     id = LETTERS[1:6],
     age = c(-1, -2, 0, 1, 2, 3), # continuous variables should be normalized
-    sex = c(0, 1, 1, 0, 1, 0), # Factor ILVs must be input as numeric
+    sex = as.factor(c("F", "M", "M", "M", "F", "F")), # Categorical ILVs must be input as factors
     weight = c(0.5, .25, .3, 0, -.2, -.4)
 )
 ```
