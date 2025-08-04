@@ -173,7 +173,7 @@ Given enough trials, and a large enough population size, the social model should
 
 ## Include ILVs
 
-Finally, let's add a constant ILV effect. First, let's create a few different types of ILVs. STbayes supports boolean, continuous and categorical ILVs. We will apply an effect of the continuous ILV to social transmission and re-run the simulations. Note that now we inc
+Finally, let's add a constant ILV effect. First, let's create a few different types of ILVs. STbayes supports boolean, continuous and categorical ILVs. We will apply an effect of the continuous ILV to social transmission and re-run the simulations.
 
 ```{r}
 ILVconstant <- data.frame(

@@ -143,10 +143,9 @@ sex and weight to add to our toy dataset above.</p>
 <span><span class="op">)</span></span></code></pre></div>
 <p>The data-frame ILV_c holds the values for each individual. The
 formatting of <code>id</code> should match the event_data and networks
-data-frames. At the moment, ILVs can be continuous or binary. You should
-normalize continuous variables, and binary variables should be coded as
-0, 1. I plan to expand this to multi-category factors, but for the
-moment you must directly edit the Stan code to use these.</p>
+data-frames. At the moment, ILVs can be continuous, boolean or
+categorical. Continuous variables should be normalized, and categorical
+variables should be input as factors.</p>
 <p>We need to explicitly tell STbayes which variables are additive
 (acting independently on intrinsic or social rates) and multiplicative
 (same effect estimated for intrinsic and social rates). Below, I have
