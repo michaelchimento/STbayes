@@ -39,7 +39,7 @@ grid_networks <- function(event_data, networks) {
             trial = seq_along(trials) # ensure consistent trial ids
         )
 
-        focal_other <- data.table::CJ(focal = ids, other = ids)[focal != to]
+        focal_other <- data.table::CJ(focal = ids, other = ids)[focal != other]
         full_grid <- data.table::CJ(trial_numeric = trials, time = 1, sorted = FALSE)[, time := NULL]
         full_grid <- event_data[, .(t_max = max(t_end)), by = trial_numeric][
             , .(time = seq_len(t_max)),
