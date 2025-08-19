@@ -123,6 +123,10 @@ import_user_STb <- function(event_data,
 
     check_trials(event_data, networks, ILV_tv, t_weights)
     id_check <- standardize_ids(networks, event_data, ILV_c, ILV_tv, t_weights)
+    if (inherits(networks, "data.frame")) {
+        networks$focal <- id_check$id_map$id_numeric[match(as.character(networks$focal), id_check$id_map$id)]
+        networks$other <- id_check$id_map$id_numeric[match(as.character(networks$other), id_check$id_map$id)]
+    }
     event_data <- id_check$event_data
     ILV_c <- id_check$ILV_c
     ILV_tv <- id_check$ILV_tv
@@ -180,7 +184,7 @@ import_user_STb <- function(event_data,
     if (high_res) {
         message("\u26A0\uFE0F I will pre-process high-res data for standard transmission models. For complex transmission, please use import_user_STb2().")
         full_networks <- grid_networks(event_data, networks)
-        networks <- process_networks_x_weights_hires(event_data, t_weights, full_networks, D_data)
+        networks_processed <- process_networks_x_weights_hires(event_data, t_weights, full_networks, D_data)
     }
 
     D_data <- D_data[, !(names(D_data) %in% "time")]

@@ -17,7 +17,7 @@ grid_networks <- function(event_data, networks) {
     # recode trial, from, other as integer factors
     networks[, `:=`(
         trial = as.integer(factor(trial)),
-        from = as.integer(factor(focal)),
+        focal = as.integer(factor(focal)),
         other = as.integer(factor(other))
     )]
 

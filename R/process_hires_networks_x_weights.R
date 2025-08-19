@@ -17,7 +17,7 @@ utils::globalVariables(c(
 
 process_networks_x_weights_hires <- function(event_data, t_weights, networks, D_data) {
     t_weights$trial <- as.integer(as.factor(t_weights$trial))
-    t_weights$id <- as.integer(as.factor(t_weights$id))
+    t_weights$id <- as.integer(t_weights$id_numeric)
 
     names(t_weights)[names(t_weights) == "id"] <- "other"
     names(D_data)[names(D_data) == "trial_numeric"] <- "trial"

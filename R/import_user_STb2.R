@@ -63,6 +63,10 @@ import_user_STb2 <- function(event_data,
 
     check_trials(event_data, networks, ILV_tv, t_weights)
     id_check <- standardize_ids(networks, event_data, ILV_c, ILV_tv, t_weights)
+    if (inherits(networks, "data.frame")) {
+        networks$focal <- id_check$id_map$id_numeric[match(as.character(networks$focal), id_check$id_map$id)]
+        networks$other <- id_check$id_map$id_numeric[match(as.character(networks$other), id_check$id_map$id)]
+    }
     event_data <- id_check$event_data
     ILV_c <- id_check$ILV_c
     ILV_tv <- id_check$ILV_tv
