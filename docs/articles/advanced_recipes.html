@@ -260,8 +260,8 @@ varying effects are added onto the main effect prior to transformation
 from log-scale back to linear. For example, if we apply a varying effect
 for
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>λ</mi><mn>0</mn></msub><annotation encoding="application/x-tex">\lambda_0</annotation></semantics></math>,
-the model will calculate a value for each individual in the block of the
-Stan model:</p>
+the model will calculate a value for each individual in the
+<code>transformed parameters</code> block of the Stan model:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>exp</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>μ</mi><mrow><mo>log</mo><msub><mi>λ</mi><mn>0</mn></msub></mrow></msub><mo>+</mo><msub><mi>𝐯</mi><mrow><mtext mathvariant="normal">ID</mtext><mo>,</mo><msub><mi>λ</mi><mn>0</mn></msub></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">
 \exp\left(\mu_{\log \lambda_0} + \boldsymbol{v}_{\text{ID}, \lambda_0}\right)
 </annotation></semantics></math> and use those values when calculating

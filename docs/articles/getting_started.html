@@ -116,8 +116,8 @@ calculation.</li>
 <li>
 <code>t_end</code>: Integer or float value representing the duration
 of the observation period for each trial. If the user observed a
-population for 30 days, . If there are no censored individuals set
-.</li>
+population for 30 days, <code>t_end=30</code>. If there are no censored
+individuals set <code>t_end=max(time)</code>.</li>
 </ul>
 <p>Next let’s look at the network data:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
@@ -152,7 +152,7 @@ columns as you want. Here, there is only one network named
 weight describes the influence that <code>other</code> may have on
 <code>focal</code> experiencing the target event. For example, if you
 wish to model vertical transmission from parent to offspring, this
-should contain rows <code>mother, daughter, 0</code>,
+should contain rows <code>mother, daughter, 0</code>;
 <code>daughter, mother, 1</code></strong>. Naming conventions for
 identities and trials must be consistent between these two dataframes
 (i.e. integers, or matching character strings). The networks dataframe
@@ -273,15 +273,22 @@ was regularly (or irregularly) sampled, so the exact time of events are
 unknown but the rough interval they occurred in is known, the user
 should select <code>"discrete_time"</code>, which creates a dTADA
 model.</li>
-<li> is used to specify which variables should receive varying effects
-by individual. For example, will create a model that will attempt to fit
-varying effects for both intrinsic rate and strength of social
-transmission. It is possible to include other ILVs, if desired.</li>
-<li> specifies whether to create a full model or an asocial model
-constrained to the intrinsic rate only</li>
-<li> specifies whether or not the user wishes to use a constant
-intrinsic rate, or a Weibull shaped rate that can increase or decrease
-over time. This fits an additional parameter
+<li>
+<code>veff_ID=c("lambda_0", "s", ...),</code> is used to specify
+which variables should receive varying effects by individual. For
+example, <code>veff_ID=c("lambda_0", "s")</code> will create a model
+that will attempt to fit varying effects for both intrinsic rate and
+strength of social transmission. It is possible to include other ILVs,
+if desired.</li>
+<li>
+<code>model_type=c("full","asocial")</code> specifies whether to
+create a full model or an asocial model constrained to the intrinsic
+rate only</li>
+<li>
+<code>intrinsic_rate=c("constant", "weibull")</code> specifies
+whether or not the user wishes to use a constant intrinsic rate, or a
+Weibull shaped rate that can increase or decrease over time. This fits
+an additional parameter
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>γ</mi><annotation encoding="application/x-tex">\gamma</annotation></semantics></math>,
 where
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>γ</mi><mo>&lt;</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\gamma&lt;1</annotation></semantics></math>
@@ -290,19 +297,23 @@ indicates a decreasing hazard over time, and
 indicates an increasing hazard over time.
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>γ</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\gamma=1</annotation></semantics></math>
 indicates a constant hazard.</li>
-<li> specifies whether the model uses simple or complex
-transmission.</li>
-<li> specifies whether or not a generated quantities block is created in
-the Stan model. This defaults to true, as the log-likelihood of
-observations is output using generated quantities and is needed for
-model comparison.</li>
-<li> specifies whether estimated acquisition times are also output by
-the generated quantities block. These are useful for posterior
-predictive checks, but this argument defaults to false for efficiency in
-fitting.</li>
-<li> allows users to specify priors for parameters in the format of a
-named list. Please see the advanced recipes vignette for more
-details</li>
+<li>
+<code>transmission_func=c("standard","freqdep_f", "freqdep_k")</code>
+specifies whether the model uses simple or complex transmission.</li>
+<li>
+<code>gq</code> specifies whether or not a generated quantities
+block is created in the Stan model. This defaults to true, as the
+log-likelihood of observations is output using generated quantities and
+is needed for model comparison.</li>
+<li>
+<code>est_acqTime</code> specifies whether estimated acquisition
+times are also output by the generated quantities block. These are
+useful for posterior predictive checks, but this argument defaults to
+false for efficiency in fitting.</li>
+<li>
+<code>priors</code> allows users to specify priors for parameters in
+the format of a named list. Please see the advanced recipes vignette for
+more details</li>
 </ul>
 </div>
 </div>
@@ -327,34 +338,34 @@ details</li>
 <span><span class="co">#&gt; Chain 2 Iteration:    1 / 4000 [  0%]  (Warmup) </span></span>
 <span><span class="co">#&gt; Chain 3 Iteration:    1 / 4000 [  0%]  (Warmup) </span></span>
 <span><span class="co">#&gt; Chain 4 Iteration:    1 / 4000 [  0%]  (Warmup) </span></span>
-<span><span class="co">#&gt; Chain 1 Iteration: 1000 / 4000 [ 25%]  (Warmup) </span></span>
 <span><span class="co">#&gt; Chain 2 Iteration: 1000 / 4000 [ 25%]  (Warmup) </span></span>
-<span><span class="co">#&gt; Chain 4 Iteration: 1000 / 4000 [ 25%]  (Warmup) </span></span>
+<span><span class="co">#&gt; Chain 1 Iteration: 1000 / 4000 [ 25%]  (Warmup) </span></span>
 <span><span class="co">#&gt; Chain 3 Iteration: 1000 / 4000 [ 25%]  (Warmup) </span></span>
+<span><span class="co">#&gt; Chain 4 Iteration: 1000 / 4000 [ 25%]  (Warmup) </span></span>
+<span><span class="co">#&gt; Chain 2 Iteration: 2000 / 4000 [ 50%]  (Warmup) </span></span>
+<span><span class="co">#&gt; Chain 2 Iteration: 2001 / 4000 [ 50%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 4 Iteration: 2000 / 4000 [ 50%]  (Warmup) </span></span>
 <span><span class="co">#&gt; Chain 4 Iteration: 2001 / 4000 [ 50%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 1 Iteration: 2000 / 4000 [ 50%]  (Warmup) </span></span>
 <span><span class="co">#&gt; Chain 1 Iteration: 2001 / 4000 [ 50%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 3 Iteration: 2000 / 4000 [ 50%]  (Warmup) </span></span>
 <span><span class="co">#&gt; Chain 3 Iteration: 2001 / 4000 [ 50%]  (Sampling) </span></span>
-<span><span class="co">#&gt; Chain 2 Iteration: 2000 / 4000 [ 50%]  (Warmup) </span></span>
-<span><span class="co">#&gt; Chain 2 Iteration: 2001 / 4000 [ 50%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 1 Iteration: 3000 / 4000 [ 75%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 4 Iteration: 3000 / 4000 [ 75%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 3 Iteration: 3000 / 4000 [ 75%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 2 Iteration: 3000 / 4000 [ 75%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 1 Iteration: 4000 / 4000 [100%]  (Sampling) </span></span>
-<span><span class="co">#&gt; Chain 1 finished in 18.2 seconds.</span></span>
-<span><span class="co">#&gt; Chain 4 Iteration: 4000 / 4000 [100%]  (Sampling) </span></span>
-<span><span class="co">#&gt; Chain 4 finished in 19.0 seconds.</span></span>
+<span><span class="co">#&gt; Chain 1 finished in 18.3 seconds.</span></span>
 <span><span class="co">#&gt; Chain 3 Iteration: 4000 / 4000 [100%]  (Sampling) </span></span>
+<span><span class="co">#&gt; Chain 4 Iteration: 4000 / 4000 [100%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 3 finished in 19.1 seconds.</span></span>
+<span><span class="co">#&gt; Chain 4 finished in 19.1 seconds.</span></span>
 <span><span class="co">#&gt; Chain 2 Iteration: 4000 / 4000 [100%]  (Sampling) </span></span>
-<span><span class="co">#&gt; Chain 2 finished in 19.7 seconds.</span></span>
+<span><span class="co">#&gt; Chain 2 finished in 19.6 seconds.</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; All 4 chains finished successfully.</span></span>
 <span><span class="co">#&gt; Mean chain execution time: 19.0 seconds.</span></span>
-<span><span class="co">#&gt; Total execution time: 20.0 seconds.</span></span>
+<span><span class="co">#&gt; Total execution time: 19.9 seconds.</span></span>
 <span><span class="co">#&gt; 🫴 Use STb_save() to save the fit and chain csvs to a single RDS file. Or don't!</span></span></code></pre></div>
 <p>This function calls cmdstanr’s $sample(), and you can add any extra
 valid arguments to pass on here. In this call, I’ve made sure that we
