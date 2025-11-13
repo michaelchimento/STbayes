@@ -16,31 +16,16 @@ networks <- data.frame(
     trial = 1,
     focal = 1:N,
     other = sample(1:N),
-    weight = 1
+    weight = 1,
+    kin = 1
 )
 
-# create all (id, time) combinations
-ILVtimevarying <- expand.grid(
-    trial = 1,
-    id = 1:N,
-    time = 1:Tmax
-)
-
-# simulate 3 types of time-varying ILVs
-ILV_tv <- ILVtimevarying %>%
-    mutate(
-        bool_ILV = as.logical(rbinom(n(), 1, 0.5)), # binary
-        cont_ILV = rnorm(n(), mean = 0, sd = 1), # continuous
-        cat_ILV = factor(sample(1:4, size = n(), replace = TRUE)) # categorical (4 levels)
-    )
 
 #### BOOLEAN ILV ####
-test_that("Boolean ILV cTADA compiles", {
+test_that("No veff cTADA compiles", {
     data_list <- import_user_STb(
         event_data = event_data,
-        networks = networks,
-        ILV_tv = ILV_tv,
-        ILVi = c("bool_ILV")
+        networks = networks
     )
 
     stan_code <- generate_STb_model(data_list)
@@ -55,36 +40,15 @@ test_that("Boolean ILV cTADA compiles", {
     )
 })
 
-test_that("Boolean ILV OADA compiles", {
+test_that("lambda_0 veff_type=id cTADA compiles", {
     data_list <- import_user_STb(
         event_data = event_data,
-        networks = networks,
-        ILV_tv = ILV_tv,
-        ILVi = c("bool_ILV")
-    )
-
-    stan_code <- generate_STb_model(data_list, data_type = "order")
-
-    # write to a temporary .stan file
-    tmp_stan_path <- cmdstanr::write_stan_file(stan_code)
-
-    # try to compile
-    expect_error(
-        cmdstanr::cmdstan_model(tmp_stan_path, compile = TRUE),
-        regexp = NA # expect no error
-    )
-})
-
-test_that("Boolean ILV cTADA veffID compiles", {
-    data_list <- import_user_STb(
-        event_data = event_data,
-        networks = networks,
-        ILV_tv = ILV_tv,
-        ILVi = c("bool_ILV")
+        networks = networks
     )
 
     stan_code <- generate_STb_model(data_list,
-        veff_ID = c("bool_ILV")
+        veff_params = "lambda_0",
+        veff_type = "id"
     )
 
     # write to a temporary .stan file
@@ -97,17 +61,15 @@ test_that("Boolean ILV cTADA veffID compiles", {
     )
 })
 
-test_that("Boolean ILV OADA veffID compiles", {
+test_that("lambda_0 veff_type=trial cTADA compiles", {
     data_list <- import_user_STb(
         event_data = event_data,
-        networks = networks,
-        ILV_tv = ILV_tv,
-        ILVi = c("bool_ILV")
+        networks = networks
     )
 
     stan_code <- generate_STb_model(data_list,
-        data_type = "order",
-        veff_ID = c("bool_ILV")
+        veff_params = "lambda_0",
+        veff_type = "trial"
     )
 
     # write to a temporary .stan file
@@ -120,57 +82,15 @@ test_that("Boolean ILV OADA veffID compiles", {
     )
 })
 
-#### Continuous ILV ####
-test_that("Continuous ILV cTADA compiles", {
+test_that("lambda_0 veff_type=c(id,trial) cTADA compiles", {
     data_list <- import_user_STb(
         event_data = event_data,
-        networks = networks,
-        ILV_tv = ILV_tv,
-        ILVi = c("cont_ILV")
-    )
-
-    stan_code <- generate_STb_model(data_list)
-
-    # write to a temporary .stan file
-    tmp_stan_path <- cmdstanr::write_stan_file(stan_code)
-
-    # try to compile
-    expect_error(
-        cmdstanr::cmdstan_model(tmp_stan_path, compile = TRUE),
-        regexp = NA # expect no error
-    )
-})
-
-test_that("Continuous ILV OADA compiles", {
-    data_list <- import_user_STb(
-        event_data = event_data,
-        networks = networks,
-        ILV_tv = ILV_tv,
-        ILVi = c("cont_ILV")
-    )
-
-    stan_code <- generate_STb_model(data_list, data_type = "order")
-
-    # write to a temporary .stan file
-    tmp_stan_path <- cmdstanr::write_stan_file(stan_code)
-
-    # try to compile
-    expect_error(
-        cmdstanr::cmdstan_model(tmp_stan_path, compile = TRUE),
-        regexp = NA # expect no error
-    )
-})
-
-test_that("Continuous ILV cTADA veffID compiles", {
-    data_list <- import_user_STb(
-        event_data = event_data,
-        networks = networks,
-        ILV_tv = ILV_tv,
-        ILVi = c("cont_ILV")
+        networks = networks
     )
 
     stan_code <- generate_STb_model(data_list,
-        veff_ID = c("cont_ILV")
+        veff_params = "lambda_0",
+        veff_type = c("id", "trial")
     )
 
     # write to a temporary .stan file
@@ -183,19 +103,82 @@ test_that("Continuous ILV cTADA veffID compiles", {
     )
 })
 
-test_that("Continuous ILV OADA veffID compiles", {
+test_that("veff_params=c(lambda_0,s) veff_type=c(id,trial) cTADA compiles", {
     data_list <- import_user_STb(
         event_data = event_data,
-        networks = networks,
-        ILV_tv = ILV_tv,
-        ILVi = c("cont_ILV")
+        networks = networks
     )
 
     stan_code <- generate_STb_model(data_list,
-        data_type = "order",
-        veff_ID = c("cont_ILV")
+        veff_params = c("lambda_0", "s"),
+        veff_type = c("id", "trial")
     )
 
+    # write to a temporary .stan file
+    tmp_stan_path <- cmdstanr::write_stan_file(stan_code)
+
+    # try to compile
+    expect_error(
+        cmdstanr::cmdstan_model(tmp_stan_path, compile = TRUE),
+        regexp = NA # expect no error
+    )
+})
+
+test_that("veff_params=c(lambda_0,s,gamma) veff_type=c(id,trial) cTADA compiles", {
+    data_list <- import_user_STb(
+        event_data = event_data,
+        networks = networks
+    )
+
+    stan_code <- generate_STb_model(data_list,
+        intrinsic_rate = "weibull",
+        veff_params = c("lambda_0", "s", "gamma"),
+        veff_type = c("id", "trial")
+    )
+    # write to a temporary .stan file
+    tmp_stan_path <- cmdstanr::write_stan_file(stan_code)
+
+    # try to compile
+    expect_error(
+        cmdstanr::cmdstan_model(tmp_stan_path, compile = TRUE),
+        regexp = NA # expect no error
+    )
+})
+
+test_that("veff_params=c(lambda_0,s,gamma, f) veff_type=c(id,trial) cTADA compiles", {
+    data_list <- import_user_STb(
+        event_data = event_data,
+        networks = networks
+    )
+
+    stan_code <- generate_STb_model(data_list,
+        intrinsic_rate = "weibull",
+        transmission_func = "freqdep_f",
+        veff_params = c("lambda_0", "s", "gamma", "f"),
+        veff_type = c("id", "trial")
+    )
+    # write to a temporary .stan file
+    tmp_stan_path <- cmdstanr::write_stan_file(stan_code)
+
+    # try to compile
+    expect_error(
+        cmdstanr::cmdstan_model(tmp_stan_path, compile = TRUE),
+        regexp = NA # expect no error
+    )
+})
+
+test_that("veff_params=c(lambda_0,s,gamma,k) veff_type=c(id,trial) cTADA compiles", {
+    data_list <- import_user_STb(
+        event_data = event_data,
+        networks = networks
+    )
+
+    stan_code <- generate_STb_model(data_list,
+        intrinsic_rate = "weibull",
+        transmission_func = "freqdep_k",
+        veff_params = c("lambda_0", "s", "gamma", "k"),
+        veff_type = c("id", "trial")
+    )
     # write to a temporary .stan file
     tmp_stan_path <- cmdstanr::write_stan_file(stan_code)
 

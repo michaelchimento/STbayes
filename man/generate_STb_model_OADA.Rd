@@ -8,7 +8,8 @@ generate_STb_model_OADA(
   STb_data,
   model_type = "full",
   transmission_func = "standard",
-  veff_ID = c(),
+  veff_params = c(),
+  veff_type = "id",
   gq = TRUE,
   priors = list()
 )
@@ -20,7 +21,9 @@ generate_STb_model_OADA(
 
 \item{transmission_func}{string specifying transmission function: "standard", "freqdep_f" or "freqdep_k" for frequency dependent complex contagion. Defaults to "standard".}
 
-\item{veff_ID}{Parameters for which to estimate varying effects by individuals. Default is no varying effects.}
+\item{veff_params}{Vector of parameter names (string) for which to estimate varying effects. For the moment, this is mutually exclusive for varying effects on trial or ID, you must choose one or the other using argument \code{veff_type}. Default is no varying effects.}
+
+\item{veff_type}{string specifying whether varying effects should be applied to "ID" or "trial". Default is ID.}
 
 \item{gq}{Boolean to indicate whether the generated quantities block is added (incl. ll for WAIC)}
 

@@ -10,7 +10,8 @@ generate_STb_model_TADA(
   intrinsic_rate = "constant",
   transmission_func = "standard",
   dTADA = F,
-  veff_ID = c(),
+  veff_params = c(),
+  veff_type = "id",
   gq = TRUE,
   est_acqTime = FALSE,
   priors = list()
@@ -27,7 +28,9 @@ generate_STb_model_TADA(
 
 \item{dTADA}{boolean indicating whether dTADA should be used.}
 
-\item{veff_ID}{Parameters for which to estimate varying effects by individuals. Default is no varying effects.}
+\item{veff_params}{Vector of parameter names (string) for which to estimate varying effects. Default is no varying effects.}
+
+\item{veff_type}{string/vector specifying whether varying effects should be applied to "id", "trial" or both (c("id","trial")). Default is id, applied only if user also gives \code{veff_params}.}
 
 \item{gq}{Boolean to indicate whether the generated quantities block is added (incl. ll for WAIC)}
 

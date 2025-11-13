@@ -7,7 +7,8 @@
 #' @param intrinsic_rate string specifying whether intrinsic rate is static or can change over time ("constant", "weibull")
 #' @param transmission_func string specifying transmission function: "standard", "freqdep_f" or "freqdep_k" for complex contagion. Defaults to "standard". Complex contagion with multi-network model is not supported.
 #' @param dTADA boolean indicating whether dTADA should be used.
-#' @param veff_ID Parameters for which to estimate varying effects by individuals. Default is no varying effects.
+#' @param veff_params Vector of parameter names (string) for which to estimate varying effects. Default is no varying effects.
+#' @param veff_type string/vector specifying whether varying effects should be applied to "id", "trial" or both (c("id","trial")). Default is id, applied only if user also gives `veff_params`.
 #' @param gq Boolean to indicate whether the generated quantities block is added (incl. ll for WAIC)
 #' @param est_acqTime Boolean to indicate whether gq block includes estimates for acquisition time. At the moment this uses 'one weird trick' to accomplish this and does not support estimates for non-integer learning times.
 #' @param priors named list with strings containing the prior for log baserate, s, f, k.
@@ -18,7 +19,8 @@ generate_STb_model_TADA <- function(STb_data,
                                     intrinsic_rate = "constant",
                                     transmission_func = "standard",
                                     dTADA = F,
-                                    veff_ID = c(),
+                                    veff_params = c(),
+                                    veff_type = "id",
                                     gq = TRUE,
                                     est_acqTime = FALSE,
                                     priors = list()) {
@@ -26,37 +28,44 @@ generate_STb_model_TADA <- function(STb_data,
         stop("Invalid model_type. Choose 'asocial' or 'full'.")
     }
 
-    if (est_acqTime == TRUE & min(check_integer(STb_data$time)) == 0) {
+    if (est_acqTime == TRUE && min(check_integer(STb_data$time)) == 0) {
         message("WARNING: You have input float times, and unfortunately estimating acquisition times in the GQ block is only possible with integer times at the moment.\nThe model will be created with est_acqTime=F.")
         est_acqTime <- FALSE
     }
+
+    # set var for index string to be used for veff
+    veff_idx <- paste0(veff_type, collapse = ",")
+
+    # set var for declaring vectors holding estimates, either pop size or num trials
+    veff_decl <- list(id = "P", trial = "K")
 
     prior_lambda0 <- priors[["log_lambda0"]]
     prior_s <- priors[["log_sprime"]]
     prior_f <- priors[["log_f"]]
     prior_k <- priors[["k_raw"]]
-    prior_z_ID <- priors[["z_ID"]]
-    prior_sigma_ID <- priors[["sigma_ID"]]
-    prior_rho_ID <- priors[["rho_ID"]]
+    prior_z_veff <- priors[["z_veff"]]
+    prior_sigma_veff <- priors[["sigma_veff"]]
+    prior_rho_veff <- priors[["rho_veff"]]
     prior_beta <- priors[["beta_ILV"]]
     prior_gamma <- priors[["gamma"]]
 
-    # check if edgeweights are sampled from posterior distribution (import func should have created S variable)
+    # check if edgeweights are sampled from posterior distribution
     if ("N_dyad" %in% names(STb_data)) is_distribution <- TRUE else is_distribution <- FALSE
     if ("N_dyad" %in% names(STb_data)) est_acqTime <- FALSE # don't want to deal with that rn
 
     network_names <- STb_data$network_names
     num_networks <- length(network_names)
 
-    separate_s <- (STb_data$multinetwork_s == "separate" & num_networks > 1)
+    separate_s <- num_networks > 1
+    network_key <- if (separate_s) "multi_network" else "single_network"
 
     # make custom declarations for distributions:
-    if (is_distribution & model_type == "full") {
+    if (is_distribution && model_type == "full") {
         # data declaration
         distribution_data_declaration <- glue::glue("    matrix[N_networks, N_dyad] logit_edge_mu;  // logit edge values
                       array[N_networks] matrix[N_dyad, N_dyad] logit_edge_cov;  // covariance matrix
-                                                    array[N_dyad] int<lower=1> from_ID;
-                                                    array[N_dyad] int<lower=1> to_ID;")
+                                                    array[N_dyad] int<lower=1> focal_ID;
+                                                    array[N_dyad] int<lower=1> other_ID;")
         distribution_data_declaration <- glue::glue("int N_dyad;  // number of dyads\n\n{distribution_data_declaration}")
 
         # param declaration
@@ -76,7 +85,7 @@ generate_STb_model_TADA <- function(STb_data,
                         for (network in 1:N_networks){{
                           for (edge_idx in 1:N_dyad) {{
                                 real w = inv_logit(edge_logit[network, edge_idx]);
-                                A[network, from_ID[edge_idx], to_ID[edge_idx]] = w;
+                                A[network, focal_ID[edge_idx], other_ID[edge_idx]] = w;
                           }}
                         }}")
             } else {
@@ -84,8 +93,8 @@ generate_STb_model_TADA <- function(STb_data,
                         for (network in 1:N_networks){{
                        for (edge_idx in 1:N_dyad) {{
                                 real w = inv_logit(edge_logit[network, edge_idx]);
-                                A[network, from_ID[edge_idx], to_ID[edge_idx]] = w;
-                                A[network, to_ID[edge_idx], from_ID[edge_idx]] = w;
+                                A[network, focal_ID[edge_idx], other_ID[edge_idx]] = w;
+                                A[network, other_ID[edge_idx], focal_ID[edge_idx]] = w;
                        }}
                         }}")
             }
@@ -115,9 +124,8 @@ generate_STb_model_TADA <- function(STb_data,
 
     # check if user wants to fit f parameter w complex contagion
     if (transmission_func == "freqdep_f") {
-        f_param <- "real log_f_mean;"
+        f_param <- if (separate_s) "vector[N_networks] log_f_mean;" else "real log_f_mean;"
         f_prior <- paste0("log_f_mean ~ ", prior_f, ";")
-        if (is.element("f", veff_ID)) f_statement <- "f[id]" else f_statement <- "f"
     } else {
         f_param <- ""
         f_prior <- ""
@@ -125,9 +133,8 @@ generate_STb_model_TADA <- function(STb_data,
 
     # check if user wants to fit k parameter w complex contagion
     if (transmission_func == "freqdep_k") {
-        k_param <- "real k_raw;"
+        k_param <- if (separate_s) "vector[N_networks] k_raw;" else "real k_raw;"
         k_prior <- paste0("k_raw ~ ", prior_k, ";")
-        if (is.element("k", veff_ID)) k_statement <- "k_shape[id]" else k_statement <- "k_shape"
     } else {
         k_param <- ""
         k_prior <- ""
@@ -137,14 +144,14 @@ generate_STb_model_TADA <- function(STb_data,
     if (intrinsic_rate == "weibull") {
         gamma_param <- "real log_gamma;"
         gamma_prior <- paste0("log_gamma ~ ", prior_gamma, ";")
-        if (is.element("gamma", veff_ID)) gamma_term <- "gamma[id]" else gamma_term <- "gamma"
+        if (is.element("gamma", veff_params)) gamma_term <- paste0("gamma[", veff_idx, "]") else gamma_term <- "gamma"
     } else {
         gamma_param <- ""
         gamma_prior <- ""
     }
 
 
-    # Declare network variables and weight parameter if multi-network (only for social model)
+    # Declare network variables
     if (model_type == "full") {
         if (!is_distribution) {
             network_declaration <- "array[N_networks, K, T_max] matrix[P, P] A;  // network matrices"
@@ -156,118 +163,345 @@ generate_STb_model_TADA <- function(STb_data,
             transmission_func = transmission_func,
             is_distribution = is_distribution,
             num_networks = num_networks,
-            separate_s = separate_s,
-            veff_ID = veff_ID,
+            veff_params = veff_params,
+            veff_type = veff_type,
+            id_var = "id",
+            veff_idx = veff_idx,
             high_res = F
         )
-
-        # If shared s (i.e., use w[] weights), declare w
-        # if (!separate_s & num_networks>1) {
-        #     w_param <- paste0("simplex[", num_networks, "] w; // Weights for networks")
-        #     w_prior <- paste0("w ~ dirichlet(rep_vector(0.5, ", num_networks, "));")
-        # } else {
-        #     w_param <- ""
-        #     w_prior <- ""
-        # }
     } else {
         network_term <- ""
     }
 
+    veff_is_id_trial <- setequal(veff_type, c("id", "trial"))
+
+    veff_templates <- list(
+        default = list(
+            id    = "v_id[,{count}]",
+            trial = "v_trial[,{count}]"
+        ),
+        indexed = list(
+            id    = "v_id[id,{count}]",
+            trial = "v_trial[trial,{count}]"
+        ),
+        multinetwork_default = list(
+            id    = "v_id[,n]",
+            trial = "v_trial[,n]"
+        ),
+        multinetwork_indexed = list(
+            id    = "v_id[id,n]",
+            trial = "v_trial[trial,n]"
+        ),
+        multinetwork_fk = list(
+            id    = "v_id[,n+{count}-1]",
+            trial = "v_trial[trial,n+{count}-1]"
+        )
+    )
+
+    if (veff_is_id_trial) {
+        v_term <- paste(veff_templates$default$id, veff_templates$indexed$trial, sep = " + ")
+        v_term_multinetwork <- paste(veff_templates$multinetwork_default$id, veff_templates$multinetwork_indexed$trial, sep = " + ")
+        v_term_multinetwork_fk <- paste(veff_templates$multinetwork_fk$id, veff_templates$multinetwork_fk$trial, sep = " + ")
+    } else {
+        v_term <- paste(veff_templates$default[[veff_type]])
+        v_term_multinetwork <- paste(veff_templates$multinetwork_default[[veff_type]])
+        v_term_multinetwork_fk <- paste(veff_templates$multinetwork_fk[[veff_type]])
+    }
 
     # deal with varying effects in transformed parameters
-    N_veff <- length(veff_ID)
-    # start w empty list
-    transformed_params <- c()
-    gq_transformed_params <- c()
-
-    # if user didn't specify veff_ID for baseline
-    if (!is.element("lambda_0", veff_ID)) {
-        transformed_params <- append(transformed_params, "real<lower=0> lambda_0 = exp(log_lambda_0_mean);")
-    }
-    # if user didn't specify veff_ID for s
-    if (!is.element("s", veff_ID) & model_type == "full") {
-        if (separate_s) {
-            transformed_params <- append(transformed_params, "vector<lower=0>[N_networks] s_prime = exp(log_s_prime_mean);")
-            gq_transformed_params <- append(gq_transformed_params, "vector<lower=0>[N_networks] s = s_prime ./ lambda_0;")
-        } else {
-            # static scalar s
-            transformed_params <- append(transformed_params, "real<lower=0> s_prime = exp(log_s_prime_mean);")
-            if (!is.element("lambda_0", veff_ID)) {
-                gq_transformed_params <- append(gq_transformed_params, "real<lower=0> s = s_prime/lambda_0;")
-            } else {
-                gq_transformed_params <- append(gq_transformed_params, "vector<lower=0>[P] s = s_prime/lambda_0;")
-            }
-        }
-    }
-    # if user didn't specify veff_ID for f
-    if (!is.element("f", veff_ID) & model_type == "full" & transmission_func == "freqdep_f") {
-        transformed_params <- append(transformed_params, "real<lower=0> f = exp(log_f_mean);")
-    }
-    # if user didn't specify veff_ID for k
-    if (!is.element("k", veff_ID) & model_type == "full" & transmission_func == "freqdep_k") {
-        transformed_params <- append(transformed_params, "real<lower=-1, upper=1> k_shape = 2 / (1 + exp(-k_raw)) - 1;")
-    }
-
-    if (!is.element("gamma", veff_ID) & intrinsic_rate == "weibull") {
-        transformed_params <- append(transformed_params, "real<lower=0> gamma = exp(log_gamma);")
-    }
+    N_veff <- length(veff_params)
 
     count <- 1
 
-    if (N_veff > 0) {
-        if ("s" %in% veff_ID & model_type == "full") {
-            # this is still a bit weird, adding single varying effect for all networks..
-            if (separate_s) {
-                # s[n, id] as exp(log_s_prime_mean[n, id] + v_ID[,i])
-                transformed_params <- append(transformed_params, glue::glue(
-                    "matrix<lower=0>[N_networks, P] s_prime;
-                for (n in 1:N_networks) {{
-                  for (id in 1:P) {{
-                    s_prime[n, id] = exp(log_s_prime_mean[n] + v_ID[id, n]);
-                  }}
-                }}"
-                ))
-                gq_transformed_params <- append(gq_transformed_params, glue::glue(
-                    "matrix<lower=0>[N_networks, P] s_id;
-                    for (n in 1:N_networks) {{
-                      for (id in 1:P) {{
-                        s_id[n, id] = s_prime[n, id] / lambda_0[id];
-                      }}
-                    }}"
-                ))
-                gq_transformed_params <- append(gq_transformed_params, "vector[N_networks] s_mean = exp(log_s_prime_mean) / exp(log_lambda_0_mean);")
-                count <- count + num_networks
-            } else {
-                # s[id] = exp(log_s_prime_mean + v_ID[,i])
-                transformed_params <- append(transformed_params, paste0("vector<lower=0>[P] s_prime = exp(log_s_prime_mean + v_ID[,", count, "]);"))
-                gq_transformed_params <- append(gq_transformed_params, paste0("vector<lower=0>[P] s_id = s_prime ./ lambda_0;"))
-                gq_transformed_params <- append(gq_transformed_params, paste0("real sprime_mean = exp(log_s_prime_mean);"))
-                gq_transformed_params <- append(gq_transformed_params, paste0("real<lower=0> s_mean = (exp(log_s_prime_mean)) / (exp(log_lambda_0_mean));"))
-                count <- count + 1
-            }
+    # SOCIAL TRANSMISSION RATE (S)
+    parameter_template_s <- list(
+        # default is if there are no veff, no multinetwork
+        veff_0 = list(
+            single_network = list(
+                transformed_params_block = list(
+                    decl = "real s_prime;",
+                    calc = "s_prime = exp(log_s_prime_mean);"
+                ),
+                gq_block = if (!is.element("lambda_0", veff_params)) "real<lower=0> s = s_prime/lambda_0;" else "real<lower=0> s = s_prime/exp(log_lambda_0_mean);"
+            ),
+            multi_network = list(
+                transformed_params_block = list(
+                    decl = "vector<lower=0>[N_networks] s_prime;",
+                    calc = "s_prime = exp(log_s_prime_mean);"
+                ),
+                gq_block = if (!is.element("lambda_0", veff_params)) "vector<lower=0>[N_networks] s = s_prime ./ lambda_0;" else "vector<lower=0>[N_networks] s = s_prime ./ exp(log_lambda_0_mean);"
+            )
+        ),
+        veff_1 = list(
+            single_network = list(
+                transformed_params_block = list(
+                    decl = "vector<lower=0>[{veff_decl[[veff_type]]}] s_prime;",
+                    calc = "s_prime = exp(log_s_prime_mean + {v_term});"
+                ),
+                gq_block = "real<lower=0> s_mean = exp(log_s_prime_mean) / exp(log_lambda_0_mean);"
+            ),
+            multi_network = list(
+                transformed_params_block = list(
+                    decl = "array[N_networks] vector<lower=0>[{veff_decl[[veff_type]]}] s_prime;",
+                    calc = "for (n in 1:N_networks) s_prime[n] = exp(log_s_prime_mean[n] + {v_term_multinetwork});"
+                ),
+                gq_block = "vector[N_networks] s_mean = exp(log_s_prime_mean) / exp(log_lambda_0_mean);"
+            )
+        ),
+        veff_2 = list(
+            single_network = list(
+                transformed_params_block = list(
+                    decl = "array[K] vector<lower=0>[P] s_prime;",
+                    calc = "for (trial in 1:K) s_prime[trial] = exp(log_s_prime_mean + {v_term});"
+                ),
+                gq_block = "real<lower=0> s_mean = exp(log_s_prime_mean) / exp(log_lambda_0_mean);"
+            ),
+            multi_network = list(
+                transformed_params_block = list(
+                    decl = "array[N_networks, K] vector<lower=0>[P] s_prime;",
+                    calc = "for (n in 1:N_networks) for (trial in 1:K) s_prime[n, trial] = exp(log_s_prime_mean[n] + {v_term_multinetwork});"
+                ),
+                gq_block = "vector[N_networks] s_mean = exp(log_s_prime_mean) / exp(log_lambda_0_mean);"
+            )
+        )
+    )
+
+    veff_case <- function(parameter, veff_params, veff_type) {
+        is_veff <- parameter %in% veff_params
+        both_it <- setequal(veff_type, c("id", "trial"))
+        if (!is_veff) {
+            return("veff_0")
         }
-        for (parameter in veff_ID) {
-            if (parameter == "s") {
-                next
-            } else if (parameter == "lambda_0") {
-                transformed_params <- append(transformed_params, paste0("vector<lower=0>[P] lambda_0 = exp(log_lambda_0_mean + v_ID[,", count, "]);"))
-                gq_transformed_params <- append(gq_transformed_params, paste0("real lambda_0_mean = exp(log_lambda_0_mean);"))
-                count <- count + 1
-            } else if (parameter == "f" & model_type == "full") {
-                transformed_params <- append(transformed_params, paste0("vector<lower=0>[P] f = exp(log_f_mean + v_ID[,", count, "]);"))
-                transformed_params <- append(transformed_params, paste0("real<lower=0> f_mean = exp(log_f_mean);"))
-                count <- count + 1
-            } else if (parameter == "k" & model_type == "full") {
-                transformed_params <- append(transformed_params, paste0("vector<lower=0>[P] k_shape = 2 / (1 + exp(-k_raw+ v_ID[,", count, "])) - 1;"))
-                transformed_params <- append(transformed_params, paste0("real<lower=-1, upper=1> k_shape_mean = 2 / (1 + exp(-k_raw)) - 1;"))
-                count <- count + 1
-            } else if (parameter == "gamma") {
-                transformed_params <- append(transformed_params, paste0("vector<lower=0>[P] gamma = exp(log_gamma + v_ID[,", count, "]);"))
-                transformed_params <- append(transformed_params, paste0("real<lower=0> mean_gamma = exp(log_gamma);"))
-                count <- count + 1
-            }
+        if (both_it) {
+            return("veff_2")
         }
+        return("veff_1")
     }
+
+    if (model_type == "full") {
+        veff_key <- veff_case("s", veff_params, veff_type)
+        strings <- parameter_template_s[[veff_key]][[network_key]]
+        s_decl <- glue::glue(strings$transformed_params_block$decl)
+        tmp <- glue::glue(strings$transformed_params_block$calc, .envir = environment())
+        s_calc <- glue::glue(tmp, .envir = environment())
+        s_gq <- glue::glue(strings$gq_block)
+        if (veff_key != "veff_0" && !separate_s) count <- count + 1 else if (veff_key != "veff_0" && separate_s) count <- count + num_networks
+    } else {
+        s_decl <- s_calc <- s_gq <- ""
+    }
+
+
+    # INTRINSIC RATE (LAMBDA_0)
+    parameter_template_lambda_0 <- list(
+        # default is if there are no veff, no multinetwork
+        veff_0 = list(
+            single_network = list(
+                transformed_params_block = list(
+                    decl = "real<lower=0> lambda_0;",
+                    calc = "lambda_0 = exp(log_lambda_0_mean);"
+                ),
+                gq_block = ""
+            )
+        ),
+        veff_1 = list(
+            single_network = list(
+                transformed_params_block = list(
+                    decl = "vector<lower=0>[{veff_decl[[veff_type]]}] lambda_0;",
+                    calc = "lambda_0 = exp(log_lambda_0_mean + {v_term});"
+                ),
+                gq_block = "real<lower=0> lambda_0_mean = exp(log_lambda_0_mean);"
+            )
+        ),
+        veff_2 = list(
+            single_network = list(
+                transformed_params_block = list(
+                    decl = "array[K] vector<lower=0>[P] lambda_0;",
+                    calc = "for (trial in 1:K) lambda_0[trial] = exp(log_lambda_0_mean + {v_term});"
+                ),
+                gq_block = "real<lower=0> lambda_0_mean = exp(log_lambda_0_mean);"
+            )
+        )
+    )
+
+    veff_key <- veff_case("lambda_0", veff_params, veff_type)
+    strings <- parameter_template_lambda_0[[veff_key]]$single_network
+    lambda_0_decl <- glue::glue(strings$transformed_params_block$decl)
+    tmp <- glue::glue(strings$transformed_params_block$calc, .envir = environment())
+    lambda_0_calc <- glue::glue(tmp, .envir = environment())
+    lambda_0_gq <- glue::glue(strings$gq_block)
+    if (veff_key != "veff_0") count <- count + 1
+
+
+    parameter_template_f <- list(
+        # default is if there are no veff, no multinetwork
+        veff_0 = list(
+            single_network = list(
+                transformed_params_block = list(
+                    decl = "real<lower=0> f;",
+                    calc = "f = exp(log_f_mean);"
+                ),
+                gq_block = ""
+            ),
+            multi_network = list(
+                transformed_params_block = list(
+                    decl = "vector<lower=0>[N_networks] f;",
+                    calc = "f = exp(log_f_mean);"
+                ),
+                gq_block = ""
+            )
+        ),
+        veff_1 = list(
+            single_network = list(
+                transformed_params_block = list(
+                    decl = "vector<lower=0>[{veff_decl[[veff_type]]}] f;",
+                    calc = "f = exp(log_f_mean + {v_term});"
+                ),
+                gq_block = "real<lower=0> f_mean = exp(log_f_mean);"
+            ),
+            multi_network = list(
+                transformed_params_block = list(
+                    decl = "array[N_networks] vector<lower=0>[{veff_decl[[veff_type]]}] f;",
+                    calc = "for (n in 1:N_networks) f[n] = exp(log_f_mean + {v_term_multinetwork_fk});"
+                ),
+                gq_block = "vector<lower=0>[N_networks] f_mean = exp(log_f_mean);"
+            )
+        ),
+        veff_2 = list(
+            single_network = list(
+                transformed_params_block = list(
+                    decl = "array[K] vector<lower=0>[P] f;",
+                    calc = "for (trial in 1:K) f[trial] = exp(log_f_mean + {v_term});"
+                ),
+                gq_block = "real<lower=0> f_mean = exp(log_f_mean);"
+            ),
+            multi_network = list(
+                transformed_params_block = list(
+                    decl = "array[N_networks, K] vector<lower=0>[P] f;",
+                    calc = "for (n in 1:N_networks) for (trial in 1:K) f[n, trial] = exp(log_f_mean + {v_term_multinetwork_fk});"
+                ),
+                gq_block = "vector<lower=0>[N_networks] f_mean = exp(log_f_mean);"
+            )
+        )
+    )
+
+    if (model_type == "full" && transmission_func == "freqdep_f") {
+        veff_key <- veff_case("f", veff_params, veff_type)
+        strings <- parameter_template_f[[veff_key]][[network_key]]
+        f_decl <- glue::glue(strings$transformed_params_block$decl)
+        tmp <- glue::glue(strings$transformed_params_block$calc, .envir = environment())
+        f_calc <- glue::glue(tmp, .envir = environment())
+        f_gq <- glue::glue(strings$gq_block)
+        if (veff_key != "veff_0" && !separate_s) count <- count + 1 else if (veff_key != "veff_0" && separate_s) count <- count + num_networks
+    } else {
+        f_decl <- f_calc <- f_gq <- ""
+    }
+
+    parameter_template_k <- list(
+        # default is if there are no veff, no multinetwork
+        veff_0 = list(
+            single_network = list(
+                transformed_params_block = list(
+                    decl = "real<lower=-1, upper=1> k_shape;",
+                    calc = "k_shape = 2 / (1 + exp(-k_raw)) - 1;"
+                ),
+                gq_block = ""
+            ),
+            multi_network = list(
+                transformed_params_block = list(
+                    decl = "vector<lower=0>[N_networks] k_shape;",
+                    calc = "k_shape = 2 / (1 + exp(-k_raw)) - 1;"
+                ),
+                gq_block = ""
+            )
+        ),
+        veff_1 = list(
+            single_network = list(
+                transformed_params_block = list(
+                    decl = "vector<lower=0>[{veff_decl[[veff_type]]}] k_shape;",
+                    calc = "k_shape = 2 / (1 + exp(-k_raw + {v_term})) - 1;"
+                ),
+                gq_block = "real<lower=-1, upper=1> k_shape_mean = 2 / (1 + exp(-k_raw)) - 1;"
+            ),
+            multi_network = list(
+                transformed_params_block = list(
+                    decl = "array[N_networks] vector<lower=0>[{veff_decl[[veff_type]]}] k_shape;",
+                    calc = "for (n in 1:N_networks) k_shape[n] = 2 / (1 + exp(-k_raw + {v_term_multinetwork_fk})) - 1;"
+                ),
+                gq_block = "vector<lower=0>[N_networks] k_shape_mean = 2 / (1 + exp(-k_raw)) - 1;"
+            )
+        ),
+        veff_2 = list(
+            single_network = list(
+                transformed_params_block = list(
+                    decl = "array[K] vector<lower=0>[P] k_shape;",
+                    calc = "for (trial in 1:K) k_shape[trial] = 2 / (1 + exp(-k_raw + {v_term})) - 1;"
+                ),
+                gq_block = "real<lower=0> k_shape_mean = 2 / (1 + exp(-k_raw)) - 1;"
+            ),
+            multi_network = list(
+                transformed_params_block = list(
+                    decl = "array[N_networks, K] vector<lower=0>[P] k_shape;",
+                    calc = "for (n in 1:N_networks) for (trial in 1:K) k_shape[n, trial] = 2 / (1 + exp(-k_raw + {v_term_multinetwork_fk})) - 1;"
+                ),
+                gq_block = "vector<lower=0>[N_networks] k_shape_mean = 2 / (1 + exp(-k_raw)) - 1;"
+            )
+        )
+    )
+
+    if (model_type == "full" && transmission_func == "freqdep_k") {
+        veff_key <- veff_case("k", veff_params, veff_type)
+        strings <- parameter_template_k[[veff_key]][[network_key]]
+        k_decl <- glue::glue(strings$transformed_params_block$decl)
+        tmp <- glue::glue(strings$transformed_params_block$calc, .envir = environment())
+        k_calc <- glue::glue(tmp, .envir = environment())
+        k_gq <- glue::glue(strings$gq_block)
+        if (veff_key != "veff_0" && !separate_s) count <- count + 1 else if (veff_key != "veff_0" && separate_s) count <- count + num_networks
+    } else {
+        k_decl <- k_calc <- k_gq <- ""
+    }
+
+    parameter_template_gamma <- list(
+        veff_0 = list(
+            single_network = list(
+                transformed_params_block = list(
+                    decl = "real<lower=0> gamma;",
+                    calc = "gamma = exp(log_gamma);"
+                ),
+                gq_block = ""
+            )
+        ),
+        veff_1 = list(
+            single_network = list(
+                transformed_params_block = list(
+                    decl = "vector<lower=0>[{veff_decl[[veff_type]]}] gamma;",
+                    calc = "gamma = exp(log_gamma + {v_term});"
+                ),
+                gq_block = "real<lower=0> gamma_mean = exp(log_gamma);"
+            )
+        ),
+        veff_2 = list(
+            single_network = list(
+                transformed_params_block = list(
+                    decl = "array[K] vector<lower=0>[P] gamma;",
+                    calc = "for (trial in 1:K) gamma[trial] = exp(log_gamma + {v_term});"
+                ),
+                gq_block = "real<lower=0> gamma_mean = exp(log_gamma);"
+            )
+        )
+    )
+
+    if (intrinsic_rate == "weibull") {
+        veff_key <- veff_case("gamma", veff_params, veff_type)
+        strings <- parameter_template_gamma[[veff_key]]$single_network
+        gamma_decl <- glue::glue(strings$transformed_params_block$decl)
+        tmp <- glue::glue(strings$transformed_params_block$calc, .envir = environment())
+        gamma_calc <- glue::glue(tmp, .envir = environment())
+        gamma_gq <- glue::glue(strings$gq_block)
+        if (veff_key != "veff_0") count <- count + 1
+    } else {
+        gamma_decl <- gamma_calc <- gamma_gq <- ""
+    }
+
 
     #### Process ILVs ####
     ILVi_vars <- STb_data$ILVi_names[!STb_data$ILVi_names %in% "ILVabsent"]
@@ -313,39 +547,65 @@ generate_STb_model_TADA <- function(STb_data,
     }
 
     # Handle asocial ILV (ILVi)
-    ilvi_result <- process_ILVs(ILVi_vars, ILVi_vars_clean, ilv_datatypes, ilv_n_levels, ilv_timevarying, veff_ID, "i", STb_data, count, prior_beta)
+    ilvi_result <- process_ILVs(ILVi_vars, ILVi_vars_clean, ilv_datatypes, ilv_n_levels, ilv_timevarying, veff_params, veff_type, "i", STb_data, count, prior_beta)
     ILVi_param <- ilvi_result$param
     ILVi_prior <- ilvi_result$prior
     ILVi_variable_effects <- ilvi_result$term
-    transformed_params <- append(transformed_params, ilvi_result$transformed)
     count <- ilvi_result$count
 
 
     # Handle social ILV (ILVs)
-    ilvs_result <- process_ILVs(ILVs_vars, ILVs_vars_clean, ilv_datatypes, ilv_n_levels, ilv_timevarying, veff_ID, "s", STb_data, count, prior_beta)
+    ilvs_result <- process_ILVs(ILVs_vars, ILVs_vars_clean, ilv_datatypes, ilv_n_levels, ilv_timevarying, veff_params, veff_type, "s", STb_data, count, prior_beta)
     ILVs_param <- ilvs_result$param
     ILVs_prior <- ilvs_result$prior
     ILVs_variable_effects <- ilvs_result$term
-    transformed_params <- append(transformed_params, ilvs_result$transformed)
     count <- ilvs_result$count
 
-
     # Handle multiplicative ILV
-    ilvm_result <- process_ILVs(ILVm_vars, ILVm_vars_clean, ilv_datatypes, ilv_n_levels, ilv_timevarying, veff_ID, "m", STb_data, count, prior_beta)
+    ilvm_result <- process_ILVs(ILVm_vars, ILVm_vars_clean, ilv_datatypes, ilv_n_levels, ilv_timevarying, veff_params, veff_type, "m", STb_data, count, prior_beta)
     ILVm_param <- ilvm_result$param
     ILVm_prior <- ilvm_result$prior
     ILVm_variable_effects <- ilvm_result$term
-    transformed_params <- append(transformed_params, ilvm_result$transformed)
     count <- ilvm_result$count
 
+    # PUT TOGETHER TRANSFORMED PARAMS and GQ block
+    transformed_params <- c(
+        s_decl, lambda_0_decl, f_decl, k_decl, gamma_decl,
+        ilvi_result$transformed_decl,
+        ilvs_result$transformed_decl,
+        ilvm_result$transformed_decl
+    )
+
+    # append calculations
+    transformed_params <- c(
+        transformed_params, s_calc, lambda_0_calc, f_calc,
+        k_calc, gamma_calc, ilvi_result$transformed_calc,
+        ilvs_result$transformed_calc,
+        ilvm_result$transformed_calc
+    )
+
+    # CALCULATIONS IN GQ
+    gq_transformed_params <- c(s_gq, lambda_0_gq, f_gq, k_gq, gamma_gq)
+
     # collapse lists into multiline statements
-    transformed_params_declaration <- paste0(transformed_params, collapse = "\n")
+    transformed_params_declaration <- optimize_transformed_params(transformed_params)
+
     gq_transformed_params_declaration <- paste0(gq_transformed_params, collapse = "\n")
 
-    N_veff_priors <- if (N_veff > 0) glue::glue("
-    to_vector(z_ID) ~ {prior_z_ID};
-    sigma_ID ~ {prior_sigma_ID};
-    Rho_ID ~ {prior_rho_ID};") else ""
+    id_veff_priors <- if (N_veff > 0 && is.element("id", veff_type)) glue::glue("
+    to_vector(z_id) ~ {prior_z_veff};
+    sigma_id ~ {prior_sigma_veff};
+    rho_id ~ {prior_rho_veff};") else ""
+
+    trial_veff_priors <- if (N_veff > 0 && is.element("trial", veff_type)) glue::glue("
+    to_vector(z_trial) ~ {prior_z_veff};
+    sigma_trial ~ {prior_sigma_veff};
+    rho_trial ~ {prior_rho_veff};") else ""
+
+    veff_priors <- glue::glue_collapse(
+        c(id_veff_priors, trial_veff_priors),
+        sep = "\n"
+    )
 
     functions_block <- if (transmission_func == "freqdep_k") glue::glue("
 functions {{
@@ -381,6 +641,30 @@ data {{
 }}
 ")
     # Parameters block
+    id_veff_block <- if (N_veff > 0 && is.element("id", veff_type)) {
+        glue::glue("
+    matrix[N_veff, {veff_decl$id}] z_id;
+    vector<lower=0, upper=3>[N_veff] sigma_id;
+    cholesky_factor_corr[N_veff] rho_id;
+  ")
+    } else {
+        ""
+    }
+
+    trial_veff_block <- if (N_veff > 0 && is.element("trial", veff_type)) {
+        glue::glue("
+    matrix[N_veff, {veff_decl$trial}] z_trial;
+    vector<lower=0, upper=3>[N_veff] sigma_trial;
+    cholesky_factor_corr[N_veff] rho_trial;
+  ")
+    } else {
+        ""
+    }
+
+    veff_block <- glue::glue_collapse(
+        c(id_veff_block, trial_veff_block),
+        sep = "\n"
+    )
     parameters_block <- glue::glue("
 parameters {{
     {distribution_param_declaration}
@@ -392,21 +676,31 @@ parameters {{
     {ILVi_param}
     {if (model_type=='full') {ILVs_param} else ''}
     {if (model_type=='full') {ILVm_param} else ''}
-    {if (N_veff > 0) '
-    matrix[N_veff,P] z_ID;
-    vector<lower=0, upper=3>[N_veff] sigma_ID;
-    cholesky_factor_corr[N_veff] Rho_ID;
-    ' else ''}
+    {veff_block}
 }}
 ")
 
     # Transformed parameters block
+    id_veff_transformed_block <- if (N_veff > 0 && is.element("id", veff_type)) {
+        glue::glue("matrix[{veff_decl$id},N_veff] v_id;
+    v_id = (diag_pre_multiply(sigma_id, rho_id) * z_id)';")
+    } else {
+        ""
+    }
+    trial_veff_transformed_block <- if (N_veff > 0 && is.element("trial", veff_type)) {
+        glue::glue("matrix[{veff_decl$trial},N_veff] v_trial;
+    v_trial = (diag_pre_multiply(sigma_trial, rho_trial) * z_trial)';")
+    } else {
+        ""
+    }
+    veff_transformed_block <- glue::glue_collapse(
+        c(id_veff_transformed_block, trial_veff_transformed_block),
+        sep = "\n"
+    )
+
     transformed_parameters_block <- glue::glue("
 transformed parameters {{
-   {if (N_veff > 0) '
-    matrix[P,N_veff] v_ID;
-    v_ID = (diag_pre_multiply(sigma_ID, Rho_ID) * z_ID)\\';
-   ' else ''}
+   {veff_transformed_block}
    {transformed_params_declaration}
    {distribution_transformed_declaration}
 }}
@@ -414,7 +708,7 @@ transformed parameters {{
     # create string inputs cuz recursion don't work 2 levels down in glue
     gamma_statement <- if (intrinsic_rate == "weibull") glue::glue("* pow(elapsed_time, {gamma_term} - 1)") else ""
     eA_gamma_statement <- if (intrinsic_rate == "weibull") glue::glue("* pow(global_time, {gamma_term} - 1)") else ""
-
+    lambda_var <- if (is.element("lambda_0", veff_params)) glue::glue("lambda_0[{veff_idx}]") else "lambda_0"
 
     if (model_type == "full") {
         psoc_code <- if (model_type == "full") {
@@ -422,7 +716,8 @@ transformed parameters {{
                 transmission_func = transmission_func,
                 is_distribution = is_distribution,
                 separate_s = separate_s,
-                veff_ID = veff_ID,
+                veff_params = veff_params,
+                veff_idx = veff_idx,
                 num_networks = num_networks,
                 ILVs_variable_effects = ILVs_variable_effects,
                 weibull_term = gamma_statement,
@@ -434,12 +729,14 @@ transformed parameters {{
             "real soc_term = net_effect{ILVs_variable_effects};"
         )
 
+
+
         lambda_statement <- glue::glue(
-            "real lambda = {ILVm_variable_effects} ({if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * ind_term + soc_term) * D[trial, time_step] {gamma_statement};"
+            "real lambda = {ILVm_variable_effects} ({lambda_var} * ind_term + soc_term) * D[trial, time_step] {gamma_statement};"
         )
 
         lambda_statement_estAcq <- glue::glue(
-            "real lambda = {ILVm_variable_effects} ({if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * ind_term + soc_term) {eA_gamma_statement};"
+            "real lambda = {ILVm_variable_effects} ({lambda_var} * ind_term + soc_term) {eA_gamma_statement};"
         )
 
         if (dTADA) {
@@ -453,20 +750,20 @@ transformed parameters {{
             )
         } else {
             target_increment_statement <- glue::glue(
-                "target += log({ILVm_variable_effects} ({if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * ind_term + soc_term){gamma_statement});"
+                "target += log({ILVm_variable_effects} ({lambda_var} * ind_term + soc_term){gamma_statement});"
             )
 
             log_lik_statement <- glue::glue(
-                "log_lik_matrix[trial, n] = log({ILVm_variable_effects} ({if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * ind_term + soc_term){gamma_statement}) - cum_hazard;"
+                "log_lik_matrix[trial, n] = log({ILVm_variable_effects} ({lambda_var} * ind_term + soc_term){gamma_statement}) - cum_hazard;"
             )
         }
     } else if (model_type == "asocial") {
         psoc_code <- ""
         social_info_statement <- ""
-        lambda_statement <- glue::glue("real lambda =  {if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * ind_term * D[trial, time_step]{gamma_statement};")
-        lambda_statement_estAcq <- glue::glue("real lambda =  {if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * ind_term{eA_gamma_statement};")
-        target_increment_statement <- glue::glue("target += log( {if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * ind_term{gamma_statement});")
-        log_lik_statement <- glue::glue("log_lik_matrix[trial, n] = log({if (is.element('lambda_0', veff_ID)) 'lambda_0[id]' else 'lambda_0'} * ind_term{gamma_statement}) - cum_hazard;")
+        lambda_statement <- glue::glue("real lambda =  {lambda_var} * ind_term * D[trial, time_step]{gamma_statement};")
+        lambda_statement_estAcq <- glue::glue("real lambda =  {lambda_var} * ind_term{eA_gamma_statement};")
+        target_increment_statement <- glue::glue("target += log( {lambda_var} * ind_term{gamma_statement});")
+        log_lik_statement <- glue::glue("log_lik_matrix[trial, n] = log({lambda_var} * ind_term{gamma_statement}) - cum_hazard;")
     }
 
     # Model block
@@ -482,7 +779,7 @@ model {{
     {if (model_type=='full') {ILVm_prior} else ''}
     {distribution_model_block}
 
-    {N_veff_priors}
+    {veff_priors}
 
     for (trial in 1:K) {{
 
@@ -557,11 +854,33 @@ model {{
         }}
     }}") else ""
 
+    # Parameters block
+    id_veff_block <- if (N_veff > 0 && is.element("id", veff_type)) {
+        glue::glue("
+    corr_matrix[N_veff] Rho_id;
+    Rho_id = multiply_lower_tri_self_transpose(rho_id);
+  ")
+    } else {
+        ""
+    }
+
+    trial_veff_block <- if (N_veff > 0 && is.element("trial", veff_type)) {
+        glue::glue("
+    corr_matrix[N_veff] Rho_trial;
+    Rho_trial = multiply_lower_tri_self_transpose(rho_trial);
+  ")
+    } else {
+        ""
+    }
+
+    veff_block <- glue::glue_collapse(
+        c(id_veff_block, trial_veff_block),
+        sep = "\n"
+    )
     generated_quantities_block <- glue::glue("
 generated quantities {{
-                                             {gq_transformed_params_declaration}
-    {if (N_veff > 0) 'corr_matrix[N_veff] Rho;
-    Rho = multiply_lower_tri_self_transpose(Rho_ID);' else ''}
+    {gq_transformed_params_declaration}
+    {veff_block}
     matrix[K, Q] log_lik_matrix = rep_matrix(0.0, K, Q);           // LL for each observation
 
     //for %ST
@@ -637,7 +956,8 @@ generated quantities {{
                              {transformed_parameters_block}
                              {model_block}
                              {if (gq==T) {generated_quantities_block} else ''}")
-    stan_model <- gsub("(?m)^[ \\t]*\\n", "", stan_model, perl = TRUE)
-    stan_model <- paste0(stan_model, "\n")
+    stan_model <- format_stancode(
+        gsub("(?m)^[ \\t]*\\n", "", paste0(stan_model, "\n"), perl = TRUE)
+    )
     return(stan_model)
 }

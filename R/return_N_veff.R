@@ -6,8 +6,11 @@
 #'
 #' @return integer of number of varying effects present in model
 return_N_veff <- function(text) {
-    # regex match v_ID[,*]
-    matches <- regmatches(text, gregexpr("v_ID\\[\\s*,\\s*(\\d+)\\]", text, perl = TRUE))
+    # regex match v_id/trial[,*]
+    matches <- c(
+        regmatches(text, gregexpr("v_id\\[\\s*,\\s*(\\d+)\\]", text, perl = TRUE)),
+        regmatches(text, gregexpr("v_trial\\[\\s*,\\s*(\\d+)\\]", text, perl = TRUE))
+    )
 
     # extract values
     numbers <- as.numeric(unlist(regmatches(unlist(matches), gregexpr("\\d+", unlist(matches)))))

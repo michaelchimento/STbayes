@@ -1,6 +1,6 @@
 //stan
- data {
-int<lower=0> K;                // Number of trials
+data {
+    int<lower=0> K;                // Number of trials
     int<lower=0> Q;                // Number of individuals in each trial
     int<lower=1> P;                // Number of unique individuals
     array[K] int<lower=0> N;       // Number of individuals that learned during observation period
@@ -27,11 +27,11 @@ model {
             int time_step = learn_time;
             if (learn_time > 0) {
                 real i_ind = 1.0;
-                real i_lambda = 1.0 * i_ind;
+                real i_lambda =  i_ind;
                 vector[Q] j_rates = rep_vector(0.0, Q);
                 for (j in 1:Q) {
                     real j_ind = 1.0;
-                    real j_lambda = 1.0 * j_ind;
+                    real j_lambda =  j_ind;
                     j_rates[j] += j_lambda * (1-Z[trial][learn_time, j]); //only include those who haven't learned in denom
                 }
                 target += log(i_lambda) - log(sum(j_rates));
@@ -43,20 +43,20 @@ generated quantities {
     matrix[K, Q] log_lik_matrix = rep_matrix(0.0, K, Q);           // LL for each observation
     for (trial in 1:K) {
         for (n in 1:N[trial]) {
-                int id = ind_id[trial, n];
-                int learn_time = t[trial, id];
-                int time_step = learn_time;
-                if (learn_time > 0) {
-                    real i_ind = 1.0;
-                    real i_lambda = 1.0 * i_ind;
-                    vector[Q] j_rates = rep_vector(0.0, Q);
-                    for (j in 1:Q) {
-                        real j_ind = 1.0;
-                        real j_lambda = 1.0 * j_ind;
-                        j_rates[j] += j_lambda * (1-Z[trial][learn_time, j]);
-                    }
-                    log_lik_matrix[trial, n] = log(i_lambda) - log(sum(j_rates));
+            int id = ind_id[trial, n];
+            int learn_time = t[trial, id];
+            int time_step = learn_time;
+            if (learn_time > 0) {
+                real i_ind = 1.0;
+                real i_lambda =  i_ind;
+                vector[Q] j_rates = rep_vector(0.0, Q);
+                for (j in 1:Q) {
+                    real j_ind = 1.0;
+                    real j_lambda =  j_ind;
+                    j_rates[j] += j_lambda * (1-Z[trial][learn_time, j]);
                 }
+                log_lik_matrix[trial, n] = log(i_lambda) - log(sum(j_rates));
+            }
         }
     }
     // Flatten log_lik_matrix into log_lik
@@ -69,4 +69,3 @@ generated quantities {
         }
     }
 }
-

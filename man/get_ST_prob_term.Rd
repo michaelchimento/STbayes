@@ -8,7 +8,8 @@ get_ST_prob_term(
   transmission_func,
   is_distribution = FALSE,
   separate_s = FALSE,
-  veff_ID = c(),
+  veff_params = c(),
+  veff_idx = "id",
   num_networks = 1,
   s_var = "s_prime",
   id_var = "id",
@@ -27,7 +28,9 @@ get_ST_prob_term(
 
 \item{separate_s}{Boolean: Is s estimated separately per network?}
 
-\item{veff_ID}{Character vector: Which params vary by ID}
+\item{veff_params}{Character vector: Which params vary by ID}
+
+\item{veff_idx}{string of how to index veffs}
 
 \item{num_networks}{Integer: Number of networks}
 

@@ -14,7 +14,9 @@ generate_X_matrix(ilv_vector, ilv_name, n_levels)
 \item{n_levels}{number of levels in factor}
 }
 \value{
-matrix of size \link{N,L-1} where L=num levels
+matrix of size \verb{[N,L-1\]} where L=num levels
+
+[N,L-1]: R:N,L-1\%5C
 }
 \description{
 Helper function to create model matrices for categorical ILVs

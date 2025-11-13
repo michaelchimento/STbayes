@@ -6,7 +6,7 @@
 #' @param required_cols vector of col names
 #' @param df_name string for name of df
 #'
-#' @returns nothing, just errors if something wrong
+#' @return nothing, just errors if something wrong
 check_required_cols <- function(df, required_cols, df_name = "dataframe") {
     missing <- setdiff(required_cols, names(df))
     if (length(missing) > 0) {

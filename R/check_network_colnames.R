@@ -4,7 +4,7 @@
 #'
 #' @param networks networks dataframe
 #'
-#' @returns networks dataframe
+#' @return networks dataframe
 check_network_colnames <- function(networks) {
     if (all(c("from", "to") %in% names(networks))) {
         warning("\u26A0\ufe0f Columns `from` and `to` are deprecated. Renaming to `focal` and `other`.")

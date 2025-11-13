@@ -140,8 +140,8 @@ trial:</p>
 <span><span class="op">}</span></span></code></pre></div>
 <p>The function accepts an integer representing the trial number, an
 integer representing the length of the observation period, an igraph
-object defining the social network, and a data-frame containing learning
-parameter values. It first creates a data-frame to hold the results of
+object defining the social network, and a dataframe containing learning
+parameter values. It first creates a dataframe to hold the results of
 when each individual experienced an event. Then it loops through
 time-steps, This is a pre-determined observation time to prevent
 infinite loops, in case you set learning rates to 0. Any individual who
@@ -149,7 +149,7 @@ doesn’t learn within the observation period will be recorded as
 censored. Each time step, we check who is already informed (experienced
 the event), and then who is still a potential learner (hasn’t
 experienced the event). If all individuals have experienced the event,
-the loop breaks and the function returns the data-frame. Otherwise, we
+the loop breaks and the function returns the dataframe. Otherwise, we
 calculate learning rates, transform them into probabilities, and the
 potential learners might experience the event according to Bernoulli
 trials using those probabilities. Finally, we record the times of those
@@ -198,11 +198,11 @@ a larger one that lets us conveniently run many trials:</p>
 <span>    <span class="op">)</span></span>
 <span>    <span class="kw"><a href="https://rdrr.io/r/base/function.html" class="external-link">return</a></span><span class="op">(</span><span class="va">final_results</span><span class="op">)</span></span>
 <span><span class="op">}</span></span></code></pre></div>
-<p>This function creates data-frames to accumulate the results in, and
+<p>This function creates dataframes to accumulate the results in, and
 then for each trial, generates a random-regular network using arguments
 <code>N</code> (pop size) and <code>k</code> (degree). It then runs the
 diffusion trial, accumulates the results, and returns a list of two
-data-frames, one with the event data, and the other with networks. These
+dataframes, one with the event data, and the other with networks. These
 are already formatted for use with STbayes.</p>
 <p>Let’s define our parameters:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
@@ -276,9 +276,9 @@ transmission model over the asocial constrained model:</p>
 <span><span class="co">#&gt; beta_ILV ~ normal(0,1)</span></span>
 <span><span class="co">#&gt; log_f ~ normal(0,1)</span></span>
 <span><span class="co">#&gt; k_raw ~ normal(0,3)</span></span>
-<span><span class="co">#&gt; z_ID ~ normal(0,1)</span></span>
-<span><span class="co">#&gt; sigma_ID ~ normal(0,1)</span></span>
-<span><span class="co">#&gt; rho_ID ~ lkj_corr_cholesky(3)</span></span>
+<span><span class="co">#&gt; z_veff ~ normal(0,1)</span></span>
+<span><span class="co">#&gt; sigma_veff ~ normal(0,1)</span></span>
+<span><span class="co">#&gt; rho_veff ~ lkj_corr_cholesky(3)</span></span>
 <span><span class="co">#&gt; gamma ~ normal(0,1)</span></span>
 <span><span class="va">fit_full</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_STb.html">fit_STb</a></span><span class="op">(</span><span class="va">data_list</span>, <span class="va">model_full</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Detected N_veff = 0</span></span>
@@ -308,9 +308,9 @@ transmission model over the asocial constrained model:</p>
 <span><span class="co">#&gt; beta_ILV ~ normal(0,1)</span></span>
 <span><span class="co">#&gt; log_f ~ normal(0,1)</span></span>
 <span><span class="co">#&gt; k_raw ~ normal(0,3)</span></span>
-<span><span class="co">#&gt; z_ID ~ normal(0,1)</span></span>
-<span><span class="co">#&gt; sigma_ID ~ normal(0,1)</span></span>
-<span><span class="co">#&gt; rho_ID ~ lkj_corr_cholesky(3)</span></span>
+<span><span class="co">#&gt; z_veff ~ normal(0,1)</span></span>
+<span><span class="co">#&gt; sigma_veff ~ normal(0,1)</span></span>
+<span><span class="co">#&gt; rho_veff ~ lkj_corr_cholesky(3)</span></span>
 <span><span class="co">#&gt; gamma ~ normal(0,1)</span></span>
 <span><span class="va">fit_asoc</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_STb.html">fit_STb</a></span><span class="op">(</span><span class="va">data_list</span>, <span class="va">model_asoc</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Detected N_veff = 0</span></span>
@@ -378,7 +378,7 @@ social transmission and re-run the simulations.</p>
 <span><span class="co">#&gt; Trial9completed.</span></span>
 <span><span class="co">#&gt; Trial10completed.</span></span></code></pre></div>
 <p>Now we can import the data into STbayes. Note that we need to include
-ILV_c data-frame, and specify that the continuous ILV should be applied
+ILV_c dataframe, and specify that the continuous ILV should be applied
 as an additive effect to social learning.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">data_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/import_user_STb.html">import_user_STb</a></span><span class="op">(</span></span>
@@ -407,9 +407,9 @@ as an additive effect to social learning.</p>
 <span><span class="co">#&gt; beta_ILV ~ normal(0,1)</span></span>
 <span><span class="co">#&gt; log_f ~ normal(0,1)</span></span>
 <span><span class="co">#&gt; k_raw ~ normal(0,3)</span></span>
-<span><span class="co">#&gt; z_ID ~ normal(0,1)</span></span>
-<span><span class="co">#&gt; sigma_ID ~ normal(0,1)</span></span>
-<span><span class="co">#&gt; rho_ID ~ lkj_corr_cholesky(3)</span></span>
+<span><span class="co">#&gt; z_veff ~ normal(0,1)</span></span>
+<span><span class="co">#&gt; sigma_veff ~ normal(0,1)</span></span>
+<span><span class="co">#&gt; rho_veff ~ lkj_corr_cholesky(3)</span></span>
 <span><span class="co">#&gt; gamma ~ normal(0,1)</span></span>
 <span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_STb.html">fit_STb</a></span><span class="op">(</span><span class="va">data_list</span>, <span class="va">model</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Detected N_veff = 0</span></span>
@@ -428,7 +428,7 @@ as an additive effect to social learning.</p>
 <span><span class="co">#&gt; Chain 1 Iteration: 800 / 1000 [ 80%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 1 Iteration: 900 / 1000 [ 90%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 1 Iteration: 1000 / 1000 [100%]  (Sampling) </span></span>
-<span><span class="co">#&gt; Chain 1 finished in 5.5 seconds.</span></span>
+<span><span class="co">#&gt; Chain 1 finished in 5.9 seconds.</span></span>
 <span><span class="co">#&gt; 🫴 Use STb_save() to save the fit and chain csvs to a single RDS file. Or don't!</span></span>
 <span><span class="fu"><a href="../reference/STb_summary.html">STb_summary</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
 <span><span class="co">#&gt;            Parameter Median   MAD CI_Lower CI_Upper ess_bulk ess_tail  Rhat</span></span>
@@ -442,12 +442,13 @@ as an additive effect to social learning.</p>
 we defined. There will be shrinkage, as the default prior for ILV betas
 is <code>normal(0,1)</code>. This can be adjusted using the priors
 argument of <code><a href="../reference/generate_STb_model.html">generate_STb_model()</a></code>. We suggest not to use a
-very uninformative prior, as this can quickly cause model identification
+very uninformative prior, as this can create model identification
 problems. If you find that you’re unable to recover the parameter value,
 a larger sample size is probably needed. This vignette is just a
 starting point, but you could equally apply the other types of
-variables, or even add varying effects to either rates or ILVs using the
-veff_ID argument in <code><a href="../reference/generate_STb_model.html">generate_STb_model()</a></code>.</p>
+variables, or even add varying effects using the
+<code>veff_params</code> and <code>veff_type</code> argument in
+<code><a href="../reference/generate_STb_model.html">generate_STb_model()</a></code>.</p>
 </div>
   </main>
 </div>

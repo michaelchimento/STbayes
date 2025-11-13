@@ -27,7 +27,7 @@ order_params <- function(p) {
     if (grepl("^s\\[", p)) {
         return(7)
     } # vector s[i]
-    if (grepl("^sigma_ID", p)) {
+    if (grepl("^sigma_veff", p)) {
         return(8)
     }
     if (grepl("^beta_", p)) {

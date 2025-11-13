@@ -5,7 +5,8 @@
 #' @param transmission_func String (e.g. "standard", "freqdep_f", "freqdep_k")
 #' @param is_distribution Boolean: Are edges drawn from posterior?
 #' @param separate_s Boolean: Is s estimated separately per network?
-#' @param veff_ID Character vector: Which params vary by ID
+#' @param veff_params Character vector: Which params vary by ID
+#' @param veff_idx string of how to index veffs
 #' @param num_networks Integer: Number of networks
 #' @param s_var String to use for s variable: e.g. "s_prime"
 #' @param id_var String for id indexes: e.g., "id"
@@ -17,7 +18,7 @@
 #' @param high_res boolean indicating if high_res
 #' @return String of Stan code for GQ block to accumulate psoc and psocn
 get_ST_prob_term <- function(transmission_func, is_distribution = FALSE,
-                             separate_s = FALSE, veff_ID = c(),
+                             separate_s = FALSE, veff_params = c(), veff_idx = "id",
                              num_networks = 1,
                              s_var = "s_prime",
                              id_var = "id", trial_var = "trial", time_var = "time_step",
@@ -27,9 +28,9 @@ get_ST_prob_term <- function(transmission_func, is_distribution = FALSE,
                              high_res = F) {
     # choose s term
     s_term <- if (num_networks > 1 && separate_s) {
-        if ("s" %in% veff_ID) glue::glue("{s_var}[network, {id_var}]") else glue::glue("{s_var}[network]")
+        if ("s" %in% veff_params) glue::glue("{s_var}[network, {veff_idx}]") else glue::glue("{s_var}[network]")
     } else {
-        if ("s" %in% veff_ID) glue::glue("{s_var}[{id_var}]") else glue::glue("{s_var}")
+        if ("s" %in% veff_params) glue::glue("{s_var}[{veff_idx}]") else glue::glue("{s_var}")
     }
 
     full_s_term <- glue::glue("{s_term} * D[{trial_var}, {time_var}] {ILVs_variable_effects} {weibull_term}")
@@ -52,7 +53,15 @@ get_ST_prob_term <- function(transmission_func, is_distribution = FALSE,
     count_ST += 1;
     "),
         "freqdep_f" = {
-            f_term <- if ("f" %in% veff_ID) glue::glue("f[{id_var}]") else "f"
+            f_term <- if ("f" %in% veff_params & num_networks == 1) {
+                glue::glue("f[{veff_idx}]")
+            } else if ("f" %in% veff_params & num_networks > 1) {
+                glue::glue("f[network,{veff_idx}]")
+            } else if (!is.element("f", veff_params) & num_networks > 1) {
+                glue::glue("f[network]")
+            } else {
+                "f"
+            }
             glue::glue("
       for (network in 1:N_networks) {{
           real active = {active_expr};
@@ -64,7 +73,15 @@ get_ST_prob_term <- function(transmission_func, is_distribution = FALSE,
       ")
         },
         "freqdep_k" = {
-            k_term <- if ("k" %in% veff_ID) glue::glue("k_shape[{id_var}]") else "k_shape"
+            k_term <- if ("k" %in% veff_params & num_networks == 1) {
+                glue::glue("k_shape[{veff_idx}]")
+            } else if ("k" %in% veff_params & num_networks > 1) {
+                glue::glue("k_shape[network,{veff_idx}]")
+            } else if (!is.element("k", veff_params) & num_networks > 1) {
+                glue::glue("k_shape[network]")
+            } else {
+                "k_shape"
+            }
             if (!high_res) {
                 glue::glue("
       for (network in 1:N_networks) {{

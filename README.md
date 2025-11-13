@@ -37,7 +37,7 @@ devtools::install_github("michaelchimento/STbayes")
 - [Multi-network models](https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#multi-network-models)
 - [Individual-level variables](https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#individual-level-variables-ilvs)
 - [Transmission weights](https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#transmission-weights)
-- [Varying effects](https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#varying-effects-by-individual)
+- [Varying effects](https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#varying-effects-by-individual-and-trial)
 - [Other model types: OADA and dTADA](https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#other-model-types-oada-and-dtada)
 - [Edge weight uncertainty](https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#edge-weight-uncertainty)
 - [Complex Transmission](https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#complex-transmission)
@@ -57,7 +57,7 @@ devtools::install_github("michaelchimento/STbayes")
  - multi-network comparison (with static or dynamic networks).
  - multiple trials with the same set, subsets, or different sets of individuals.
  - constant and time-varying ILVs for additive and multiplicative transmission models.
- - varying effects by individual for strength of social transmission, baseline hazard rates, and other user defined ILVs.
+ - varying effects by individual, by trial, or by both for any parameter.
  - easy workflow for ELPD (loo-psis, waic) model comparison.
  - propagation of uncertainty from network measures to transmission model
  - modeling of complex transmission and contagion

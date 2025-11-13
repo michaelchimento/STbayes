@@ -67,7 +67,7 @@ diffusion_trial <- function(trial_num, obs_duration, g, parameter_values) {
 }
 ```
 
-The function accepts an integer representing the trial number, an integer representing the length of the observation period, an igraph object defining the social network, and a data-frame containing learning parameter values. It first creates a data-frame to hold the results of when each individual experienced an event. Then it loops through time-steps, This is a pre-determined observation time to prevent infinite loops, in case you set learning rates to 0. Any individual who doesn't learn within the observation period will be recorded as censored. Each time step, we check who is already informed (experienced the event), and then who is still a potential learner (hasn't experienced the event). If all individuals have experienced the event, the loop breaks and the function returns the data-frame. Otherwise, we calculate learning rates, transform them into probabilities, and the potential learners might experience the event according to Bernoulli trials using those probabilities. Finally, we record the times of those events.
+The function accepts an integer representing the trial number, an integer representing the length of the observation period, an igraph object defining the social network, and a dataframe containing learning parameter values. It first creates a dataframe to hold the results of when each individual experienced an event. Then it loops through time-steps, This is a pre-determined observation time to prevent infinite loops, in case you set learning rates to 0. Any individual who doesn't learn within the observation period will be recorded as censored. Each time step, we check who is already informed (experienced the event), and then who is still a potential learner (hasn't experienced the event). If all individuals have experienced the event, the loop breaks and the function returns the dataframe. Otherwise, we calculate learning rates, transform them into probabilities, and the potential learners might experience the event according to Bernoulli trials using those probabilities. Finally, we record the times of those events.
 
 We want to run more than one trial, so we can embed this function in a larger one that lets us conveniently run many trials:
 
@@ -115,7 +115,7 @@ run_sims <- function(num_trials, obs_duration, parameter_values, N, k) {
 }
 ```
 
-This function creates data-frames to accumulate the results in, and then for each trial, generates a random-regular network using arguments `N` (pop size) and `k` (degree). It then runs the diffusion trial, accumulates the results, and returns a list of two data-frames, one with the event data, and the other with networks. These are already formatted for use with STbayes.
+This function creates dataframes to accumulate the results in, and then for each trial, generates a random-regular network using arguments `N` (pop size) and `k` (degree). It then runs the diffusion trial, accumulates the results, and returns a list of two dataframes, one with the event data, and the other with networks. These are already formatted for use with STbayes.
 
 Let's define our parameters:
 
@@ -192,7 +192,7 @@ parameter_values$s = parameter_values$s_prime/parameter_values$lambda_0
 results <- run_sims(num_trials, obs_duration, parameter_values, N, k)
 ```
 
-Now we can import the data into STbayes. Note that we need to include ILV_c data-frame, and specify that the continuous ILV should be applied as an additive effect to social learning.
+Now we can import the data into STbayes. Note that we need to include ILV_c dataframe, and specify that the continuous ILV should be applied as an additive effect to social learning.
 
 ```{r}
 data_list <- import_user_STb(
@@ -207,4 +207,4 @@ fit <- fit_STb(data_list, model)
 STb_summary(fit)
 ```
 
-The estimated beta should be in the neighborhood of the effect that we defined. There will be shrinkage, as the default prior for ILV betas is `normal(0,1)`. This can be adjusted using the priors argument of `generate_STb_model()`. We suggest not to use a very uninformative prior, as this can quickly cause model identification problems. If you find that you're unable to recover the parameter value, a larger sample size is probably needed. This vignette is just a starting point, but you could equally apply the other types of variables, or even add varying effects to either rates or ILVs using the veff_ID argument in `generate_STb_model()`.
+The estimated beta should be in the neighborhood of the effect that we defined. There will be shrinkage, as the default prior for ILV betas is `normal(0,1)`. This can be adjusted using the priors argument of `generate_STb_model()`. We suggest not to use a very uninformative prior, as this can create model identification problems. If you find that you're unable to recover the parameter value, a larger sample size is probably needed. This vignette is just a starting point, but you could equally apply the other types of variables, or even add varying effects using the `veff_params` and `veff_type` argument in `generate_STb_model()`.

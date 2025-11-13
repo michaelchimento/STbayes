@@ -93,9 +93,10 @@ If you want to directly modify the code, go ahead. You can supply the file path 
 Here is a summary of each argument to ```generate_STb_model``` for easy reference:
 
 - ```data_type=c("continuous_time", "discrete_time", "order")``` distinguishes between cases where the times of events are known (TADA type models) or only the order of events is known (OADA type models). If exact times of acquisition are known the user can select ```"continuous_time"```, creating a cTADA model. If a population was regularly (or irregularly) sampled, so the exact time of events are unknown but the rough interval they occurred in is known, the user should select ```"discrete_time"```, which creates a dTADA model.
-- ```veff_ID=c("lambda_0", "s", ...),``` is used to specify which variables should receive varying effects by individual. For example, ```veff_ID=c("lambda_0", "s")``` will create a model that will attempt to fit varying effects for both intrinsic rate and strength of social transmission. It is possible to include other ILVs, if desired. 
-- ```model_type=c("full","asocial")``` specifies whether to create a full model or an asocial model constrained to the intrinsic rate only
-- ```intrinsic_rate=c("constant", "weibull")``` specifies whether or not the user wishes to use a constant intrinsic rate, or a Weibull shaped rate that can increase or decrease over time. This fits an additional parameter $\gamma$, where $\gamma<1$ indicates a decreasing hazard over time, and $\gamma>1$ indicates an increasing hazard over time. $\gamma=1$ indicates a constant hazard.
+- ```veff_params=c("lambda_0", "s", ...)``` is used to specify which variables should receive varying effects. For example, ```veff_ID=c("lambda_0", "s")``` will create a model that will attempt to fit varying effects for both intrinsic rate and strength of social transmission. It is possible to include other ILVs. The default value is none.
+- ```veff_type=c("id", "trial")``` is used to specify whether varying effects should be fit for individuals, trials or both. The default value is ```"id"```.
+- ```model_type=c("full","asocial")``` specifies whether to create a full model or an asocial model constrained to the intrinsic rate only.
+- ```intrinsic_rate=c("constant", "weibull")``` specifies whether or not the user wishes to use a constant intrinsic rate, or a Weibull shaped rate that can increase or decrease over time. This fits an additional parameter $\gamma$, where $\gamma<1$ indicates a decreasing hazard over time, and $\gamma>1$ indicates an increasing hazard over time. $\gamma=1$ indicates a constant hazard. This parameter is only possible to be estimated when fitting TADA-type models, i.e. when ```data_type != "order"```. The default value is ```"constant"```.
 - ```transmission_func=c("standard","freqdep_f", "freqdep_k")``` specifies whether the model uses simple or complex transmission.
 - ```gq``` specifies whether or not a generated quantities block is created in the Stan model. This defaults to true, as the log-likelihood of observations is output using generated quantities and is needed for model comparison.
 - ```est_acqTime``` specifies whether estimated acquisition times are also output by the generated quantities block. These are useful for posterior predictive checks, but this argument defaults to false for efficiency in fitting.
@@ -111,12 +112,12 @@ full_fit <- fit_STb(data_list,
     parallel_chains = 4,
     chains = 4,
     cores = 4,
-    iter = 4000,
+    iter = 2000,
     refresh=1000
 )
 ```
 
-This function calls cmdstanr's $sample(), and you can add any extra valid arguments to pass on here. In this call, I've made sure that we run 4 chains in parallel for 4000 iterations, and only to update us on progress every 1000 iterations. By default, fit_STb() will do iter/2 worth of warmup, and iter/2 worth of sampling. Fitting can take anywhere from seconds to hours depending on your computer and the amount of data. Fitting this dataset _should_ be quick. If it's very slow, you might want to try running this on your friend's computer. I've tried to make things reasonably efficient, but have not parallelized the model block yet.
+This function calls cmdstanr's $sample(), and you can add any extra valid arguments to pass on here. In this call, I've made sure that we run 4 chains in parallel for 4000 iterations, and only to update us on progress every 1000 iterations. By default, fit_STb() will do iter/2 worth of warmup, and iter/2 worth of sampling. Fitting can take anywhere from seconds to hours depending on your computer and the amount of data. Fitting this dataset _should_ be quick, under 10 seconds. If it's very slow, you might want to try running this on a different computer. I've tried to make things reasonably efficient, but have not parallelized the model block.
 
 I strongly recommend using the convenience function below to save the output after fitting. If you only save the fit object to an rda using something like ```save()```, it will not include the data output from chains, making it useless. ```STb_save``` saves these alongside the fit in a single file:
 
@@ -188,7 +189,8 @@ ppc_long <- draws_df %>%
     mutate(
         trial = as.integer(trial),
         ind = as.integer(ind),
-        draw = rep(1:(nrow(draws_df)), each = length(unique(.$trial)) * length(unique(.$ind)))
+        draw = rep(1:(nrow(draws_df)), 
+                   each = length(unique(.$trial)) * length(unique(.$ind)))
     )
 
 # thin sample for plotting
@@ -214,7 +216,9 @@ plot_data_ppc <- bind_rows(
 
 # plot it
 ggplot() +
-    geom_line(data = plot_data_ppc, aes(x = time, y = cum_prop, group = interaction(draw, trial)), alpha = .1) +
+    geom_line(data = plot_data_ppc, 
+              aes(x = time, y = cum_prop, 
+                  group = interaction(draw, trial)), alpha = .1) +
     geom_line(data = plot_data_obs, aes(x = time, y = cum_prop), linewidth = 1) +
     labs(x = "Time", y = "Cumulative proportion informed", color = "Trial") +
     theme_minimal()
@@ -231,7 +235,8 @@ acqdata = extract_acqTime(full_fit, data_list)
 
 ggplot(acqdata, aes(x = observed_time, y = median_time)) +
     geom_segment(
-        aes(x = observed_time, xend = observed_time, y = median_time, yend = observed_time),
+        aes(x = observed_time, xend = observed_time, 
+            y = median_time, yend = observed_time),
         color = "red",
         alpha = 0.3) +
     geom_point(size = 2) +
@@ -253,7 +258,7 @@ asocial_fit = fit_STb(data_list,
                       parallel_chains = 4,
                       chains = 4,
                       cores = 4,
-                      iter = 4000,
+                      iter = 2000,
                       refresh=1000)
 ```
 

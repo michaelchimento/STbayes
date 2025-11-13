@@ -46,13 +46,14 @@
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">get_network_term</span><span class="op">(</span></span>
 <span>  transmission_func <span class="op">=</span> <span class="st">"standard"</span>,</span>
 <span>  is_distribution <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  separate_s <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  num_networks <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  veff_ID <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  veff_params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  s_var <span class="op">=</span> <span class="st">"s_prime"</span>,</span>
 <span>  net_var <span class="op">=</span> <span class="st">"A"</span>,</span>
 <span>  net_index <span class="op">=</span> <span class="st">"network"</span>,</span>
 <span>  id_var <span class="op">=</span> <span class="st">"id"</span>,</span>
+<span>  veff_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  veff_idx <span class="op">=</span> <span class="st">"id"</span>,</span>
 <span>  trial_var <span class="op">=</span> <span class="st">"trial"</span>,</span>
 <span>  time_var <span class="op">=</span> <span class="st">"time_step"</span>,</span>
 <span>  high_res <span class="op">=</span> <span class="cn">F</span></span>
@@ -71,15 +72,11 @@
 <dd><p>did the user supply a posterior distribution for edges</p></dd>
 
 
-<dt id="arg-separate-s">separate_s<a class="anchor" aria-label="anchor" href="#arg-separate-s"></a></dt>
-<dd><p>whether or not s should be constrained to be the same for all networks</p></dd>
-
-
 <dt id="arg-num-networks">num_networks<a class="anchor" aria-label="anchor" href="#arg-num-networks"></a></dt>
 <dd><p>integer of number of networks</p></dd>
 
 
-<dt id="arg-veff-id">veff_ID<a class="anchor" aria-label="anchor" href="#arg-veff-id"></a></dt>
+<dt id="arg-veff-params">veff_params<a class="anchor" aria-label="anchor" href="#arg-veff-params"></a></dt>
 <dd><p>vector of varying effects</p></dd>
 
 
@@ -97,6 +94,14 @@
 
 <dt id="arg-id-var">id_var<a class="anchor" aria-label="anchor" href="#arg-id-var"></a></dt>
 <dd><p>string used to index individuals. "id" for tada, need to use "id" and "j" for oada</p></dd>
+
+
+<dt id="arg-veff-type">veff_type<a class="anchor" aria-label="anchor" href="#arg-veff-type"></a></dt>
+<dd><p>string or character vector of whether veffs are id, trial or both</p></dd>
+
+
+<dt id="arg-veff-idx">veff_idx<a class="anchor" aria-label="anchor" href="#arg-veff-idx"></a></dt>
+<dd><p>string used to index parameters for varying effects</p></dd>
 
 
 <dt id="arg-trial-var">trial_var<a class="anchor" aria-label="anchor" href="#arg-trial-var"></a></dt>

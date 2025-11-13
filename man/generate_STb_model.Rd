@@ -10,8 +10,8 @@ generate_STb_model(
   model_type = c("full", "asocial"),
   intrinsic_rate = c("constant", "weibull"),
   transmission_func = c("standard", "freqdep_f", "freqdep_k"),
-  multinetwork_s = c("separate", "shared"),
-  veff_ID = c(),
+  veff_params = c(),
+  veff_type = "id",
   gq = TRUE,
   est_acqTime = FALSE,
   priors = list()
@@ -28,9 +28,9 @@ generate_STb_model(
 
 \item{transmission_func}{string specifying transmission function: "standard", "freqdep_f" or "freqdep_k" for frequency dependent complex contagion. Defaults to "standard".}
 
-\item{multinetwork_s}{string specifying how multi-network models are generated. "separate" estimates an s value for each network. "shared" generates model with single s and a vector of weights for each network.}
+\item{veff_params}{Vector of parameter names (string) for which to estimate varying effects. Default is no varying effects.}
 
-\item{veff_ID}{Parameters for which to estimate varying effects by individuals. Default is no varying effects.}
+\item{veff_type}{string/vector specifying whether varying effects should be applied to "id", "trial" or both (c("id","trial")). Default is id, applied only if user also gives \code{veff_params}.}
 
 \item{gq}{Boolean to indicate whether the generated quantities block is added (incl. ll for WAIC)}
 
@@ -77,8 +77,16 @@ data_list <- import_user_STb(
 )
 # creates full specification of cTADA model, no varying effects and default priors.
 model <- generate_STb_model(data_list)
-# estimate varying effects by ID for intrinsic and social rates.
-model <- generate_STb_model(data_list, veff_ID = c("lambda_0", "s"))
+# estimate varying effects by id, trial or both for intrinsic and social rates.
+model <- generate_STb_model(data_list, veff_params = c("lambda_0", "s"), veff_type = "id")
+model <- generate_STb_model(data_list,
+    veff_params = c("lambda_0", "s"),
+    veff_type = "trial"
+)
+model <- generate_STb_model(data_list,
+    veff_params = c("lambda_0", "s"),
+    veff_type = c("id", "trial")
+)
 # creates OADA specification
 model <- generate_STb_model(data_list, data = "order")
 # adjust priors

@@ -39,8 +39,8 @@ networks <- data.frame(
            "B", "C", "C",
            "B", "C", "C"),
     foveation = c(1, 0, 1, #summarizes from start of obs period to first event
-                0, 1, 1 #summarizes from first event to second event
-                0, 0, 1) #summarizes from second event to final event,
+                0, 1, 1, #summarizes from first event to second event
+                0, 0, 1), #summarizes from second event to final event,
     time = rep(1:3, each=3)
 )
 ```
@@ -67,6 +67,8 @@ data_list <- import_user_STb(
    event_data = event_data,
    networks = networks)
 ```
+
+When fitting a multi-network model, it will estimate an $s$ value for each network. If you are using a complex transmission function, it will also estimate separate $k$ or $f$ parameters for each network.
 
 ## Individual-level variables (ILVs)
 
@@ -155,20 +157,67 @@ data_list <- import_user_STb(
 
 You can mix and match static/dynamic networks with static/dynamic transmission weights.
 
-## Varying effects by individual
+## Varying effects by individual and trial
 
-You may apply varying effects for each individual for the intrinsic rate (lambda_0), social learning rate (s) and any of the ILVs. You do this by specifying specific parameter names using the argument ```veff_ID``` in the call to ```generate_STb_model()``` or ```generate_STb_asocial_model```:
+You may estimate varying effects on the intrinsic rate (lambda_0), social learning rate (s) and any of the other parameters or ILVs. Specify specific parameter names using the argument ```veff_params``` in the call to ```generate_STb_model()```, and specify whether you want by individual, trial or both using the ```veff_type``` argument:
 
 ```{r veff, eval=F}
-model = generate_STb_model(data_list, veff_ID = c("lambda_0", "s"))
+model = generate_STb_model(data_list, 
+                           veff_params = c("lambda_0", "s"), 
+                           veff_type="id") #on id
+model = generate_STb_model(data_list, 
+                           veff_params = c("lambda_0", "s"), 
+                           veff_type="trial") #on trial
+model = generate_STb_model(data_list, 
+                           veff_params = c("lambda_0", "s"), 
+                           veff_type=c("id", "trial")) #on both
 ```
 
-For $lambda_0$ and $s$, varying effects are added onto the main effect prior to transformation from log-scale back to linear. For example, if we apply a varying effect for $\lambda_0$, the model will calculate a value for each individual in the ```transformed parameters``` block of the Stan model:
+For $lambda_0$, $s$ and $f$, varying effects are added onto the main effect prior to transformation from log-scale back to linear. For example, if we apply a varying effect for $\lambda_0$, the model will calculate a value for each individual in the ```transformed parameters``` block of the Stan model:
 
 $$
-\exp\left(\mu_{\log \lambda_0} + \boldsymbol{v}_{\text{ID}, \lambda_0}\right)
+\exp\left(\mu_{\log \lambda_0} + \boldsymbol{v}_{\text{id}, \lambda_0}\right)
 $$
 and use those values when calculating the likelihood in the ```model``` block. This ensures that $\lambda_0$ or $s$ values are constrained to be positive.
+
+You can also apply varying effects to ILVs, if you want:
+
+```{r}
+event_data <- data.frame(
+    trial = rep(1:2, each = 3),
+    id = LETTERS[1:6],
+    time = c(2, 1, 3, 4, 2, 1),
+    t_end = c(3, 3, 3, 4, 4, 4)
+)
+networks <- data.frame(
+    trial = rep(1:2, each = 3),
+    focal = c("A", "A", "B", "D", "D", "E"),
+    other = c("B", "C", "C", "E", "F", "F"),
+    kin = c(1, 0, 1, 0, 1, 1), # first network
+    inverse_distance = c(0, 1, .5, .25, .1, 0) #second network
+)
+ILV_c <- data.frame(
+    id = LETTERS[1:6],
+    age = c(-1, -2, 0, 1, 2, 3), # continuous variables should be normalized
+    sex = as.factor(c("F", "M", "M", "M", "F", "F")), # Categorical ILVs must be input as factors
+    weight = c(0.5, .25, .3, 0, -.2, -.4)
+)
+
+data_list <- import_user_STb(
+    event_data = event_data,
+    networks = networks,
+    ILV_c = ILV_c,
+    ILVi = c("age"),
+    ILVs = c( "age", "sex"),
+    ILVm = c("weight")
+)
+
+model = generate_STb_model(data_list, 
+                           veff_params = c("lambda_0", "s", "age"), 
+                           veff_type=c("id", "trial"))
+```
+
+If you inspect the model code above, you'll see that it's generated 2 different sets of varying effects for age, since age is being considered as additive rather than multiplicative: one as it's applied to the intrinsic rate, and one as it's applied to the social transmission rate.
 
 ## Other model types: OADA and dTADA
 
@@ -202,7 +251,8 @@ model <- generate_STb_model(data_list)
 
 # it's also possible to do multi-network models. 
 # here i add two of the same just to illustrate
-data_list <- import_user_STb(event_data, networks = list(bisonr_fit, bisonr_fit))
+data_list <- import_user_STb(event_data, 
+                             networks = list(bisonr_fit, bisonr_fit))
 model <- generate_STb_model(data_list)
 ```
 
@@ -228,7 +278,7 @@ STbayes also includes an _alternative parameterization_ "freqdep_k" based on a s
 
 ![dini plot](../man/figures/complex_transmission.png)
 
-You might find that one or the other has convergence issues, so we provide both. Complex transmission can be implemented with varying effects, ilvs, oada and ctada type models, etc. We note however that the interpretation of the $s$ parameter changes when fitting a complex transmission model, as it is no longer scaled per unit connection, but rather per the proportion of associates.
+You might find that one or the other has convergence issues, so we provide both. Complex transmission can be implemented with varying effects, ilvs, oada and ctada type models, etc. We note however that the interpretation of the $s$ parameter changes when fitting a complex transmission model, as it is no longer scaled per unit connection, but rather per the proportion of associates. NB: You can set varying effects on $k$ or $f$ but tbh that's gonna need a lot of data to estimate.
 
 ## Setting priors
 

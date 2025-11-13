@@ -30,7 +30,7 @@
 STb_summary <- function(fit, depth = 1, prob = 0.95,
                         ignore_params = c(
                             "lp__", "idx", "log_lik", "log_lik_matrix", "count_ST", "psocn_sum",
-                            "acquisition_time", "z_ID", "Rho_ID", "v_ID", ".chain", ".iteration", ".draw", "s_prime"
+                            "acquisition_time", "z_id", "rho_id", "Rho_id", "v_id", "z_trial", "rho_trial", "Rho_trial", "v_trial", ".chain", ".iteration", ".draw", "s_prime"
                         ),
                         digits = 3,
                         CI_method = c("HPDI", "PI")) {
@@ -45,7 +45,7 @@ STb_summary <- function(fit, depth = 1, prob = 0.95,
     # Get parameter names and filter
     param_names <- names(draws_df)
     s_prime_params <- grep("^log_s_prime_mean\\[", param_names, value = TRUE)
-    sigma_ID_params <- grep("^sigma_ID\\[", param_names, value = TRUE)
+    sigma_veff_params <- grep("^sigma_(id|trial)\\[", param_names, value = TRUE)
     s_mean_params <- grep("^s_mean\\[", param_names, value = TRUE)
     s_params <- grep("^s\\[", param_names, value = TRUE)
     ST_params <- grep("^percent_ST\\[", param_names, value = TRUE)
@@ -63,7 +63,7 @@ STb_summary <- function(fit, depth = 1, prob = 0.95,
         s_prime_params,
         s_mean_params,
         s_params,
-        sigma_ID_params,
+        sigma_veff_params,
         ST_params,
         beta_params
     ))

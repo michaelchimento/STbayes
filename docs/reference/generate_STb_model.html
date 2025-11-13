@@ -55,8 +55,8 @@ formatted version in the R console using cat().</p>
 <span>  model_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"full"</span>, <span class="st">"asocial"</span><span class="op">)</span>,</span>
 <span>  intrinsic_rate <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"constant"</span>, <span class="st">"weibull"</span><span class="op">)</span>,</span>
 <span>  transmission_func <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"standard"</span>, <span class="st">"freqdep_f"</span>, <span class="st">"freqdep_k"</span><span class="op">)</span>,</span>
-<span>  multinetwork_s <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"separate"</span>, <span class="st">"shared"</span><span class="op">)</span>,</span>
-<span>  veff_ID <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  veff_params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  veff_type <span class="op">=</span> <span class="st">"id"</span>,</span>
 <span>  gq <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  est_acqTime <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  priors <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -87,12 +87,12 @@ formatted version in the R console using cat().</p>
 <dd><p>string specifying transmission function: "standard", "freqdep_f" or "freqdep_k" for frequency dependent complex contagion. Defaults to "standard".</p></dd>
 
 
-<dt id="arg-multinetwork-s">multinetwork_s<a class="anchor" aria-label="anchor" href="#arg-multinetwork-s"></a></dt>
-<dd><p>string specifying how multi-network models are generated. "separate" estimates an s value for each network. "shared" generates model with single s and a vector of weights for each network.</p></dd>
+<dt id="arg-veff-params">veff_params<a class="anchor" aria-label="anchor" href="#arg-veff-params"></a></dt>
+<dd><p>Vector of parameter names (string) for which to estimate varying effects. Default is no varying effects.</p></dd>
 
 
-<dt id="arg-veff-id">veff_ID<a class="anchor" aria-label="anchor" href="#arg-veff-id"></a></dt>
-<dd><p>Parameters for which to estimate varying effects by individuals. Default is no varying effects.</p></dd>
+<dt id="arg-veff-type">veff_type<a class="anchor" aria-label="anchor" href="#arg-veff-type"></a></dt>
+<dd><p>string/vector specifying whether varying effects should be applied to "id", "trial" or both (c("id","trial")). Default is id, applied only if user also gives <code>veff_params</code>.</p></dd>
 
 
 <dt id="arg-gq">gq<a class="anchor" aria-label="anchor" href="#arg-gq"></a></dt>
@@ -144,8 +144,16 @@ formatted version in the R console using cat().</p>
 <span><span class="op">)</span></span>
 <span><span class="co"># creates full specification of cTADA model, no varying effects and default priors.</span></span>
 <span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu">generate_STb_model</span><span class="op">(</span><span class="va">data_list</span><span class="op">)</span></span>
-<span><span class="co"># estimate varying effects by ID for intrinsic and social rates.</span></span>
-<span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu">generate_STb_model</span><span class="op">(</span><span class="va">data_list</span>, veff_ID <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lambda_0"</span>, <span class="st">"s"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co"># estimate varying effects by id, trial or both for intrinsic and social rates.</span></span>
+<span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu">generate_STb_model</span><span class="op">(</span><span class="va">data_list</span>, veff_params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lambda_0"</span>, <span class="st">"s"</span><span class="op">)</span>, veff_type <span class="op">=</span> <span class="st">"id"</span><span class="op">)</span></span>
+<span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu">generate_STb_model</span><span class="op">(</span><span class="va">data_list</span>,</span>
+<span>    veff_params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lambda_0"</span>, <span class="st">"s"</span><span class="op">)</span>,</span>
+<span>    veff_type <span class="op">=</span> <span class="st">"trial"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu">generate_STb_model</span><span class="op">(</span><span class="va">data_list</span>,</span>
+<span>    veff_params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lambda_0"</span>, <span class="st">"s"</span><span class="op">)</span>,</span>
+<span>    veff_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"id"</span>, <span class="st">"trial"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
 <span><span class="co"># creates OADA specification</span></span>
 <span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu">generate_STb_model</span><span class="op">(</span><span class="va">data_list</span>, data <span class="op">=</span> <span class="st">"order"</span><span class="op">)</span></span>
 <span><span class="co"># adjust priors</span></span>

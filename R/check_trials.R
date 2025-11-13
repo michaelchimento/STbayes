@@ -7,7 +7,7 @@
 #' @param ILV_tv dataframe of time-varying ILVs
 #' @param t_weights dataframe of transmission weights, can be timevarying
 #'
-#' @returns error message if trials are missing from dataframes
+#' @return error message if trials are missing from dataframes
 check_trials <- function(event_data, networks, ILV_tv = NULL, t_weights = NULL) {
     event_trials <- unique(event_data$trial)
     if (inherits(networks, "data.frame")) {

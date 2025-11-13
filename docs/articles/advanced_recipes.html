@@ -89,19 +89,20 @@ and <code>time=11</code> represents from
 individual) in a group of 3 individuals. None of the individuals are
 censored, so we only need to provide networks summarized over three
 timesteps:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>networks <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
-<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>    <span class="at">trial =</span> <span class="dv">1</span>,</span>
-<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>    <span class="at">focal =</span> <span class="fu">c</span>(<span class="st">"A"</span>, <span class="st">"A"</span>, <span class="st">"B"</span>,</span>
-<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>             <span class="st">"A"</span>, <span class="st">"A"</span>, <span class="st">"B"</span>,</span>
-<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>             <span class="st">"A"</span>, <span class="st">"A"</span>, <span class="st">"B"</span>),</span>
-<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>    <span class="at">other =</span> <span class="fu">c</span>(<span class="st">"B"</span>, <span class="st">"C"</span>, <span class="st">"C"</span>,</span>
-<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>           <span class="st">"B"</span>, <span class="st">"C"</span>, <span class="st">"C"</span>,</span>
-<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>           <span class="st">"B"</span>, <span class="st">"C"</span>, <span class="st">"C"</span>),</span>
-<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>    <span class="at">foveation =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">1</span>, <span class="co">#summarizes from start of obs period to first event</span></span>
-<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a>                <span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">1</span> <span class="co">#summarizes from first event to second event</span></span>
-<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a>                <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">1</span>) <span class="co">#summarizes from second event to final event,</span></span>
-<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a>    <span class="at">time =</span> <span class="fu">rep</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, <span class="at">each=</span><span class="dv">3</span>)</span>
-<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a>)</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">networks</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>    trial <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>    focal <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>, <span class="st">"A"</span>, <span class="st">"B"</span>,</span>
+<span>             <span class="st">"A"</span>, <span class="st">"A"</span>, <span class="st">"B"</span>,</span>
+<span>             <span class="st">"A"</span>, <span class="st">"A"</span>, <span class="st">"B"</span><span class="op">)</span>,</span>
+<span>    other <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"B"</span>, <span class="st">"C"</span>, <span class="st">"C"</span>,</span>
+<span>           <span class="st">"B"</span>, <span class="st">"C"</span>, <span class="st">"C"</span>,</span>
+<span>           <span class="st">"B"</span>, <span class="st">"C"</span>, <span class="st">"C"</span><span class="op">)</span>,</span>
+<span>    foveation <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">0</span>, <span class="fl">1</span>, <span class="co">#summarizes from start of obs period to first event</span></span>
+<span>                <span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">1</span>, <span class="co">#summarizes from first event to second event</span></span>
+<span>                <span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">1</span><span class="op">)</span>, <span class="co">#summarizes from second event to final event,</span></span>
+<span>    time <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, each<span class="op">=</span><span class="fl">3</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="multi-network-models">Multi-network models<a class="anchor" aria-label="anchor" href="#multi-network-models"></a>
@@ -127,6 +128,14 @@ network.</p>
 <span><span class="va">data_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/import_user_STb.html">import_user_STb</a></span><span class="op">(</span></span>
 <span>   event_data <span class="op">=</span> <span class="va">event_data</span>,</span>
 <span>   networks <span class="op">=</span> <span class="va">networks</span><span class="op">)</span></span></code></pre></div>
+<p>When fitting a multi-network model, it will estimate an
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>s</mi><annotation encoding="application/x-tex">s</annotation></semantics></math>
+value for each network. If you are using a complex transmission
+function, it will also estimate separate
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>
+or
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>f</mi><annotation encoding="application/x-tex">f</annotation></semantics></math>
+parameters for each network.</p>
 </div>
 <div class="section level2">
 <h2 id="individual-level-variables-ilvs">Individual-level variables (ILVs)<a class="anchor" aria-label="anchor" href="#individual-level-variables-ilvs"></a>
@@ -243,33 +252,82 @@ interval:</p>
 transmission weights.</p>
 </div>
 <div class="section level2">
-<h2 id="varying-effects-by-individual">Varying effects by individual<a class="anchor" aria-label="anchor" href="#varying-effects-by-individual"></a>
+<h2 id="varying-effects-by-individual-and-trial">Varying effects by individual and trial<a class="anchor" aria-label="anchor" href="#varying-effects-by-individual-and-trial"></a>
 </h2>
-<p>You may apply varying effects for each individual for the intrinsic
-rate (lambda_0), social learning rate (s) and any of the ILVs. You do
-this by specifying specific parameter names using the argument
-<code>veff_ID</code> in the call to <code><a href="../reference/generate_STb_model.html">generate_STb_model()</a></code> or
-<code>generate_STb_asocial_model</code>:</p>
+<p>You may estimate varying effects on the intrinsic rate (lambda_0),
+social learning rate (s) and any of the other parameters or ILVs.
+Specify specific parameter names using the argument
+<code>veff_params</code> in the call to
+<code><a href="../reference/generate_STb_model.html">generate_STb_model()</a></code>, and specify whether you want by
+individual, trial or both using the <code>veff_type</code> argument:</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">model</span> <span class="op">=</span> <span class="fu"><a href="../reference/generate_STb_model.html">generate_STb_model</a></span><span class="op">(</span><span class="va">data_list</span>, veff_ID <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lambda_0"</span>, <span class="st">"s"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">model</span> <span class="op">=</span> <span class="fu"><a href="../reference/generate_STb_model.html">generate_STb_model</a></span><span class="op">(</span><span class="va">data_list</span>, </span>
+<span>                           veff_params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lambda_0"</span>, <span class="st">"s"</span><span class="op">)</span>, </span>
+<span>                           veff_type<span class="op">=</span><span class="st">"id"</span><span class="op">)</span> <span class="co">#on id</span></span>
+<span><span class="va">model</span> <span class="op">=</span> <span class="fu"><a href="../reference/generate_STb_model.html">generate_STb_model</a></span><span class="op">(</span><span class="va">data_list</span>, </span>
+<span>                           veff_params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lambda_0"</span>, <span class="st">"s"</span><span class="op">)</span>, </span>
+<span>                           veff_type<span class="op">=</span><span class="st">"trial"</span><span class="op">)</span> <span class="co">#on trial</span></span>
+<span><span class="va">model</span> <span class="op">=</span> <span class="fu"><a href="../reference/generate_STb_model.html">generate_STb_model</a></span><span class="op">(</span><span class="va">data_list</span>, </span>
+<span>                           veff_params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lambda_0"</span>, <span class="st">"s"</span><span class="op">)</span>, </span>
+<span>                           veff_type<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"id"</span>, <span class="st">"trial"</span><span class="op">)</span><span class="op">)</span> <span class="co">#on both</span></span></code></pre></div>
 <p>For
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>l</mi><mi>a</mi><mi>m</mi><mi>b</mi><mi>d</mi><msub><mi>a</mi><mn>0</mn></msub></mrow><annotation encoding="application/x-tex">lambda_0</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>l</mi><mi>a</mi><mi>m</mi><mi>b</mi><mi>d</mi><msub><mi>a</mi><mn>0</mn></msub></mrow><annotation encoding="application/x-tex">lambda_0</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>s</mi><annotation encoding="application/x-tex">s</annotation></semantics></math>
 and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>s</mi><annotation encoding="application/x-tex">s</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>f</mi><annotation encoding="application/x-tex">f</annotation></semantics></math>,
 varying effects are added onto the main effect prior to transformation
 from log-scale back to linear. For example, if we apply a varying effect
 for
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>λ</mi><mn>0</mn></msub><annotation encoding="application/x-tex">\lambda_0</annotation></semantics></math>,
 the model will calculate a value for each individual in the
 <code>transformed parameters</code> block of the Stan model:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>exp</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>μ</mi><mrow><mo>log</mo><msub><mi>λ</mi><mn>0</mn></msub></mrow></msub><mo>+</mo><msub><mi>𝐯</mi><mrow><mtext mathvariant="normal">ID</mtext><mo>,</mo><msub><mi>λ</mi><mn>0</mn></msub></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">
-\exp\left(\mu_{\log \lambda_0} + \boldsymbol{v}_{\text{ID}, \lambda_0}\right)
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>exp</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>μ</mi><mrow><mo>log</mo><msub><mi>λ</mi><mn>0</mn></msub></mrow></msub><mo>+</mo><msub><mi>𝐯</mi><mrow><mtext mathvariant="normal">id</mtext><mo>,</mo><msub><mi>λ</mi><mn>0</mn></msub></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">
+\exp\left(\mu_{\log \lambda_0} + \boldsymbol{v}_{\text{id}, \lambda_0}\right)
 </annotation></semantics></math> and use those values when calculating
 the likelihood in the <code>model</code> block. This ensures that
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>λ</mi><mn>0</mn></msub><annotation encoding="application/x-tex">\lambda_0</annotation></semantics></math>
 or
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>s</mi><annotation encoding="application/x-tex">s</annotation></semantics></math>
 values are constrained to be positive.</p>
+<p>You can also apply varying effects to ILVs, if you want:</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">event_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>    trial <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">2</span>, each <span class="op">=</span> <span class="fl">3</span><span class="op">)</span>,</span>
+<span>    id <span class="op">=</span> <span class="va">LETTERS</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">6</span><span class="op">]</span>,</span>
+<span>    time <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">1</span>, <span class="fl">3</span>, <span class="fl">4</span>, <span class="fl">2</span>, <span class="fl">1</span><span class="op">)</span>,</span>
+<span>    t_end <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">3</span>, <span class="fl">3</span>, <span class="fl">4</span>, <span class="fl">4</span>, <span class="fl">4</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">networks</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>    trial <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">2</span>, each <span class="op">=</span> <span class="fl">3</span><span class="op">)</span>,</span>
+<span>    focal <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>, <span class="st">"A"</span>, <span class="st">"B"</span>, <span class="st">"D"</span>, <span class="st">"D"</span>, <span class="st">"E"</span><span class="op">)</span>,</span>
+<span>    other <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"B"</span>, <span class="st">"C"</span>, <span class="st">"C"</span>, <span class="st">"E"</span>, <span class="st">"F"</span>, <span class="st">"F"</span><span class="op">)</span>,</span>
+<span>    kin <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">1</span><span class="op">)</span>, <span class="co"># first network</span></span>
+<span>    inverse_distance <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">.5</span>, <span class="fl">.25</span>, <span class="fl">.1</span>, <span class="fl">0</span><span class="op">)</span> <span class="co">#second network</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">ILV_c</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>    id <span class="op">=</span> <span class="va">LETTERS</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">6</span><span class="op">]</span>,</span>
+<span>    age <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">1</span>, <span class="op">-</span><span class="fl">2</span>, <span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span><span class="op">)</span>, <span class="co"># continuous variables should be normalized</span></span>
+<span>    sex <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">as.factor</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"F"</span>, <span class="st">"M"</span>, <span class="st">"M"</span>, <span class="st">"M"</span>, <span class="st">"F"</span>, <span class="st">"F"</span><span class="op">)</span><span class="op">)</span>, <span class="co"># Categorical ILVs must be input as factors</span></span>
+<span>    weight <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span>, <span class="fl">.25</span>, <span class="fl">.3</span>, <span class="fl">0</span>, <span class="op">-</span><span class="fl">.2</span>, <span class="op">-</span><span class="fl">.4</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">data_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/import_user_STb.html">import_user_STb</a></span><span class="op">(</span></span>
+<span>    event_data <span class="op">=</span> <span class="va">event_data</span>,</span>
+<span>    networks <span class="op">=</span> <span class="va">networks</span>,</span>
+<span>    ILV_c <span class="op">=</span> <span class="va">ILV_c</span>,</span>
+<span>    ILVi <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"age"</span><span class="op">)</span>,</span>
+<span>    ILVs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span> <span class="st">"age"</span>, <span class="st">"sex"</span><span class="op">)</span>,</span>
+<span>    ILVm <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"weight"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">model</span> <span class="op">=</span> <span class="fu"><a href="../reference/generate_STb_model.html">generate_STb_model</a></span><span class="op">(</span><span class="va">data_list</span>, </span>
+<span>                           veff_params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lambda_0"</span>, <span class="st">"s"</span>, <span class="st">"age"</span><span class="op">)</span>, </span>
+<span>                           veff_type<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"id"</span>, <span class="st">"trial"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p>If you inspect the model code above, you’ll see that it’s generated 2
+different sets of varying effects for age, since age is being considered
+as additive rather than multiplicative: one as it’s applied to the
+intrinsic rate, and one as it’s applied to the social transmission
+rate.</p>
 </div>
 <div class="section level2">
 <h2 id="other-model-types-oada-and-dtada">Other model types: OADA and dTADA<a class="anchor" aria-label="anchor" href="#other-model-types-oada-and-dtada"></a>
@@ -282,7 +340,7 @@ uncertain of exactly when, you can create a discrete TADA (dTADA) model.
 If you have no time information, but only the order of acquisition, you
 can also create an OADA model. The <code>data_type</code> argument
 allows you to choose between these options:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">model_cTADA</span> <span class="op">=</span> <span class="fu"><a href="../reference/generate_STb_model.html">generate_STb_model</a></span><span class="op">(</span><span class="va">data_list</span>, data_type <span class="op">=</span> <span class="st">"continuous_time"</span><span class="op">)</span> <span class="co">#default</span></span>
 <span><span class="va">model_dTADA</span> <span class="op">=</span> <span class="fu"><a href="../reference/generate_STb_model.html">generate_STb_model</a></span><span class="op">(</span><span class="va">data_list</span>, data_type <span class="op">=</span> <span class="st">"discrete_time"</span><span class="op">)</span></span>
 <span><span class="va">model_OADA</span> <span class="op">=</span> <span class="fu"><a href="../reference/generate_STb_model.html">generate_STb_model</a></span><span class="op">(</span><span class="va">data_list</span>, data_type <span class="op">=</span> <span class="st">"order"</span><span class="op">)</span></span></code></pre></div>
@@ -298,7 +356,7 @@ models, such as those fit by the <a href="https://github.com/JHart96/bisonR/tree
 the <a href="https://github.com/ctross/STRAND/tree/main" class="external-link">STRAND
 package</a>. This is done by providing single fits (or a list of fits)
 to <code><a href="../reference/import_user_STb.html">import_user_STb()</a></code>.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">bisonr_fit</span> <span class="op">&lt;-</span> <span class="fu">STbayes</span><span class="fu">::</span><span class="va">bisonr_fit</span></span>
 <span></span>
 <span><span class="co"># network has 10 individuals, create mock diffusion data</span></span>
@@ -314,7 +372,8 @@ to <code><a href="../reference/import_user_STb.html">import_user_STb()</a></code
 <span></span>
 <span><span class="co"># it's also possible to do multi-network models. </span></span>
 <span><span class="co"># here i add two of the same just to illustrate</span></span>
-<span><span class="va">data_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/import_user_STb.html">import_user_STb</a></span><span class="op">(</span><span class="va">event_data</span>, networks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">bisonr_fit</span>, <span class="va">bisonr_fit</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">data_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/import_user_STb.html">import_user_STb</a></span><span class="op">(</span><span class="va">event_data</span>, </span>
+<span>                             networks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">bisonr_fit</span>, <span class="va">bisonr_fit</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_STb_model.html">generate_STb_model</a></span><span class="op">(</span><span class="va">data_list</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
@@ -324,7 +383,7 @@ to <code><a href="../reference/import_user_STb.html">import_user_STb()</a></code
 You can create a log-likelihood that includes a frequency-dependent
 transmission rules by using the <code>transmission_func</code> argument
 of <code>generate_STb_model</code>:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">data_list</span> <span class="op">=</span> <span class="fu"><a href="../reference/import_user_STb.html">import_user_STb</a></span><span class="op">(</span><span class="fu">STbayes</span><span class="fu">::</span><span class="va">event_data</span>, <span class="fu">STbayes</span><span class="fu">::</span><span class="va">edge_list</span><span class="op">)</span></span>
 <span><span class="va">model_standard</span> <span class="op">=</span> <span class="fu"><a href="../reference/generate_STb_model.html">generate_STb_model</a></span><span class="op">(</span><span class="va">data_list</span>, transmission_func<span class="op">=</span><span class="st">"standard"</span><span class="op">)</span> <span class="co"># default</span></span>
 <span><span class="va">model_f</span> <span class="op">=</span> <span class="fu"><a href="../reference/generate_STb_model.html">generate_STb_model</a></span><span class="op">(</span><span class="va">data_list</span>, transmission_func<span class="op">=</span><span class="st">"freqdep_f"</span><span class="op">)</span></span>
@@ -355,14 +414,18 @@ interpretation of the
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>s</mi><annotation encoding="application/x-tex">s</annotation></semantics></math>
 parameter changes when fitting a complex transmission model, as it is no
 longer scaled per unit connection, but rather per the proportion of
-associates.</p>
+associates. NB: You can set varying effects on
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>
+or
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>f</mi><annotation encoding="application/x-tex">f</annotation></semantics></math>
+but tbh that’s gonna need a lot of data to estimate.</p>
 </div>
 <div class="section level2">
 <h2 id="setting-priors">Setting priors<a class="anchor" aria-label="anchor" href="#setting-priors"></a>
 </h2>
 <p>You might want to customize the priors of your model. Here are the
 default priors:</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">default_priors</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>        log_lambda0 <span class="op">=</span> <span class="st">"normal(-4, 2)"</span>, <span class="co"># intrinsic rate</span></span>
 <span>        log_sprime <span class="op">=</span> <span class="st">"normal(-4, 2)"</span>, <span class="co"># social transmission rate</span></span>
@@ -380,7 +443,7 @@ distributions should be written with the usual Stan convention. You only
 need to supply those which you wish to change. For example, you might
 want to tighten your priors on intrinsic rate, social rate and beta
 params for ILVs.</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">data_list</span> <span class="op">=</span> <span class="fu"><a href="../reference/import_user_STb.html">import_user_STb</a></span><span class="op">(</span><span class="fu">STbayes</span><span class="fu">::</span><span class="va">event_data</span>, <span class="fu">STbayes</span><span class="fu">::</span><span class="va">edge_list</span><span class="op">)</span></span>
 <span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_STb_model.html">generate_STb_model</a></span><span class="op">(</span><span class="va">data_list</span>, priors <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>     log_lambda0 <span class="op">=</span> <span class="st">"normal(-4, 1)"</span>,</span>
@@ -403,7 +466,7 @@ in value frequently between events. Sampling intervals should be regular
 weights are recorded every time-step, rather than summarized per
 inter-event interval. If fitting a model with standard transmission,
 STbayes preprocesses the data for efficient fitting.</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">data_hires</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/import_user_STb.html">import_user_STb</a></span><span class="op">(</span></span>
 <span>    event_data <span class="op">=</span> <span class="fu">STbayes</span><span class="fu">::</span><span class="va">events_hires</span>,</span>
 <span>    networks <span class="op">=</span> <span class="fu">STbayes</span><span class="fu">::</span><span class="va">networks_hires</span>,</span>
@@ -417,7 +480,7 @@ transmission rule. You should use <code><a href="../reference/import_user_STb2.h
 High-res complex transmission models will take significantly longer to
 fit as they loop through each time-step, rather than inter-event
 intervals.</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">data_hires</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/import_user_STb2.html">import_user_STb2</a></span><span class="op">(</span></span>
 <span>    event_data <span class="op">=</span> <span class="fu">STbayes</span><span class="fu">::</span><span class="va">events_hires</span>,</span>
 <span>    networks <span class="op">=</span> <span class="fu">STbayes</span><span class="fu">::</span><span class="va">networks_hires</span>,</span>
@@ -434,7 +497,7 @@ to figure out what was meant to be done with ILVs. However, some
 features of STbayes require using <code>import_user_STb</code>. Below we
 read in an NBDA object (taken from Tutorial 4.1 from <a href="https://doi.org/10.1111/1365-2656.13307" class="external-link">Hasenjager et
 al. 2021</a>):</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">nbdaData_cTADA</span> <span class="op">&lt;-</span> <span class="fu">STbayes</span><span class="fu">::</span><span class="va">tutorial4_1</span></span>
 <span><span class="va">data_list</span> <span class="op">=</span> <span class="fu"><a href="../reference/import_NBDA_STb.html">import_NBDA_STb</a></span><span class="op">(</span><span class="va">nbdaData_cTADA</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">data_list</span><span class="op">)</span></span></code></pre></div>

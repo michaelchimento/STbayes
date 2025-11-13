@@ -7,13 +7,14 @@
 get_network_term(
   transmission_func = "standard",
   is_distribution = FALSE,
-  separate_s = FALSE,
   num_networks = 1,
-  veff_ID = c(),
+  veff_params = c(),
   s_var = "s_prime",
   net_var = "A",
   net_index = "network",
   id_var = "id",
+  veff_type = c(),
+  veff_idx = "id",
   trial_var = "trial",
   time_var = "time_step",
   high_res = F
@@ -24,11 +25,9 @@ get_network_term(
 
 \item{is_distribution}{did the user supply a posterior distribution for edges}
 
-\item{separate_s}{whether or not s should be constrained to be the same for all networks}
-
 \item{num_networks}{integer of number of networks}
 
-\item{veff_ID}{vector of varying effects}
+\item{veff_params}{vector of varying effects}
 
 \item{s_var}{string used to represent s term ("s_prime" or "s_direct")}
 
@@ -37,6 +36,10 @@ get_network_term(
 \item{net_index}{string used to index networks "network"}
 
 \item{id_var}{string used to index individuals. "id" for tada, need to use "id" and "j" for oada}
+
+\item{veff_type}{string or character vector of whether veffs are id, trial or both}
+
+\item{veff_idx}{string used to index parameters for varying effects}
 
 \item{trial_var}{string used to index trial "trial"}
 

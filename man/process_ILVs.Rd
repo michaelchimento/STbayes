@@ -10,7 +10,8 @@ process_ILVs(
   ilv_datatypes,
   ilv_n_levels,
   ilv_timevarying,
-  veff_ID,
+  veff_params,
+  veff_type,
   suffix,
   STb_data,
   count_start,
@@ -28,7 +29,9 @@ process_ILVs(
 
 \item{ilv_timevarying}{named vector of boolean vals for whether or not the ILV is timevarying}
 
-\item{veff_ID}{vector of parameters that need veffs}
+\item{veff_params}{vector of parameters that need veffs}
+
+\item{veff_type}{string for declaring vectors, either pop size "P" or trial "K"}
 
 \item{suffix}{character "i" or "j"}
 

@@ -13,7 +13,7 @@ test_that("process_ILVs produces identical output to original ILV handling", {
     names(STb_data$ILV_datatypes) <- c("ILV_age", "ILV_sex", "ILV_weight")
     names(STb_data$ILV_n_levels) <- c("ILV_sex")
 
-    veff_ID <- c("age", "sex") # only age and sex have varying effects
+    veff_params <- c("age", "sex") # only age and sex have varying effects
     count_start <- 1
 
     # Run refactored version
@@ -23,12 +23,15 @@ test_that("process_ILVs produces identical output to original ILV handling", {
         ilv_datatypes = STb_data$ILV_datatypes,
         ilv_n_levels = STb_data$ILV_n_levels,
         ilv_timevarying = STb_data$ILV_timevarying,
-        veff_ID = veff_ID,
+        veff_params = veff_params,
+        veff_type = "id",
         suffix = "i",
         STb_data = STb_data,
         count_start = count_start,
         prior_beta = "normal(0, 1)"
     )
+
+    result_ILVi$prior
 
     result_ILVs <- process_ILVs(
         ilv_vars = c("sex"),
@@ -36,7 +39,8 @@ test_that("process_ILVs produces identical output to original ILV handling", {
         ilv_datatypes = STb_data$ILV_datatypes,
         ilv_n_levels = STb_data$ILV_n_levels,
         ilv_timevarying = STb_data$ILV_timevarying,
-        veff_ID = veff_ID,
+        veff_params = veff_params,
+        veff_type = "id",
         suffix = "s",
         STb_data = STb_data,
         count_start = result_ILVi$count,
@@ -49,7 +53,8 @@ test_that("process_ILVs produces identical output to original ILV handling", {
         ilv_datatypes = STb_data$ILV_datatypes,
         ilv_n_levels = STb_data$ILV_n_levels,
         ilv_timevarying = STb_data$ILV_timevarying,
-        veff_ID = veff_ID,
+        veff_params = veff_params,
+        veff_type = "id",
         suffix = "m",
         STb_data = STb_data,
         count_start = result_ILVs$count,
@@ -59,16 +64,19 @@ test_that("process_ILVs produces identical output to original ILV handling", {
     # Hardcoded expected outputs
     expect_equal(result_ILVi$param, "real beta_ILVi_age;")
     expect_equal(result_ILVi$prior, "beta_ILVi_age ~ normal(0, 1);")
-    expect_equal(result_ILVi$transformed, "array[K, T_max] vector[P] age_i;\nfor (trial in 1:K) for (timestep in 1:T_max) age_i[trial][timestep] = ILV_age[trial][timestep] * beta_ILVi_age + v_ID[,1];")
+    expect_equal(result_ILVi$transformed_decl, "array[K, T_max] vector[P] age_i;")
+    expect_equal(result_ILVi$transformed_calc, "for (trial in 1:K) for (timestep in 1:T_max) age_i[trial][timestep] = ILV_age[trial][timestep] * beta_ILVi_age + v_id[,1];")
     expect_equal(result_ILVi$term, "exp(age_i[trial,time_step,id])")
 
     expect_equal(result_ILVs$param, "vector[1] beta_ILVs_sex;")
     expect_equal(result_ILVs$prior, "beta_ILVs_sex ~ normal(0, 1);")
-    expect_equal(result_ILVs$transformed, "vector[P] sex_s = ILV_sex * beta_ILVs_sex + v_ID[,2];")
+    expect_equal(result_ILVs$transformed_decl, "vector[P] sex_s;")
+    expect_equal(result_ILVs$transformed_calc, "sex_s = ILV_sex * beta_ILVs_sex + v_id[,2];")
     expect_equal(result_ILVs$term, "* exp(sex_s[id])")
 
     expect_equal(result_ILVm$param, "real beta_ILVm_weight;")
     expect_equal(result_ILVm$prior, "beta_ILVm_weight ~ normal(0, 1);")
-    expect_equal(result_ILVm$transformed, "vector[P] weight_m = ILV_weight * beta_ILVm_weight;") # not in veff_ID
+    expect_equal(result_ILVm$transformed_decl, "vector[P] weight_m;")
+    expect_equal(result_ILVm$transformed_calc, "weight_m = ILV_weight * beta_ILVm_weight;")
     expect_equal(result_ILVm$term, "exp(weight_m[id]) *")
 })

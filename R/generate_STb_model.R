@@ -9,8 +9,8 @@
 #' @param model_type string specifying the model type: "full" or "asocial"
 #' @param intrinsic_rate Define shape of intrinsic rate (either "constant" or "weibull"). Weibull fits extra parameter (gamma) that allows for time-varying event rates.
 #' @param transmission_func string specifying transmission function: "standard", "freqdep_f" or "freqdep_k" for frequency dependent complex contagion. Defaults to "standard".
-#' @param multinetwork_s string specifying how multi-network models are generated. "separate" estimates an s value for each network. "shared" generates model with single s and a vector of weights for each network.
-#' @param veff_ID Parameters for which to estimate varying effects by individuals. Default is no varying effects.
+#' @param veff_params Vector of parameter names (string) for which to estimate varying effects. Default is no varying effects.
+#' @param veff_type string/vector specifying whether varying effects should be applied to "id", "trial" or both (c("id","trial")). Default is id, applied only if user also gives `veff_params`.
 #' @param gq Boolean to indicate whether the generated quantities block is added (incl. ll for WAIC)
 #' @param est_acqTime Boolean to indicate whether gq block includes estimates for acquisition time. At the moment this uses 'one weird trick' to accomplish this and does not support estimates for non-integer learning times.
 #' @param priors named list with strings containing priors.
@@ -48,8 +48,16 @@
 #' )
 #' # creates full specification of cTADA model, no varying effects and default priors.
 #' model <- generate_STb_model(data_list)
-#' # estimate varying effects by ID for intrinsic and social rates.
-#' model <- generate_STb_model(data_list, veff_ID = c("lambda_0", "s"))
+#' # estimate varying effects by id, trial or both for intrinsic and social rates.
+#' model <- generate_STb_model(data_list, veff_params = c("lambda_0", "s"), veff_type = "id")
+#' model <- generate_STb_model(data_list,
+#'     veff_params = c("lambda_0", "s"),
+#'     veff_type = "trial"
+#' )
+#' model <- generate_STb_model(data_list,
+#'     veff_params = c("lambda_0", "s"),
+#'     veff_type = c("id", "trial")
+#' )
 #' # creates OADA specification
 #' model <- generate_STb_model(data_list, data = "order")
 #' # adjust priors
@@ -64,26 +72,25 @@ generate_STb_model <- function(STb_data,
                                model_type = c("full", "asocial"),
                                intrinsic_rate = c("constant", "weibull"),
                                transmission_func = c("standard", "freqdep_f", "freqdep_k"),
-                               multinetwork_s = c("separate", "shared"),
-                               veff_ID = c(),
+                               veff_params = c(),
+                               veff_type = "id",
                                gq = TRUE,
                                est_acqTime = FALSE,
                                priors = list()) {
-    data_type <- match.arg(data_type)
-    model_type <- match.arg(model_type)
-    intrinsic_rate <- match.arg(intrinsic_rate)
-    transmission_func <- match.arg(transmission_func)
-    multinetwork_s <- match.arg(multinetwork_s)
+    data_type <- match.arg(data_type, choices = c("continuous_time", "discrete_time", "order"))
+    model_type <- match.arg(model_type, choices = c("full", "asocial"))
+    intrinsic_rate <- match.arg(intrinsic_rate, choices = c("constant", "weibull"))
+    transmission_func <- match.arg(transmission_func, choices = c("standard", "freqdep_f", "freqdep_k"))
+    veff_type <- check_veff_type(veff_type)
+    stopifnot(is.logical(gq), length(gq) == 1)
+    stopifnot(is.logical(est_acqTime), length(est_acqTime) == 1)
 
-
-    # used shared s config if only one network
-    if (multinetwork_s == "separate" & STb_data$N_networks == 1) {
-        multinetwork_s <- "shared"
+    if (data_type == "order" && any(c("lambda_0", "gamma") %in% veff_params)) {
+        stop("Intrinsic rate parameters (lambda_0, gamma) cannot be a varying effect in an OADA-type model.")
     }
-    STb_data$multinetwork_s <- multinetwork_s
 
-    if (data_type == "order" && "lambda_0" %in% veff_ID) {
-        stop("lambda_0 cannot be veff_ID when using OADA.")
+    if (model_type == "asocial" && any(c("s", "f", "k") %in% veff_params)) {
+        stop("Social transmission rate parameters (s, f, k) cannot be varying effects in an asocial model.")
     }
 
     default_priors <- list(
@@ -92,9 +99,9 @@ generate_STb_model <- function(STb_data,
         beta_ILV = "normal(0,1)",
         log_f = "normal(0,1)",
         k_raw = "normal(0,3)",
-        z_ID = "normal(0,1)",
-        sigma_ID = "normal(0,1)",
-        rho_ID = "lkj_corr_cholesky(3)",
+        z_veff = "normal(0,1)",
+        sigma_veff = "normal(0,1)",
+        rho_veff = "lkj_corr_cholesky(3)",
         gamma = "normal(0,1)"
     )
 
@@ -112,7 +119,8 @@ generate_STb_model <- function(STb_data,
             intrinsic_rate = intrinsic_rate,
             transmission_func = transmission_func,
             dTADA = F,
-            veff_ID = veff_ID,
+            veff_params = veff_params,
+            veff_type = veff_type,
             gq = gq,
             est_acqTime = est_acqTime,
             priors = priors
@@ -128,7 +136,8 @@ generate_STb_model <- function(STb_data,
             intrinsic_rate = intrinsic_rate,
             transmission_func = transmission_func,
             dTADA = T,
-            veff_ID = veff_ID,
+            veff_params = veff_params,
+            veff_type = veff_type,
             gq = gq,
             est_acqTime = est_acqTime,
             priors = priors
@@ -142,7 +151,8 @@ generate_STb_model <- function(STb_data,
             STb_data = STb_data,
             model_type = model_type,
             transmission_func = transmission_func,
-            veff_ID = veff_ID,
+            veff_params = veff_params,
+            veff_type = veff_type,
             gq = gq,
             priors = priors
         ))

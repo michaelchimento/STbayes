@@ -6,8 +6,7 @@
 #' @param ilv_name name to use for column
 #' @param n_levels number of levels in factor
 #'
-#' @returns matrix of size [N,L-1] where L=num levels
-#' @export
+#' @return matrix of size `[N,L-1\]` where L=num levels
 #'
 generate_X_matrix <- function(ilv_vector, ilv_name, n_levels) {
     # if there's only one level, return 0-col matrix
