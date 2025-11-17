@@ -106,15 +106,15 @@ import_user_STb <- function(event_data,
     if (inherits(networks, "data.frame")) {
         message("User supplied edge weights as point estimates \U0001F4CD")
         is_distribution <- FALSE
-    } else if (inherits(networks, "bison_model") || inherits(networks, "STRAND Results Object")) {
+    } else if (inherits(networks, "bison_model") || inherits(networks, "STRAND Results Object") || inherits(networks, "array")) {
         message("User supplied edge weights as posterior distributions \U0001F308")
         networks <- list(networks)
         is_distribution <- TRUE
-    } else if (is.list(networks) && all(sapply(networks, function(x) inherits(x, "bison_model") || inherits(x, "STRAND Results Object")))) {
+    } else if (is.list(networks) && all(sapply(networks, function(x) inherits(x, "bison_model") || inherits(x, "STRAND Results Object") || inherits(x, "array")))) {
         message("User supplied a list of Bayesian network fits [\U0001F308 , \U0001F308] ")
         is_distribution <- TRUE
     } else {
-        stop("\U0001F614 Please feed me a dataframe for the networks argument, or a bisonR model fit, or a list of fits.")
+        stop("\U0001F614 For the networks argument, please provide i) a dataframe of edgeweights (point estimates), an array of posterior draws of edgweights with structure [network, draws, focal, other] (distribution), a bisonR/STRAND model fit, or a list of fits.")
     }
 
     if (all(is.null(ILVi), is.null(ILVs), is.null(ILVm)) & (!is.null(ILV_c) | !is.null(ILV_tv))) {
@@ -409,7 +409,7 @@ import_user_STb <- function(event_data,
         dims <- c(length(network_cols), data_list$K, max_timesteps, data_list$P, data_list$P)
         A_array <- array(0, dim = dims)
 
-        # flatten ONCE
+        # flatten
         A_flat <- as.numeric(aperm(A_array, c(1, 2, 3, 4, 5)))
 
         # fill in-place
@@ -431,7 +431,7 @@ import_user_STb <- function(event_data,
             }
         }
 
-        # reshape ONCE after all fill_array calls
+        # reshape after all fill_array calls
         A_array <- aperm(array(A_flat, dim = dims), c(1, 2, 3, 4, 5))
 
         # replicate across time for static networks
@@ -459,8 +459,10 @@ import_user_STb <- function(event_data,
     # IF DISTRIBUTION
     else {
         N_networks <- length(networks)
+        data_list$focal_ID <- c()
+        data_list$other_ID <- c()
 
-        for (i in seq_along(networks)) {
+        for (i in 1:N_networks) {
             net_obj <- networks[[i]]
 
             if (inherits(net_obj, "bison_model")) {
@@ -483,18 +485,7 @@ import_user_STb <- function(event_data,
                 dyad_df <- dyad_df[dyad_df$focal != dyad_df$other, ]
                 data_list$focal_ID <- dyad_df$focal
                 data_list$other_ID <- dyad_df$other
-
-                if (net_obj$directed) {
-                    # Use samples as-is
-                    edges <- edge_samples
-                } else {
-                    # Duplicate edges to simulate directed version
-                    # focal_ids <- c(dyad_df$focal, dyad_df$other)
-                    # to_ids   <- c(dyad_df$other, dyad_df$focal)
-                    # dyad_df <- data.frame(focal = focal_ids, other = other_ids)
-                    # edges <- cbind(edge_samples, edge_samples)
-                    edges <- edge_samples
-                }
+                edges <- edge_samples
             } else if (inherits(net_obj, "STRAND Results Object")) {
                 # STRAND handling
                 ass_matrix <- net_obj$samples$predicted_network_sample # [draws, focal, other]
@@ -508,14 +499,34 @@ import_user_STb <- function(event_data,
                     for (i_other in 1:P) {
                         if (i_focal != i_other) {
                             edge_mat[, idx] <- ass_matrix[, i_focal, i_other]
+                            data_list$focal_ID[idx] <- i_focal
+                            data_list$other_ID[idx] <- i_other
                             idx <- idx + 1
                         }
                     }
                 }
 
                 edges <- qlogis(edge_mat) # convert to logit space
+            } else if (inherits(net_obj, "array")) {
+                draws <- dim(net_obj)[1]
+                P <- dim(net_obj)[2]
+
+                # Create edge sample matrix: [draws, dyads]
+                edge_mat <- matrix(NA, nrow = draws, ncol = P * (P - 1))
+                idx <- 1
+                for (i_focal in 1:P) {
+                    for (i_other in 1:P) {
+                        if (i_focal != i_other) {
+                            edge_mat[, idx] <- net_obj[, i_focal, i_other]
+                            data_list$focal_ID[idx] <- i_focal
+                            data_list$other_ID[idx] <- i_other
+                            idx <- idx + 1
+                        }
+                    }
+                }
+                edges <- edge_mat
             } else {
-                stop("\U0001F614 Unrecognized distributional network object. Expected bison_model.")
+                stop("\U0001F614 Unrecognized network object.")
             }
 
             if (i == 1) {

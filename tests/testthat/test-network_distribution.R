@@ -1,3 +1,49 @@
+testthat::test_that("Importing single and multi-network distribution edge weights works.", {
+    # network has 10 individuals, create mock diffusion data
+    event_data <- data.frame(
+        trial = 1,
+        # bison stores ids as characters, ids should match across dataframes
+        id = as.character(c(1:10)),
+        time = sample(1:101, 10, replace = FALSE),
+        t_end = 100
+    )
+
+    # mock 1000 posterior draws.
+    association <- array(rnorm(1000 * 10 * 10, mean = 0, sd = 1),
+        dim = c(1000, 10, 10)
+    )
+
+    data_list <- import_user_STb(event_data, networks = association)
+    model <- generate_STb_model(data_list)
+
+    # write to a temporary .stan file
+    tmp_stan_path <- cmdstanr::write_stan_file(model)
+
+    # try to compile
+    expect_error(
+        cmdstanr::cmdstan_model(tmp_stan_path, compile = TRUE),
+        regexp = NA # expect no error
+    )
+
+    # it's also possible to do multi-network models
+    visual_contact <- array(rnorm(1000 * 10 * 10, mean = 0, sd = 1),
+        dim = c(1000, 10, 10)
+    )
+
+    data_list <- import_user_STb(event_data,
+        networks = list(association, visual_contact)
+    )
+    model <- generate_STb_model(data_list)
+    # write to a temporary .stan file
+    tmp_stan_path <- cmdstanr::write_stan_file(model)
+
+    # try to compile
+    expect_error(
+        cmdstanr::cmdstan_model(tmp_stan_path, compile = TRUE),
+        regexp = NA # expect no error
+    )
+})
+
 testthat::test_that("Network structure is consistent using distribution edgeweights.", {
     networks <- STbayes::bisonr_fit
 

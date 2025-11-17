@@ -233,8 +233,38 @@ A flow chart for deciding between models can be found in [Hasenjager et al. 2021
 
 ## Edge weight uncertainty
 
-Rather than using point estimates for edge weights, it is possible to import posterior distributions of edge weights from bayesian network models, such as those fit by the [bisonr package](https://github.com/JHart96/bisonR/tree/main) or the [STRAND package](https://github.com/ctross/STRAND/tree/main). This is done by providing single fits (or a list of fits) to ```import_user_STb()```.
+Rather than using point estimates for edge weights, it is possible to import posterior distributions of edge weights from generative network models, such as those fit by the [bisonr package](https://github.com/JHart96/bisonR/tree/main) or the [STRAND package](https://github.com/ctross/STRAND/tree/main). The safest way to import this is to use a 3D array with dimensions (e.g. `association[draw,focal_ID,other_ID]`). Each value encodes the influence that other_ID has on focal_ID, so `association[1,1,2]` represents the edge along which social transmission can occur from individual `2` to `1`, and `association[1,2,1]` is vice versa. If the network is undirected, these values should be equal. Edge weights should be on the logit scale. Diagonal values (self-loops) are ignored when STbayes processes the data and won't influence the model. These can be set to zero in the input data. To create a multi-network nbda, just provide a list of arrays, one for each network. Alternatively, you can provide single fits (or a list of fits) from STRAND or bisonr to ```import_user_STb()```, although depending on how the network model was configured, this may have unexpected results. The imports seem to work as of the publication of the paper, but these packages may change in a way that breaks the import function. The safest is that you extract and format the posterior draws yourself.
+```{r}
+# network has 10 individuals, create mock diffusion data
+event_data <- data.frame(
+    trial = 1,
+    #bison stores ids as characters, ids should match across dataframes
+    id = as.character(c(1:10)),
+    time = sample(1:101, 10, replace = FALSE),
+    t_end = 100
+)
 
+# mock 1000 posterior draws.
+association <- array(rnorm(1000 * 10 * 10, mean = 0, sd = 1), 
+                     dim = c(1000, 10, 10))
+
+data_list <- import_user_STb(event_data, networks = association)
+model <- generate_STb_model(data_list)
+
+fit_STb(data_list = data_list,
+        model_obj = model)
+
+# it's also possible to do multi-network models
+visual_contact <- array(rnorm(1000 * 10 * 10, mean = 0, sd = 1), 
+                     dim = c(1000, 10, 10))
+
+data_list <- import_user_STb(event_data, 
+                             networks = list(association, visual_contact))
+model <- generate_STb_model(data_list)
+```
+
+
+Importing from bisonr:
 ```{r}
 bisonr_fit <- STbayes::bisonr_fit
 
@@ -253,6 +283,27 @@ model <- generate_STb_model(data_list)
 # here i add two of the same just to illustrate
 data_list <- import_user_STb(event_data, 
                              networks = list(bisonr_fit, bisonr_fit))
+model <- generate_STb_model(data_list)
+```
+
+Importing from STRAND:
+```{r}
+strand_fit <- STbayes::strand_results_obj
+
+# network has 10 individuals, create mock diffusion data
+event_data <- data.frame(
+    trial = 1,
+    #bison stores ids as characters, ids should match across dataframes
+    id = as.character(c(1:10)),
+    time = sample(1:101, 10, replace = FALSE),
+    t_end = 100
+)
+data_list <- import_user_STb(event_data, networks = strand_fit)
+model <- generate_STb_model(data_list)
+
+# multi-network models.
+data_list <- import_user_STb(event_data, 
+                             networks = list(strand_fit, strand_fit))
 model <- generate_STb_model(data_list)
 ```
 

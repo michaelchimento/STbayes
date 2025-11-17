@@ -351,12 +351,55 @@ al. 2021</a>.</p>
 <h2 id="edge-weight-uncertainty">Edge weight uncertainty<a class="anchor" aria-label="anchor" href="#edge-weight-uncertainty"></a>
 </h2>
 <p>Rather than using point estimates for edge weights, it is possible to
-import posterior distributions of edge weights from bayesian network
+import posterior distributions of edge weights from generative network
 models, such as those fit by the <a href="https://github.com/JHart96/bisonR/tree/main" class="external-link">bisonr package</a> or
 the <a href="https://github.com/ctross/STRAND/tree/main" class="external-link">STRAND
-package</a>. This is done by providing single fits (or a list of fits)
-to <code><a href="../reference/import_user_STb.html">import_user_STb()</a></code>.</p>
+package</a>. The safest way to import this is to use a 3D array with
+dimensions (e.g. <code>association[draw,focal_ID,other_ID]</code>). Each
+value encodes the influence that other_ID has on focal_ID, so
+<code>association[1,1,2]</code> represents the edge along which social
+transmission can occur from individual <code>2</code> to <code>1</code>,
+and <code>association[1,2,1]</code> is vice versa. If the network is
+undirected, these values should be equal. Edge weights should be on the
+logit scale. Diagonal values (self-loops) are ignored when STbayes
+processes the data and won’t influence the model. These can be set to
+zero in the input data. To create a multi-network nbda, just provide a
+list of arrays, one for each network. Alternatively, you can provide
+single fits (or a list of fits) from STRAND or bisonr to
+<code><a href="../reference/import_user_STb.html">import_user_STb()</a></code>, although depending on how the network
+model was configured, this may have unexpected results. The imports seem
+to work as of the publication of the paper, but these packages may
+change in a way that breaks the import function. The safest is that you
+extract and format the posterior draws yourself.</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># network has 10 individuals, create mock diffusion data</span></span>
+<span><span class="va">event_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>    trial <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>    <span class="co">#bison stores ids as characters, ids should match across dataframes</span></span>
+<span>    id <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">10</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>    time <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">101</span>, <span class="fl">10</span>, replace <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span>,</span>
+<span>    t_end <span class="op">=</span> <span class="fl">100</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># mock 1000 posterior draws.</span></span>
+<span><span class="va">association</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">1000</span> <span class="op">*</span> <span class="fl">10</span> <span class="op">*</span> <span class="fl">10</span>, mean <span class="op">=</span> <span class="fl">0</span>, sd <span class="op">=</span> <span class="fl">1</span><span class="op">)</span>, </span>
+<span>                     dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1000</span>, <span class="fl">10</span>, <span class="fl">10</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">data_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/import_user_STb.html">import_user_STb</a></span><span class="op">(</span><span class="va">event_data</span>, networks <span class="op">=</span> <span class="va">association</span><span class="op">)</span></span>
+<span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_STb_model.html">generate_STb_model</a></span><span class="op">(</span><span class="va">data_list</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/fit_STb.html">fit_STb</a></span><span class="op">(</span>data_list <span class="op">=</span> <span class="va">data_list</span>,</span>
+<span>        model_obj <span class="op">=</span> <span class="va">model</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># it's also possible to do multi-network models</span></span>
+<span><span class="va">visual_contact</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">1000</span> <span class="op">*</span> <span class="fl">10</span> <span class="op">*</span> <span class="fl">10</span>, mean <span class="op">=</span> <span class="fl">0</span>, sd <span class="op">=</span> <span class="fl">1</span><span class="op">)</span>, </span>
+<span>                     dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1000</span>, <span class="fl">10</span>, <span class="fl">10</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">data_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/import_user_STb.html">import_user_STb</a></span><span class="op">(</span><span class="va">event_data</span>, </span>
+<span>                             networks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">association</span>, <span class="va">visual_contact</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_STb_model.html">generate_STb_model</a></span><span class="op">(</span><span class="va">data_list</span><span class="op">)</span></span></code></pre></div>
+<p>Importing from bisonr:</p>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">bisonr_fit</span> <span class="op">&lt;-</span> <span class="fu">STbayes</span><span class="fu">::</span><span class="va">bisonr_fit</span></span>
 <span></span>
 <span><span class="co"># network has 10 individuals, create mock diffusion data</span></span>
@@ -375,6 +418,25 @@ to <code><a href="../reference/import_user_STb.html">import_user_STb()</a></code
 <span><span class="va">data_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/import_user_STb.html">import_user_STb</a></span><span class="op">(</span><span class="va">event_data</span>, </span>
 <span>                             networks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">bisonr_fit</span>, <span class="va">bisonr_fit</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_STb_model.html">generate_STb_model</a></span><span class="op">(</span><span class="va">data_list</span><span class="op">)</span></span></code></pre></div>
+<p>Importing from STRAND:</p>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">strand_fit</span> <span class="op">&lt;-</span> <span class="fu">STbayes</span><span class="fu">::</span><span class="va">strand_results_obj</span></span>
+<span></span>
+<span><span class="co"># network has 10 individuals, create mock diffusion data</span></span>
+<span><span class="va">event_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>    trial <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>    <span class="co">#bison stores ids as characters, ids should match across dataframes</span></span>
+<span>    id <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">10</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>    time <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">101</span>, <span class="fl">10</span>, replace <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span>,</span>
+<span>    t_end <span class="op">=</span> <span class="fl">100</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">data_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/import_user_STb.html">import_user_STb</a></span><span class="op">(</span><span class="va">event_data</span>, networks <span class="op">=</span> <span class="va">strand_fit</span><span class="op">)</span></span>
+<span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_STb_model.html">generate_STb_model</a></span><span class="op">(</span><span class="va">data_list</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># multi-network models.</span></span>
+<span><span class="va">data_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/import_user_STb.html">import_user_STb</a></span><span class="op">(</span><span class="va">event_data</span>, </span>
+<span>                             networks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">strand_fit</span>, <span class="va">strand_fit</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_STb_model.html">generate_STb_model</a></span><span class="op">(</span><span class="va">data_list</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="complex-transmission">Complex transmission<a class="anchor" aria-label="anchor" href="#complex-transmission"></a>
@@ -383,7 +445,7 @@ to <code><a href="../reference/import_user_STb.html">import_user_STb()</a></code
 You can create a log-likelihood that includes a frequency-dependent
 transmission rules by using the <code>transmission_func</code> argument
 of <code>generate_STb_model</code>:</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">data_list</span> <span class="op">=</span> <span class="fu"><a href="../reference/import_user_STb.html">import_user_STb</a></span><span class="op">(</span><span class="fu">STbayes</span><span class="fu">::</span><span class="va">event_data</span>, <span class="fu">STbayes</span><span class="fu">::</span><span class="va">edge_list</span><span class="op">)</span></span>
 <span><span class="va">model_standard</span> <span class="op">=</span> <span class="fu"><a href="../reference/generate_STb_model.html">generate_STb_model</a></span><span class="op">(</span><span class="va">data_list</span>, transmission_func<span class="op">=</span><span class="st">"standard"</span><span class="op">)</span> <span class="co"># default</span></span>
 <span><span class="va">model_f</span> <span class="op">=</span> <span class="fu"><a href="../reference/generate_STb_model.html">generate_STb_model</a></span><span class="op">(</span><span class="va">data_list</span>, transmission_func<span class="op">=</span><span class="st">"freqdep_f"</span><span class="op">)</span></span>
@@ -425,7 +487,7 @@ but tbh that’s gonna need a lot of data to estimate.</p>
 </h2>
 <p>You might want to customize the priors of your model. Here are the
 default priors:</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">default_priors</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>        log_lambda0 <span class="op">=</span> <span class="st">"normal(-4, 2)"</span>, <span class="co"># intrinsic rate</span></span>
 <span>        log_sprime <span class="op">=</span> <span class="st">"normal(-4, 2)"</span>, <span class="co"># social transmission rate</span></span>
@@ -443,7 +505,7 @@ distributions should be written with the usual Stan convention. You only
 need to supply those which you wish to change. For example, you might
 want to tighten your priors on intrinsic rate, social rate and beta
 params for ILVs.</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">data_list</span> <span class="op">=</span> <span class="fu"><a href="../reference/import_user_STb.html">import_user_STb</a></span><span class="op">(</span><span class="fu">STbayes</span><span class="fu">::</span><span class="va">event_data</span>, <span class="fu">STbayes</span><span class="fu">::</span><span class="va">edge_list</span><span class="op">)</span></span>
 <span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generate_STb_model.html">generate_STb_model</a></span><span class="op">(</span><span class="va">data_list</span>, priors <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>     log_lambda0 <span class="op">=</span> <span class="st">"normal(-4, 1)"</span>,</span>
@@ -466,7 +528,7 @@ in value frequently between events. Sampling intervals should be regular
 weights are recorded every time-step, rather than summarized per
 inter-event interval. If fitting a model with standard transmission,
 STbayes preprocesses the data for efficient fitting.</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">data_hires</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/import_user_STb.html">import_user_STb</a></span><span class="op">(</span></span>
 <span>    event_data <span class="op">=</span> <span class="fu">STbayes</span><span class="fu">::</span><span class="va">events_hires</span>,</span>
 <span>    networks <span class="op">=</span> <span class="fu">STbayes</span><span class="fu">::</span><span class="va">networks_hires</span>,</span>
@@ -480,7 +542,7 @@ transmission rule. You should use <code><a href="../reference/import_user_STb2.h
 High-res complex transmission models will take significantly longer to
 fit as they loop through each time-step, rather than inter-event
 intervals.</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">data_hires</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/import_user_STb2.html">import_user_STb2</a></span><span class="op">(</span></span>
 <span>    event_data <span class="op">=</span> <span class="fu">STbayes</span><span class="fu">::</span><span class="va">events_hires</span>,</span>
 <span>    networks <span class="op">=</span> <span class="fu">STbayes</span><span class="fu">::</span><span class="va">networks_hires</span>,</span>
@@ -497,7 +559,7 @@ to figure out what was meant to be done with ILVs. However, some
 features of STbayes require using <code>import_user_STb</code>. Below we
 read in an NBDA object (taken from Tutorial 4.1 from <a href="https://doi.org/10.1111/1365-2656.13307" class="external-link">Hasenjager et
 al. 2021</a>):</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">nbdaData_cTADA</span> <span class="op">&lt;-</span> <span class="fu">STbayes</span><span class="fu">::</span><span class="va">tutorial4_1</span></span>
 <span><span class="va">data_list</span> <span class="op">=</span> <span class="fu"><a href="../reference/import_NBDA_STb.html">import_NBDA_STb</a></span><span class="op">(</span><span class="va">nbdaData_cTADA</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">data_list</span><span class="op">)</span></span></code></pre></div>
