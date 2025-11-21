@@ -233,7 +233,7 @@ A flow chart for deciding between models can be found in [Hasenjager et al. 2021
 
 ## Edge weight uncertainty
 
-Rather than using point estimates for edge weights, it is possible to import posterior distributions of edge weights from generative network models, such as those fit by the [bisonr package](https://github.com/JHart96/bisonR/tree/main) or the [STRAND package](https://github.com/ctross/STRAND/tree/main). The safest way to import this is to use a 3D array with dimensions (e.g. `association[draw,focal_ID,other_ID]`). Each value encodes the influence that other_ID has on focal_ID, so `association[1,1,2]` represents the edge along which social transmission can occur from individual `2` to `1`, and `association[1,2,1]` is vice versa. If the network is undirected, these values should be equal. Edge weights should be on the logit scale. Diagonal values (self-loops) are ignored when STbayes processes the data and won't influence the model. These can be set to zero in the input data. To create a multi-network nbda, just provide a list of arrays, one for each network. Alternatively, you can provide single fits (or a list of fits) from STRAND or bisonr to ```import_user_STb()```, although depending on how the network model was configured, this may have unexpected results. The imports seem to work as of the publication of the paper, but these packages may change in a way that breaks the import function. The safest is that you extract and format the posterior draws yourself.
+Rather than using point estimates for edge weights, it is possible to import posterior distributions of edge weights from generative network models, such as those fit by the [bisonr package](https://github.com/JHart96/bisonR/tree/main) or the [STRAND package](https://github.com/ctross/STRAND/tree/main). The safest way to import this is to use a 3D array with dimensions (e.g. `association[draw,focal_ID,other_ID]`). Each value encodes the influence that other_ID has on focal_ID, so `association[1,1,2]` represents the edge along which social transmission can occur from individual `2` to `1`, and `association[1,2,1]` is vice versa. If the network is undirected, these values should be equal. Edge weights should be on the logit scale. Diagonal values (self-loops) are ignored when STbayes processes the data and won't influence the model. These can be set to zero in the input data. To create a multi-network nbda, just provide a list of arrays, one for each network. Alternatively, you can provide single fits (or a list of fits) from STRAND or bisonr to ```import_user_STb()```, although depending on how the network model was configured, this may have unexpected results. The imports work as of the publication of the paper, but the safest method is to extract and format the posterior draws yourself.
 ```{r}
 # network has 10 individuals, create mock diffusion data
 event_data <- data.frame(
@@ -342,9 +342,9 @@ default_priors <- list(
         beta_ILV = "normal(0,1)", # beta coefficients for ILVs
         log_f = "normal(0,1)", # exponent parameter under freqdep_f models
         k_raw = "normal(0,3)", # k parameter under freqdep_k models
-        z_ID = "normal(0,1)", # varying effects
-        sigma_ID = "normal(0,1)", # SD of varying effects
-        rho_ID = "lkj_corr_cholesky(3)", # LKJ prior for veff corr matrix
+        z_veff = "normal(0,1)", # varying effects
+        sigma_veff = "normal(0,1)", # SD of varying effects
+        rho_veff = "lkj_corr_cholesky(3)", # LKJ prior for veff corr matrix
         gamma = "normal(0,1)" # gamma parameter for Weibull intrinsic hazard model
     )
 ```
