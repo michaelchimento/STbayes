@@ -239,7 +239,7 @@ import_user_STb <- function(event_data,
                 "Dimensions of Z (",
                 paste(dim(data_list$Z), collapse = ","),
                 ") do not match W (",
-                paste(dim(data_list$W), collapse = ","), ")."
+                paste(dim(data_list$W), collapse = ","), "). Check that the number of timesteps are equivalent between event_data and t_weights."
             ))
         }
         data_list$Z <- data_list$Z * data_list$W

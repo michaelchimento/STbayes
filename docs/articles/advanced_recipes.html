@@ -76,14 +76,27 @@ STbayes.</p>
 input by adding an optional column <code>time</code> containing integers
 indicating which time-step the edges belong to. The network should be
 summarized for each inter-event period. For example, if the user’s
-observation period included 10 events, they should supply edge weights
-from 11 networks in total, where <code>time=1</code> should contain the
-network representing the period from
+observation period included 10 events and the dataset does not contain
+censored individuals, they should supply edge weights from 10 networks
+in total, where <code>time=1</code> should contain the network
+representing the period from
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">[</mo><msub><mi>t</mi><mn>0</mn></msub><mo>,</mo><msub><mi>t</mi><mrow><mi>e</mi><mn>1</mn></mrow></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">[t_0, t_{e1})</annotation></semantics></math>,
+<code>time=2</code> represents
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">[</mo><msub><mi>t</mi><mrow><mi>e</mi><mn>1</mn></mrow></msub><mo>,</mo><msub><mi>t</mi><mrow><mi>e</mi><mn>2</mn></mrow></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">[t_{e1}, t_{e2})</annotation></semantics></math>,
+and <code>time=10</code> represents from
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>t</mi><mrow><mi>e</mi><mn>9</mn></mrow></msub><mo>,</mo><msub><mi>t</mi><mtext mathvariant="normal">e10</mtext></msub><mo stretchy="true" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">[t_{e9}, t_{\text{e10}}]</annotation></semantics></math>.
+if the user’s observation period included 10 events and the dataset does
+contain censored individuals, they should supply edge weights from 11
+networks in total, where <code>time=1</code> should contain the network
+representing the period from
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">[</mo><msub><mi>t</mi><mn>0</mn></msub><mo>,</mo><msub><mi>t</mi><mrow><mi>e</mi><mn>1</mn></mrow></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">[t_0, t_{e1})</annotation></semantics></math>,
 <code>time=2</code> represents
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">[</mo><msub><mi>t</mi><mrow><mi>e</mi><mn>1</mn></mrow></msub><mo>,</mo><msub><mi>t</mi><mrow><mi>e</mi><mn>2</mn></mrow></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">[t_{e1}, t_{e2})</annotation></semantics></math>,
 and <code>time=11</code> represents from
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>t</mi><mrow><mi>e</mi><mn>10</mn></mrow></msub><mo>,</mo><msub><mi>t</mi><mtext mathvariant="normal">end</mtext></msub><mo stretchy="true" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">[t_{e10}, t_{\text{end}}]</annotation></semantics></math>.</p>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>t</mi><mrow><mi>e</mi><mn>10</mn></mrow></msub><mo>,</mo><msub><mi>t</mi><mtext mathvariant="normal">end</mtext></msub><mo stretchy="true" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">[t_{e10}, t_{\text{end}}]</annotation></semantics></math>.
+NB: If there are censored individuals, the end of the observation period
+should necessarily be larger than the time of the final event
+(<code>event_data$t_end &gt; max(event_data$time</code>).</p>
 <p>In the toy example below, we create a dynamic foveation network
 (indicating whether or not the focal individual foveated at the other
 individual) in a group of 3 individuals. None of the individuals are
@@ -249,7 +262,14 @@ interval:</p>
 <span>    t_weights <span class="op">=</span> <span class="va">t_weights_dynamic</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>You can mix and match static/dynamic networks with static/dynamic
-transmission weights.</p>
+transmission weights. Dynamic transmission weights are multiplied with
+the network edges to modulate their effect. Users should only include
+them if they are certain that they reflect real production rates, since
+a 0 value will remove any social influence that individual has on others
+for that timestep. <strong>This feature is designed for studies with
+automated methods that allow for accurate counts of behavioural
+productions.</strong> With coarser sampling regimes, <strong>users
+should instead use static transmission rates</strong>.</p>
 </div>
 <div class="section level2">
 <h2 id="varying-effects-by-individual-and-trial">Varying effects by individual and trial<a class="anchor" aria-label="anchor" href="#varying-effects-by-individual-and-trial"></a>

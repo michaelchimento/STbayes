@@ -25,7 +25,7 @@ library(STbayes)
 
 ## Dynamic network models
 
-Dynamic networks that change over the observation period may also be input by adding an optional column ```time``` containing integers indicating which time-step the edges belong to. The network should be summarized for each inter-event period. For example, if the user's observation period included 10 events, they should supply edge weights from 11 networks in total, where ```time=1``` should contain the network representing the period from $[t_0, t_{e1})$, ```time=2``` represents $[t_{e1}, t_{e2})$, and ```time=11``` represents from $[t_{e10}, t_{\text{end}}]$. 
+Dynamic networks that change over the observation period may also be input by adding an optional column ```time``` containing integers indicating which time-step the edges belong to. The network should be summarized for each inter-event period. For example, if the user's observation period included 10 events and the dataset does not contain censored individuals, they should supply edge weights from 10 networks in total, where ```time=1``` should contain the network representing the period from $[t_0, t_{e1})$, ```time=2``` represents $[t_{e1}, t_{e2})$, and ```time=10``` represents from $[t_{e9}, t_{\text{e10}}]$.  if the user's observation period included 10 events and the dataset does contain censored individuals, they should supply edge weights from 11 networks in total, where ```time=1``` should contain the network representing the period from $[t_0, t_{e1})$, ```time=2``` represents $[t_{e1}, t_{e2})$, and ```time=11``` represents from $[t_{e10}, t_{\text{end}}]$. NB: If there are censored individuals, the end of the observation period should necessarily be larger than the time of the final event (```event_data$t_end > max(event_data$time```).
 
 In the toy example below, we create a dynamic foveation network (indicating whether or not the focal individual foveated at the other individual) in a group of 3 individuals. None of the individuals are censored, so we only need to provide networks summarized over three timesteps:
 
@@ -155,7 +155,7 @@ data_list <- import_user_STb(
 )
 ```
 
-You can mix and match static/dynamic networks with static/dynamic transmission weights.
+You can mix and match static/dynamic networks with static/dynamic transmission weights. Dynamic transmission weights are multiplied with the network edges to modulate their effect. Users should only include them if they are certain that they reflect real production rates, since a 0 value will remove any social influence that individual has on others for that timestep. **This feature is designed for studies with automated methods that allow for accurate counts of behavioural productions.** With coarser sampling regimes, **users should instead use static transmission rates**.
 
 ## Varying effects by individual and trial
 
