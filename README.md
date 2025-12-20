@@ -3,24 +3,21 @@
 <!-- badges: start -->
 <!-- badges: end -->
 
-**STbayes** (ST standing for social transmission) is a package for building and running Bayesian inferential models of social transmission across static or dynamic networks. Users may supply their own data in formats given below, or import nbdaData objects directly from the [NBDA package](https://github.com/whoppitt/NBDA).
-   
-There is now an associated [preprint](https://doi.org/10.1101/2025.06.07.658152). The package is still under development, so if you run into a bug, please open an issue or contact me directly!
+**STbayes** is an R package for building, fitting and interpreting Bayesian network-based diffusion analyses (NBDA). NBDA models are generally used to identify i) whether social transmission is occurring, ii) correlates of asocial learning and social transmission, iii) pathways of transmission. An overview of the package is now published as an [application article in Methods in Ecology and Evolution](https://doi.org/10.1111/2041-210x.70228).
 
 ## Installation<a name="Installation"></a>
 
-The functions of this package depend on ```cmdstanr```, ```posterior```, ```bayestestR```, ```data.table``` and ```loo```. You can install ```cmdstanr``` by following these [instructions](https://mc-stan.org/cmdstanr/articles/cmdstanr.html).
+STbayes depends on ```cmdstanr```, ```posterior```, ```bayestestR```, ```data.table``` and ```loo```. You can install ```cmdstanr``` by following these [instructions](https://mc-stan.org/cmdstanr/articles/cmdstanr.html). Vignettes use NBDA (install with ```devtools::install_github("whoppitt/NBDA"```), igraph, dplyr, ggplot2, and ggpubr.
 
-Vignettes use packages NBDA (install with ```devtools::install_github("whoppitt/NBDA"```), igraph, dplyr, ggplot2, and ggpubr.
-
-
-To install the development version of STbayes:
+To install STbayes:
 
 ``` r
 # install devtools if not already
 if (!require("devtools")) install.packages("devtools")
 devtools::install_github("michaelchimento/STbayes")
 ```
+## Citing STbayes
+Chimento, M., & Hoppitt, W. (2025). STbayes: An R package for creating, fitting and understanding Bayesian models of social transmission. *Methods in Ecology and Evolution*, 00, 1–10. [https://doi.org/10.1111/2041-210x.70228](https://doi.org/10.1111/2041-210x.70228).
 
 ## Getting started
 
