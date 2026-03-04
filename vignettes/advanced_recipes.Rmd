@@ -25,7 +25,7 @@ library(STbayes)
 
 ## Dynamic network models
 
-Dynamic networks that change over the observation period may also be input by adding an optional column ```time``` containing integers indicating which time-step the edges belong to. The network should be summarized for each inter-event period. For example, if the user's observation period included 10 events and the dataset does not contain censored individuals, they should supply edge weights from 10 networks in total, where ```time=1``` should contain the network representing the period from $[t_0, t_{e1})$, ```time=2``` represents $[t_{e1}, t_{e2})$, and ```time=10``` represents from $[t_{e9}, t_{\text{e10}}]$.  if the user's observation period included 10 events and the dataset does contain censored individuals, they should supply edge weights from 11 networks in total, where ```time=1``` should contain the network representing the period from $[t_0, t_{e1})$, ```time=2``` represents $[t_{e1}, t_{e2})$, and ```time=11``` represents from $[t_{e10}, t_{\text{end}}]$. NB: If there are censored individuals, the end of the observation period should necessarily be larger than the time of the final event (```event_data$t_end > max(event_data$time```).
+Dynamic networks that change over the observation period may also be input by adding an optional column ```time``` containing integers indicating which time-step the edges belong to. The network should be summarized for each inter-event period. For example, if the user's observation period included 10 events and the dataset does not contain censored individuals, they should supply edge weights from 10 networks in total, where ```time=1``` should contain the network representing the period from $[t_0, t_{e1})$, ```time=2``` represents $[t_{e1}, t_{e2})$, and ```time=10``` represents from $[t_{e9}, t_{\text{e10}}]$.  if the user's observation period included 10 events and the dataset does contain censored individuals, they should supply edge weights from 11 networks in total, where ```time=1``` should contain the network representing the period from $[t_0, t_{e1})$, ```time=2``` represents $[t_{e1}, t_{e2})$, and ```time=11``` represents from $[t_{e10}, t_{\text{end}}]$.
 
 In the toy example below, we create a dynamic foveation network (indicating whether or not the focal individual foveated at the other individual) in a group of 3 individuals. None of the individuals are censored, so we only need to provide networks summarized over three timesteps:
 
@@ -42,6 +42,31 @@ networks <- data.frame(
                 0, 1, 1, #summarizes from first event to second event
                 0, 0, 1), #summarizes from second event to final event,
     time = rep(1:3, each=3)
+)
+```
+
+### Censored individuals in dynamic network models
+
+To illustrate how data should be formatted if censored individuals are present, let's load example dataframes of events and networks:
+
+```{r dynamic-network2}
+data(events_dynamic_network_ex)
+events_dynamic_network_ex %>% filter(time>t_end)
+```
+4 individuals were not observed producing the target behaviour within the observation period, so they are coded as $t_end+1$.
+
+```{r}
+data(networks_dynamic_network_ex)
+summary(networks_dynamic_network_ex)
+```
+For each time interval, we have 2 networks (```avf, dist```) summarizing the edges between focal and other for that time interval. Edges coded with ```time=1``` summarizes the time period from the start of the observation period until the first event $[t_{start}, t_1]$. Edges coded with ```time=7``` summarizes the time period from the final event to the end of the observation period $[t_6, t_{end}]$.
+
+We can then feed these into STbayes as usual. These are directed networks, so we also include that info in the arguments:
+```{r}
+data_list <- import_user_STb(
+    event_data = events_dynamic_network_ex,
+    networks = networks_dynamic_network_ex,
+    network_type = "directed"
 )
 ```
 
