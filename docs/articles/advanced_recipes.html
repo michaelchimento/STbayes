@@ -68,7 +68,16 @@
 <p>This vignette gives some examples of more advanced/involved uses of
 STbayes.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://michaelchimento.github.io/STbayes">STbayes</a></span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://michaelchimento.github.io/STbayes">STbayes</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Attaching package: 'dplyr'</span></span>
+<span><span class="co">#&gt; The following objects are masked from 'package:stats':</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;     filter, lag</span></span>
+<span><span class="co">#&gt; The following objects are masked from 'package:base':</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;     intersect, setdiff, setequal, union</span></span></code></pre></div>
 <div class="section level2">
 <h2 id="dynamic-network-models">Dynamic network models<a class="anchor" aria-label="anchor" href="#dynamic-network-models"></a>
 </h2>
@@ -120,13 +129,34 @@ timesteps:</p>
 are present, let’s load example dataframes of events and networks:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">events_dynamic_network_ex</span><span class="op">)</span></span>
-<span><span class="va">events_dynamic_network_ex</span> <span class="op">%&gt;%</span> <span class="fu"><a href="https://rdrr.io/r/stats/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">time</span><span class="op">&gt;</span><span class="va">t_end</span><span class="op">)</span></span></code></pre></div>
-<p>4 individuals were not observed producing the target behaviour within
-the observation period, so they are coded as
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>t</mi><mi>e</mi></msub><mi>n</mi><mi>d</mi><mo>+</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">t_end+1</annotation></semantics></math>.</p>
+<span><span class="va">events_dynamic_network_ex</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">time</span><span class="op">&gt;</span><span class="va">t_end</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 4 × 4</span></span></span>
+<span><span class="co">#&gt;      id trial  time t_end</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>     1     1  <span style="text-decoration: underline;">1</span>884  <span style="text-decoration: underline;">1</span>883</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>     5     1  <span style="text-decoration: underline;">1</span>884  <span style="text-decoration: underline;">1</span>883</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>     6     1  <span style="text-decoration: underline;">1</span>884  <span style="text-decoration: underline;">1</span>883</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span>    10     1  <span style="text-decoration: underline;">1</span>884  <span style="text-decoration: underline;">1</span>883</span></span></code></pre></div>
+<p>4 of 10 individuals were not observed producing the target behaviour
+within the observation period, so they are coded as
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>t</mi><mrow><mi>e</mi><mi>n</mi><mi>d</mi></mrow></msub><mo>+</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">t_{end}+1</annotation></semantics></math>.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">networks_dynamic_network_ex</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">networks_dynamic_network_ex</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">networks_dynamic_network_ex</span><span class="op">)</span></span>
+<span><span class="co">#&gt;      trial       focal          other           avf              dist      </span></span>
+<span><span class="co">#&gt;  Min.   :1   Min.   : 1.0   Min.   : 1.0   Min.   :0.0000   Min.   :0.000  </span></span>
+<span><span class="co">#&gt;  1st Qu.:1   1st Qu.: 3.0   1st Qu.: 3.0   1st Qu.:0.0000   1st Qu.:0.000  </span></span>
+<span><span class="co">#&gt;  Median :1   Median : 5.5   Median : 5.5   Median :0.0000   Median :0.000  </span></span>
+<span><span class="co">#&gt;  Mean   :1   Mean   : 5.5   Mean   : 5.5   Mean   :0.4492   Mean   :0.419  </span></span>
+<span><span class="co">#&gt;  3rd Qu.:1   3rd Qu.: 8.0   3rd Qu.: 8.0   3rd Qu.:1.0000   3rd Qu.:1.000  </span></span>
+<span><span class="co">#&gt;  Max.   :1   Max.   :10.0   Max.   :10.0   Max.   :1.0000   Max.   :1.000  </span></span>
+<span><span class="co">#&gt;       time  </span></span>
+<span><span class="co">#&gt;  Min.   :1  </span></span>
+<span><span class="co">#&gt;  1st Qu.:2  </span></span>
+<span><span class="co">#&gt;  Median :4  </span></span>
+<span><span class="co">#&gt;  Mean   :4  </span></span>
+<span><span class="co">#&gt;  3rd Qu.:6  </span></span>
+<span><span class="co">#&gt;  Max.   :7</span></span></code></pre></div>
 <p>For each time interval, we have 2 networks (<code>avf, dist</code>)
 summarizing the edges between focal and other for that time interval.
 Edges coded with <code>time=1</code> summarizes the time period from the

@@ -19,8 +19,9 @@ knitr::opts_chunk$set(
 
 This vignette gives some examples of more advanced/involved uses of STbayes.
 
-```{r setup}
+```{r setup, eval=T}
 library(STbayes)
+library(dplyr)
 ```
 
 ## Dynamic network models
@@ -49,13 +50,13 @@ networks <- data.frame(
 
 To illustrate how data should be formatted if censored individuals are present, let's load example dataframes of events and networks:
 
-```{r dynamic-network2}
+```{r dynamic-network2, eval = TRUE}
 data(events_dynamic_network_ex)
 events_dynamic_network_ex %>% filter(time>t_end)
 ```
-4 individuals were not observed producing the target behaviour within the observation period, so they are coded as $t_end+1$.
+4 of 10 individuals were not observed producing the target behaviour within the observation period, so they are coded as $t_{end}+1$.
 
-```{r}
+```{r, eval = TRUE}
 data(networks_dynamic_network_ex)
 summary(networks_dynamic_network_ex)
 ```

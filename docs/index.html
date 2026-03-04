@@ -53,19 +53,22 @@
 </nav><div class="container template-home">
 <div class="row">
   <main id="main" class="col-md-9"><p><br><br><img src="reference/figures/stbayes_banner2.png" alt="banner"><!-- badges: start --><!-- badges: end --></p>
-<p><strong>STbayes</strong> (ST standing for social transmission) is an R package for building, fitting and interpreting Bayesian network-based diffusion analyses (NBDA). NBDA models are generally used to identify i) whether social transmission is occurring, ii) correlates of asocial learning and social transmission, iii) pathways of transmission.</p>
-<p>An overview of the package is now published as an <a href="https://doi.org/10.1111/2041-210x.70228" class="external-link">application article in Methods in Ecology and Evolution</a>.</p>
+<p><strong>STbayes</strong> is an R package for building, fitting and interpreting Bayesian network-based diffusion analyses (NBDA). NBDA models are generally used to identify i) whether social transmission is occurring, ii) correlates of asocial learning and social transmission, iii) pathways of transmission. An overview of the package is now published as an <a href="https://doi.org/10.1111/2041-210x.70228" class="external-link">application article in Methods in Ecology and Evolution</a>.</p>
 <div class="section level2">
 <h2 id="installation">Installation<a name="Installation"></a>
 <a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
-<p>The functions of this package depend on <code>cmdstanr</code>, <code>posterior</code>, <code>bayestestR</code>, <code>data.table</code> and <code>loo</code>. You can install <code>cmdstanr</code> by following these <a href="https://mc-stan.org/cmdstanr/articles/cmdstanr.html" class="external-link">instructions</a>.</p>
-<p>Vignettes use packages NBDA (install with <code>devtools::install_github("whoppitt/NBDA"</code>), igraph, dplyr, ggplot2, and ggpubr.</p>
-<p>To install the development version of STbayes:</p>
+<p>STbayes depends on <code>cmdstanr</code>, <code>posterior</code>, <code>bayestestR</code>, <code>data.table</code> and <code>loo</code>. You can install <code>cmdstanr</code> by following these <a href="https://mc-stan.org/cmdstanr/articles/cmdstanr.html" class="external-link">instructions</a>. Vignettes use NBDA (install with <code>devtools::install_github("whoppitt/NBDA"</code>), igraph, dplyr, ggplot2, and ggpubr.</p>
+<p>To install STbayes:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install devtools if not already</span></span>
 <span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">require</a></span><span class="op">(</span><span class="st"><a href="https://devtools.r-lib.org/" class="external-link">"devtools"</a></span><span class="op">)</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"devtools"</span><span class="op">)</span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"michaelchimento/STbayes"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="citing-stbayes">Citing STbayes<a class="anchor" aria-label="anchor" href="#citing-stbayes"></a>
+</h2>
+<p>Chimento, M., &amp; Hoppitt, W. (2025). STbayes: An R package for creating, fitting and understanding Bayesian models of social transmission. <em>Methods in Ecology and Evolution</em>, 00, 1–10. <a href="https://doi.org/10.1111/2041-210x.70228" class="external-link">https://doi.org/10.1111/2041-210x.70228</a>.</p>
 </div>
 <div class="section level2">
 <h2 id="getting-started">Getting started<a class="anchor" aria-label="anchor" href="#getting-started"></a>
