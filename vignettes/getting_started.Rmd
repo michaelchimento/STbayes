@@ -151,12 +151,17 @@ Above, we used the argument ```est_acqTime=T```. As the Stan model runs, in each
 
 We can plot the posterior distribution of cumulative diffusion curves and compare them with the observed curve. First, we create a dataframe for the cumulative number of individuals who experienced an event.
 ```{r PPC1}
+# we need to store num inds per trial to refer to later
+event_data <- event_data %>%
+    group_by(trial) %>%
+    mutate(n_trial = n())
+
 plot_data_obs <- event_data %>%
     filter(time > 0, time <= t_end) %>% # exclude demonstrators (time == 0) and censored (time > t_end)
     group_by(trial) %>%
     arrange(time, .by_group = TRUE) %>%
     mutate(
-        cum_prop = row_number() / n(),
+        cum_prop = row_number() / n_trial, # this denominator needs to be the number of individuals per trial
         type = "observed"
     ) %>%
     select(trial, time, cum_prop, type) %>%
@@ -172,7 +177,7 @@ plot_data_obs <- bind_rows(
     arrange(trial, time)
 ```
 
-Next, we can extract the draws of estimated acquisition times, excluding warm-up iterations, as a data-frame. We can then pivot it into a long format and calculate the cumulative curves for each draw as we did our observed data. Note that I thinned the draws for the sake of visualization.
+Next, we can extract the draws of estimated acquisition times, excluding warm-up iterations, as a data-frame. We can then pivot it into a long format and calculate the cumulative curves for each draw as we did our observed data. If an individual is predicted as censored for a particular draw, it's estimated event time will be $-1$, and they should be filtered out before plotting. Note that I thinned the draws for the sake of visualization.
 
 ```{r PPC2}
 draws_df <- as_draws_df(full_fit$draws(variables = "acquisition_time", inc_warmup = FALSE))
@@ -197,13 +202,23 @@ ppc_long <- draws_df %>%
 sample_idx <- sample(c(1:max(ppc_long$draw)), 100)
 ppc_long <- ppc_long %>% filter(draw %in% sample_idx)
 
+# same as before, we need a way to reference the number of individuals in each trial
+ppc_long <- ppc_long %>%
+    group_by(draw, trial) %>%
+    mutate(n_trial = n())
+
+# we also need to remove individuals predicted as censored, which
+# have value of -1 in predicted data
+ppc_long <- ppc_long %>%
+    filter(time > -1)
+
 # build cumulative curves per draw
 plot_data_ppc <- ppc_long %>%
     group_by(draw, trial, time) %>%
-    summarise(n = n(), .groups = "drop") %>%
+    summarise(n = n(), n_trial = first(n_trial), .groups = "drop") %>%
     group_by(draw, trial) %>%
     arrange(time) %>%
-    mutate(cum_prop = cumsum(n) / data_list$Q)
+    mutate(cum_prop = cumsum(n) / n_trial)
 
 # add in 0,0 starting point
 plot_data_ppc <- bind_rows(

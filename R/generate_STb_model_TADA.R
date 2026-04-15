@@ -11,6 +11,7 @@
 #' @param veff_type string/vector specifying whether varying effects should be applied to "id", "trial" or both (c("id","trial")). Default is id, applied only if user also gives `veff_params`.
 #' @param gq Boolean to indicate whether the generated quantities block is added (incl. ll for WAIC)
 #' @param est_acqTime Boolean to indicate whether gq block includes estimates for acquisition time. At the moment this uses 'one weird trick' to accomplish this and does not support estimates for non-integer learning times.
+#' @param est_acqTime_option character option "a" or "b" that determines how the model will estimate acquisition times. Default is "a", which is much faster, but *cannot* account for any time-varying values that change during inter-event intervals. Option "b" is much slower, but can account for these cases.
 #' @param priors named list with strings containing the prior for log baserate, s, f, k.
 #' @return A STAN model (character) that is customized to the input data.
 
@@ -23,6 +24,7 @@ generate_STb_model_TADA <- function(STb_data,
                                     veff_type = "id",
                                     gq = TRUE,
                                     est_acqTime = FALSE,
+                                    est_acqTime_option = "a",
                                     priors = list()) {
     if (!model_type %in% c("asocial", "full")) {
         stop("Invalid model_type. Choose 'asocial' or 'full'.")
@@ -819,22 +821,64 @@ model {{
     }}
 }}
 ")
-    est_acqTime_code <- if (est_acqTime == TRUE) glue::glue("
+    est_acqTime_code <- if (est_acqTime == TRUE && est_acqTime_option == "a") glue::glue("
+    //the following will NOT work properly if
+    //variables or networks change outside of event cutpoints
     matrix[K, Q] acquisition_time;         // simulated acquisition times
     for (trial in 1:K) {{
         for (n in 1:Q) {{
             int id = ind_id[trial, n];
             int learn_time = t[trial, id];
             // if demonstrator, skip simulation
-            if (learn_time < 0) {{
+            if (learn_time <= 0) {{
                 acquisition_time[trial, n] = 0;
                 continue;
             }}
 
-            real cum_hazard = 0; //set val before adding
+            acquisition_time[trial, n] = -1; // any ind predicted as censored will take -1 val
+            real cum_hazard = 0;
+            real threshold = -log(uniform_rng(0,1));
+            int global_time = 1;
+
+            for (time_step in 1:T[trial]) {{
+                real ind_term = {ILVi_variable_effects};
+                {network_term}
+                {social_info_statement}
+                {lambda_statement_estAcq}
+                int dt = D_int[trial, time_step];   // inter-event interval length
+                real delta_H = lambda * dt;
+
+                // will the event happen during this interval?
+                // if so update acquisition time
+                if (cum_hazard + delta_H > threshold) {{
+                    real tau = (threshold - cum_hazard) / lambda;
+                    acquisition_time[trial, n] = global_time + tau;
+                    break;
+                }}
+                //otherwise accumulate time and hazard
+                cum_hazard += delta_H;
+                global_time += dt;
+            }}
+        }}
+    }}") else if (est_acqTime == TRUE && est_acqTime_option == "b") glue::glue("
+    // the following is quite slow for long diffusions but
+    // allows variables and networks to flexibly change between events
+    matrix[K, Q] acquisition_time; // simulated acquisition times
+    for (trial in 1:K) {{
+        for (n in 1:Q) {{
+            int id = ind_id[trial, n];
+            int learn_time = t[trial, id];
+            // if demonstrator, skip simulation
+            if (learn_time <= 0) {{
+                acquisition_time[trial, n] = 0;
+                continue;
+            }}
+
+            acquisition_time[trial, n] = -1; // any ind predicted as censored will take -1 val
+            real cum_hazard = 0;
             real threshold = -log(uniform_rng(0, 1));
             int global_time = 1;
-            acquisition_time[trial, n] = time_max[trial];
+
 
             for (time_step in 1:T[trial]) {{
                 for (micro_time in 1:D_int[trial, time_step]){{

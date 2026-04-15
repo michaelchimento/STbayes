@@ -14,6 +14,7 @@ generate_STb_model_TADA(
   veff_type = "id",
   gq = TRUE,
   est_acqTime = FALSE,
+  est_acqTime_option = "a",
   priors = list()
 )
 }

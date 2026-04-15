@@ -14,6 +14,7 @@ generate_STb_model(
   veff_type = "id",
   gq = TRUE,
   est_acqTime = FALSE,
+  est_acqTime_option = c("a", "b"),
   priors = list()
 )
 }
@@ -35,6 +36,8 @@ generate_STb_model(
 \item{gq}{Boolean to indicate whether the generated quantities block is added (incl. ll for WAIC)}
 
 \item{est_acqTime}{Boolean to indicate whether gq block includes estimates for acquisition time. At the moment this uses 'one weird trick' to accomplish this and does not support estimates for non-integer learning times.}
+
+\item{est_acqTime_option}{character option "a" or "b" that determines how the model will estimate acquisition times. Default is "a", which is much faster, but \emph{cannot} account for any time-varying values that change during inter-event intervals. Option "b" is much slower, but can account for these cases.}
 
 \item{priors}{named list with strings containing priors.}
 }
