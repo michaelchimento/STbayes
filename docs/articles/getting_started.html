@@ -36,6 +36,7 @@
 <li><a class="dropdown-item" href="../articles/advanced_recipes.html">Advanced recipes</a></li>
     <li><a class="dropdown-item" href="../articles/getting_started.html">Getting started with STbayes</a></li>
     <li><a class="dropdown-item" href="../articles/simulate_data_for_power_analyses.html">Simulate data for power analyses</a></li>
+    <li><a class="dropdown-item" href="../articles/weibull_shaped_hazards.html">Weibull shaped hazards</a></li>
   </ul>
 </li>
       </ul>
@@ -176,7 +177,7 @@ You can specify whether the network is directed or undirected using
 <span><span class="co">#&gt; ░▒▓█►─═ Sanity check ═─◄█▓▒░</span></span>
 <span><span class="co">#&gt; User provided data about:</span></span>
 <span><span class="co">#&gt; 50 individuals across 1 independent diffusions (trials).</span></span>
-<span><span class="co">#&gt; There were 50 individuals in each trial.</span></span>
+<span><span class="co">#&gt; 50 of 50 individuals learned in trial 1</span></span>
 <span><span class="co">#&gt; User supplied 1 networks: assoc</span></span>
 <span><span class="co">#&gt; ILV for asocial learning: ILVabsent</span></span>
 <span><span class="co">#&gt; ILV for social learning: ILVabsent</span></span>
@@ -240,7 +241,7 @@ it’ll use. You can specify your own priors using the argument
 <span><span class="co">#&gt; z_veff ~ normal(0,1)</span></span>
 <span><span class="co">#&gt; sigma_veff ~ normal(0,1)</span></span>
 <span><span class="co">#&gt; rho_veff ~ lkj_corr_cholesky(3)</span></span>
-<span><span class="co">#&gt; gamma ~ normal(0,1)</span></span></code></pre></div>
+<span><span class="co">#&gt; gamma ~ normal(0,.5)</span></span></code></pre></div>
 <p>This returns a very long string containing the code. The argument
 <code>gq</code> indicates whether a generated quantities block will be
 created. This defaults to TRUE, as it’s needed to output the
@@ -347,24 +348,24 @@ more details</li>
 <span><span class="co">#&gt; Chain 4 Iteration:    1 / 2000 [  0%]  (Warmup) </span></span>
 <span><span class="co">#&gt; Chain 2 Iteration: 1000 / 2000 [ 50%]  (Warmup) </span></span>
 <span><span class="co">#&gt; Chain 2 Iteration: 1001 / 2000 [ 50%]  (Sampling) </span></span>
-<span><span class="co">#&gt; Chain 1 Iteration: 1000 / 2000 [ 50%]  (Warmup) </span></span>
-<span><span class="co">#&gt; Chain 4 Iteration: 1000 / 2000 [ 50%]  (Warmup) </span></span>
-<span><span class="co">#&gt; Chain 4 Iteration: 1001 / 2000 [ 50%]  (Sampling) </span></span>
-<span><span class="co">#&gt; Chain 1 Iteration: 1001 / 2000 [ 50%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 3 Iteration: 1000 / 2000 [ 50%]  (Warmup) </span></span>
 <span><span class="co">#&gt; Chain 3 Iteration: 1001 / 2000 [ 50%]  (Sampling) </span></span>
+<span><span class="co">#&gt; Chain 4 Iteration: 1000 / 2000 [ 50%]  (Warmup) </span></span>
+<span><span class="co">#&gt; Chain 4 Iteration: 1001 / 2000 [ 50%]  (Sampling) </span></span>
+<span><span class="co">#&gt; Chain 1 Iteration: 1000 / 2000 [ 50%]  (Warmup) </span></span>
+<span><span class="co">#&gt; Chain 1 Iteration: 1001 / 2000 [ 50%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 2 Iteration: 2000 / 2000 [100%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 4 Iteration: 2000 / 2000 [100%]  (Sampling) </span></span>
-<span><span class="co">#&gt; Chain 2 finished in 6.7 seconds.</span></span>
-<span><span class="co">#&gt; Chain 4 finished in 6.7 seconds.</span></span>
+<span><span class="co">#&gt; Chain 2 finished in 6.9 seconds.</span></span>
+<span><span class="co">#&gt; Chain 4 finished in 6.8 seconds.</span></span>
 <span><span class="co">#&gt; Chain 3 Iteration: 2000 / 2000 [100%]  (Sampling) </span></span>
-<span><span class="co">#&gt; Chain 3 finished in 6.8 seconds.</span></span>
+<span><span class="co">#&gt; Chain 3 finished in 7.0 seconds.</span></span>
 <span><span class="co">#&gt; Chain 1 Iteration: 2000 / 2000 [100%]  (Sampling) </span></span>
-<span><span class="co">#&gt; Chain 1 finished in 7.1 seconds.</span></span>
+<span><span class="co">#&gt; Chain 1 finished in 7.4 seconds.</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; All 4 chains finished successfully.</span></span>
-<span><span class="co">#&gt; Mean chain execution time: 6.8 seconds.</span></span>
-<span><span class="co">#&gt; Total execution time: 7.3 seconds.</span></span>
+<span><span class="co">#&gt; Mean chain execution time: 7.0 seconds.</span></span>
+<span><span class="co">#&gt; Total execution time: 7.6 seconds.</span></span>
 <span><span class="co">#&gt; 🫴 Use STb_save() to save the fit and chain csvs to a single RDS file. Or don't!</span></span></code></pre></div>
 <p>This function calls cmdstanr’s $sample(), and you can add any extra
 valid arguments to pass on here. In this call, I’ve made sure that we
@@ -455,14 +456,27 @@ for the cumulative number of individuals who experienced an event.</p>
 <span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">trial</span>, <span class="va">time</span>, <span class="va">cum_prop</span>, <span class="va">type</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">ungroup</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># add in 0,0 starting point</span></span>
-<span><span class="va">plot_data_obs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/bind_rows.html" class="external-link">bind_rows</a></span><span class="op">(</span></span>
-<span>    <span class="va">plot_data_obs</span>,</span>
-<span>    <span class="va">plot_data_obs</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>        <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="va">trial</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>        <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>time <span class="op">=</span> <span class="fl">0</span>, cum_prop <span class="op">=</span> <span class="fl">0</span>, type <span class="op">=</span> <span class="st">"observed"</span><span class="op">)</span></span>
-<span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span><span class="co"># add in 0,0 starting point for diffusions w/o demonstrators</span></span>
+<span><span class="va">starting_points</span> <span class="op">&lt;-</span> <span class="va">plot_data_obs</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="va">trial</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter-joins.html" class="external-link">anti_join</a></span><span class="op">(</span></span>
+<span>        <span class="va">plot_data_obs</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">time</span> <span class="op">==</span> <span class="fl">0</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="va">trial</span><span class="op">)</span>,</span>
+<span>        by <span class="op">=</span> <span class="st">"trial"</span></span>
+<span>    <span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>time <span class="op">=</span> <span class="fl">0</span>, cum_prop <span class="op">=</span> <span class="fl">0</span>, type <span class="op">=</span> <span class="st">"observed"</span><span class="op">)</span></span>
+<span><span class="va">plot_data_obs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/bind_rows.html" class="external-link">bind_rows</a></span><span class="op">(</span><span class="va">plot_data_obs</span>, <span class="va">starting_points</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="va">trial</span>, <span class="va">time</span><span class="op">)</span></span></code></pre></div>
+<p>Note that for diffusions where there are no demonstrators
+(i.e. individuals knowledgeable at time 0), I added in a starting point
+using anti-join. This is only to make the curve look nice. Demonstrators
+do not have an event time to predict, so you could exclude them
+altogether from PPC plots, with nothing of value lost. The Stan code
+ensures they will receive a predicted time of “0” in each draw, and you
+can filter them out the same way we filter out censored individuals.
+Just be consistent: if you exclude them here, you must also exclude them
+in the predicted draws below. This example has no demonstrators, so
+there’s no choice to make. But, with real data, you’ll have to
+decide.</p>
 <p>Next, we can extract the draws of estimated acquisition times,
 excluding warm-up iterations, as a data-frame. We can then pivot it into
 a long format and calculate the cumulative curves for each draw as we
@@ -513,14 +527,19 @@ draws for the sake of visualization.</p>
 <span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="va">time</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>cum_prop <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/cumsum.html" class="external-link">cumsum</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span> <span class="op">/</span> <span class="va">n_trial</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># add in 0,0 starting point</span></span>
-<span><span class="va">plot_data_ppc</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/bind_rows.html" class="external-link">bind_rows</a></span><span class="op">(</span></span>
-<span>    <span class="va">plot_data_ppc</span>,</span>
-<span>    <span class="va">plot_data_ppc</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>        <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="va">trial</span>, <span class="va">draw</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>        <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>time <span class="op">=</span> <span class="fl">0</span>, cum_prop <span class="op">=</span> <span class="fl">0</span>, type <span class="op">=</span> <span class="st">"ppc"</span><span class="op">)</span></span>
-<span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="va">trial</span>, <span class="va">time</span><span class="op">)</span></span>
+<span><span class="co"># add in 0,0 starting point when no demos, similar to above</span></span>
+<span><span class="va">starting_points_ppc</span> <span class="op">&lt;-</span> <span class="va">plot_data_ppc</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="va">trial</span>, <span class="va">draw</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter-joins.html" class="external-link">anti_join</a></span><span class="op">(</span></span>
+<span>        <span class="va">plot_data_ppc</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>            <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">time</span> <span class="op">==</span> <span class="fl">0</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>            <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="va">trial</span>, <span class="va">draw</span><span class="op">)</span>,</span>
+<span>        by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"trial"</span>, <span class="st">"draw"</span><span class="op">)</span></span>
+<span>    <span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>time <span class="op">=</span> <span class="fl">0</span>, cum_prop <span class="op">=</span> <span class="fl">0</span>, type <span class="op">=</span> <span class="st">"ppc"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">plot_data_ppc</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/bind_rows.html" class="external-link">bind_rows</a></span><span class="op">(</span><span class="va">plot_data_ppc</span>, <span class="va">starting_points_ppc</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="va">trial</span>, <span class="va">draw</span>, <span class="va">time</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># plot it</span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
@@ -582,7 +601,7 @@ to the full model fit.</p>
 <span><span class="co">#&gt; z_veff ~ normal(0,1)</span></span>
 <span><span class="co">#&gt; sigma_veff ~ normal(0,1)</span></span>
 <span><span class="co">#&gt; rho_veff ~ lkj_corr_cholesky(3)</span></span>
-<span><span class="co">#&gt; gamma ~ normal(0,1)</span></span>
+<span><span class="co">#&gt; gamma ~ normal(0,.5)</span></span>
 <span><span class="va">asocial_fit</span> <span class="op">=</span> <span class="fu"><a href="../reference/fit_STb.html">fit_STb</a></span><span class="op">(</span><span class="va">data_list</span>,</span>
 <span>                      <span class="va">model_asoc</span>,</span>
 <span>                      parallel_chains <span class="op">=</span> <span class="fl">4</span>,</span>
@@ -601,13 +620,13 @@ to the full model fit.</p>
 <span><span class="co">#&gt; Chain 2 Iteration: 1000 / 2000 [ 50%]  (Warmup) </span></span>
 <span><span class="co">#&gt; Chain 2 Iteration: 1001 / 2000 [ 50%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 3 Iteration:    1 / 2000 [  0%]  (Warmup) </span></span>
-<span><span class="co">#&gt; Chain 4 Iteration:    1 / 2000 [  0%]  (Warmup) </span></span>
-<span><span class="co">#&gt; Chain 1 Iteration: 2000 / 2000 [100%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 3 Iteration: 1000 / 2000 [ 50%]  (Warmup) </span></span>
 <span><span class="co">#&gt; Chain 3 Iteration: 1001 / 2000 [ 50%]  (Sampling) </span></span>
+<span><span class="co">#&gt; Chain 4 Iteration:    1 / 2000 [  0%]  (Warmup) </span></span>
+<span><span class="co">#&gt; Chain 1 Iteration: 2000 / 2000 [100%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 4 Iteration: 1000 / 2000 [ 50%]  (Warmup) </span></span>
 <span><span class="co">#&gt; Chain 4 Iteration: 1001 / 2000 [ 50%]  (Sampling) </span></span>
-<span><span class="co">#&gt; Chain 1 finished in 0.3 seconds.</span></span>
+<span><span class="co">#&gt; Chain 1 finished in 0.2 seconds.</span></span>
 <span><span class="co">#&gt; Chain 2 Iteration: 2000 / 2000 [100%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 3 Iteration: 2000 / 2000 [100%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 4 Iteration: 2000 / 2000 [100%]  (Sampling) </span></span>
@@ -616,7 +635,7 @@ to the full model fit.</p>
 <span><span class="co">#&gt; Chain 4 finished in 0.3 seconds.</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; All 4 chains finished successfully.</span></span>
-<span><span class="co">#&gt; Mean chain execution time: 0.3 seconds.</span></span>
+<span><span class="co">#&gt; Mean chain execution time: 0.2 seconds.</span></span>
 <span><span class="co">#&gt; Total execution time: 0.4 seconds.</span></span>
 <span><span class="co">#&gt; 🫴 Use STb_save() to save the fit and chain csvs to a single RDS file. Or don't!</span></span></code></pre></div>
 <p>If you are familiar with loo or have your own pipeline, then you can
@@ -631,10 +650,10 @@ want, here we just compare these two.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">loo_output</span><span class="op">$</span><span class="va">comparison</span>, simplify <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt;             elpd_diff se_diff elpd_loo se_elpd_loo p_loo  se_p_loo looic </span></span>
 <span><span class="co">#&gt; full_fit       0.0       0.0  -290.8      6.3         2.0    0.5    581.5</span></span>
-<span><span class="co">#&gt; asocial_fit  -21.3       5.3  -312.0      3.9         0.3    0.0    624.1</span></span>
+<span><span class="co">#&gt; asocial_fit -292.5      30.2  -583.2     33.0         9.2    1.4   1166.5</span></span>
 <span><span class="co">#&gt;             se_looic</span></span>
 <span><span class="co">#&gt; full_fit      12.5  </span></span>
-<span><span class="co">#&gt; asocial_fit    7.7</span></span></code></pre></div>
+<span><span class="co">#&gt; asocial_fit   66.1</span></span></code></pre></div>
 <p>If you are not familiar with leave-out-out cross validation, I
 strongly suggest reading up on it, but the TLDR is that you should pay
 attention to the elpd_diff and se_diff columns. A model is credibly more

@@ -6,6 +6,7 @@
 #' @param high_res boolean
 #' @param time_type do we want to summarize inter-event intervals or real time
 #' @return matrix dimensions k,t,n where value=0 if naive at t, otherwise 1
+#' @noRd
 create_Z_matrix <- function(event_data, high_res, time_type = c("interval", "real")) {
     time_type <- match.arg(time_type)
     trials <- unique(event_data$trial_numeric)

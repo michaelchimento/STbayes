@@ -6,6 +6,7 @@
 #' @param ILV_type character indicating types of ILVs: @asocILVdata = asocial, @intILVdata = social, and @multiILVdata = multiplicative (affects both social and asocial equally)
 #'
 #' @return List of vectors for each ILV
+#' @noRd
 extract_ILV <- function(nbda_object, ILV_type) {
     ILV_matrix <- methods::slot(nbda_object, ILV_type) # Access the slot via its name
 

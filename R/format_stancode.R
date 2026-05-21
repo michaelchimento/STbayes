@@ -4,6 +4,7 @@
 #' @param indent integer of num spaces for indent
 #'
 #' @return formatted string of stan code
+#' @noRd
 format_stancode <- function(stan_code, indent = 4) {
     lines <- unlist(strsplit(stan_code, "\n"))
     level <- 0

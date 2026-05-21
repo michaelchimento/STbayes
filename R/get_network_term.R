@@ -16,6 +16,7 @@
 #' @param time_var string used to index time "time_step"
 #' @param high_res boolean indicating if high res
 #' @return string of stan code to be used in the model for calculating network effects
+#' @noRd
 
 get_network_term <- function(transmission_func = "standard", is_distribution = FALSE, num_networks = 1, veff_params = c(), s_var = "s_prime", net_var = "A",
                              net_index = "network", id_var = "id", veff_type = c(), veff_idx = "id", trial_var = "trial", time_var = "time_step", high_res = F) {

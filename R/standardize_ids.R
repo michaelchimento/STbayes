@@ -9,6 +9,7 @@
 #' @param t_weights Optional dataframe with columns trial, id, time and t_weight.
 #'
 #' @return list of dataframes with filled out ids
+#' @noRd
 standardize_ids <- function(networks, event_data, ILV_c = NULL, ILV_tv = NULL, t_weights = NULL) {
     if (inherits(networks, "data.frame")) {
         # Extract all unique ids from networks

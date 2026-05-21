@@ -37,6 +37,8 @@ generate_STb_model_TADA(
 
 \item{est_acqTime}{Boolean to indicate whether gq block includes estimates for acquisition time. At the moment this uses 'one weird trick' to accomplish this and does not support estimates for non-integer learning times.}
 
+\item{est_acqTime_option}{character option "a" or "b" that determines how the model will estimate acquisition times. Default is "a", which is much faster, but \emph{cannot} account for any time-varying values that change during inter-event intervals. Option "b" is much slower, but can account for these cases.}
+
 \item{priors}{named list with strings containing the prior for log baserate, s, f, k.}
 }
 \value{

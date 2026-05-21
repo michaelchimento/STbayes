@@ -6,6 +6,7 @@
 #' @param max_time end of the observation period
 #' @importFrom stats setNames
 #' @returns W dimensions k,t,n
+#' @noRd
 create_W_matrix <- function(t_weights, max_time) {
     t_weights$trial_numeric <- as.numeric(as.factor(t_weights$trial))
     # t_weights$id_numeric <- as.numeric(as.factor(t_weights$id))

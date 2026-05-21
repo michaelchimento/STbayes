@@ -7,7 +7,7 @@
 #' @param n_levels number of levels in factor
 #'
 #' @return matrix of size `[N,L-1\]` where L=num levels
-#'
+#' @noRd
 generate_X_matrix <- function(ilv_vector, ilv_name, n_levels) {
     # if there's only one level, return 0-col matrix
     if (n_levels <= 1) {

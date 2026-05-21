@@ -139,10 +139,10 @@ import_user_STb <- function(event_data,
     # event_data should be in format id, trial, time, t_end
     # if time==0, assume to be trained demonstrator, if time>t_end, assume to be censored
     # create numeric variables in case user has supplied strings
-
     event_data$trial_numeric <- as.numeric(as.factor(event_data$trial))
     # order in case user has not, assign indexes per trial
     event_data <- event_data[order(event_data$trial_numeric, event_data$time), ]
+
     event_data$index <- with(event_data, ave(trial_numeric, trial_numeric, FUN = seq_along))
 
     # create discrete time (this should be 0 if ID was a demo/seed)
@@ -152,6 +152,8 @@ import_user_STb <- function(event_data,
         ave(time, trial_numeric, FUN = function(x) as.numeric(as.factor(x)))
     )
     event_data$discrete_time[event_data$time == 0] <- 0
+
+
 
 
     # not using these now but just in case..
@@ -229,6 +231,9 @@ import_user_STb <- function(event_data,
         directed = if (network_type == "directed") T else F
     )
 
+    # create attribute for returned object
+    attr(data_list, "df_event_data") <- event_data
+
     dim(data_list$D) <- c(data_list$K, data_list$T_max)
     dim(data_list$D_int) <- c(data_list$K, data_list$T_max)
 
@@ -244,6 +249,9 @@ import_user_STb <- function(event_data,
         }
         data_list$Z <- data_list$Z * data_list$W
         # data_list$Z <- data_list$W
+
+        # create attribute for returned object
+        attr(data_list, "df_t_weights") <- t_weights
     }
 
     # ILV processing BEGINS HERE
@@ -303,6 +311,9 @@ import_user_STb <- function(event_data,
         N_trials <- max(ILV_tv$trial_numeric)
         P <- max(ILV_tv$id_numeric)
         T_max <- max(ILV_tv$discrete_time)
+
+        # create attribute for returned object
+        attr(data_list, "df_ILV_tv") <- ILV_tv
 
         for (col in ILV_cols) {
             datatype <- detect_ILV_datatype(ILV_tv[[col]])
@@ -402,6 +413,9 @@ import_user_STb <- function(event_data,
         networks$trial_numeric <- as.numeric(as.factor(networks$trial))
 
         networks$discrete_time <- with(networks, ave(time, trial_numeric, FUN = function(x) as.numeric(as.factor(x))))
+
+        # create attribute for returned object
+        attr(data_list, "df_networks") <- networks
 
         is_symmetric <- nrow(networks[networks$trial_numeric == 1 & networks$discrete_time == min(networks$discrete_time), ]) == data_list$P * (data_list$P - 1)
         max_timesteps <- max(data_list$T)

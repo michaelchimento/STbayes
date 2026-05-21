@@ -30,10 +30,10 @@ generate_STb_model_TADA <- function(STb_data,
         stop("Invalid model_type. Choose 'asocial' or 'full'.")
     }
 
-    if (est_acqTime == TRUE && min(check_integer(STb_data$time)) == 0) {
-        message("WARNING: You have input float times, and unfortunately estimating acquisition times in the GQ block is only possible with integer times at the moment.\nThe model will be created with est_acqTime=F.")
-        est_acqTime <- FALSE
-    }
+    # if (est_acqTime == TRUE && min(check_integer(STb_data$time)) == 0) {
+    #    message("WARNING: You have input float times, and unfortunately estimating acquisition times in the GQ block is only possible with integer times at the moment.\nThe model will be created with est_acqTime=F.")
+    #    est_acqTime <- FALSE
+    # }
 
     # set var for index string to be used for veff
     veff_idx <- paste0(veff_type, collapse = ",")
@@ -708,8 +708,16 @@ transformed parameters {{
 }}
 ")
     # create string inputs cuz recursion don't work 2 levels down in glue
-    gamma_statement <- if (intrinsic_rate == "weibull") glue::glue("* pow(elapsed_time, {gamma_term} - 1)") else ""
-    eA_gamma_statement <- if (intrinsic_rate == "weibull") glue::glue("* pow(global_time, {gamma_term} - 1)") else ""
+    gamma_statement <- if (intrinsic_rate == "weibull") glue::glue("(pow(t_end, {gamma_term}) - pow(t_start, {gamma_term}))") else "D[trial, time_step]"
+    eA_gamma_statement <- if (intrinsic_rate == "weibull") glue::glue("* (pow(t_end, {gamma_term}) - pow(t_start, {gamma_term}))") else ""
+    t_event_estAcq <- if (intrinsic_rate == "weibull") {
+        glue::glue("real t_event = pow(pow(t_start, {gamma_term}) + (threshold - cum_hazard) / lambda, 1.0 / {gamma_term});")
+    } else {
+        glue::glue("real tau = (threshold - cum_hazard) / lambda;
+      real t_event = global_time + tau;")
+    }
+
+    gamma_target_increment_statement <- if (intrinsic_rate == "weibull") glue::glue("+ log({gamma_term}) + ({gamma_term}-1) * log(t_end)") else ""
     lambda_var <- if (is.element("lambda_0", veff_params)) glue::glue("lambda_0[{veff_idx}]") else "lambda_0"
 
     if (model_type == "full") {
@@ -734,12 +742,14 @@ transformed parameters {{
 
 
         lambda_statement <- glue::glue(
-            "real lambda = {ILVm_variable_effects} ({lambda_var} * ind_term + soc_term) * D[trial, time_step] {gamma_statement};"
+            "real lambda = {ILVm_variable_effects} ({lambda_var} * ind_term + soc_term) * {gamma_statement};"
         )
 
         lambda_statement_estAcq <- glue::glue(
-            "real lambda = {ILVm_variable_effects} ({lambda_var} * ind_term + soc_term) {eA_gamma_statement};"
+            "real lambda = {ILVm_variable_effects} ({lambda_var} * ind_term + soc_term);"
         )
+
+
 
         if (dTADA) {
             target_increment_statement <- glue::glue(
@@ -752,20 +762,28 @@ transformed parameters {{
             )
         } else {
             target_increment_statement <- glue::glue(
-                "target += log({ILVm_variable_effects} ({lambda_var} * ind_term + soc_term){gamma_statement});"
+                "target += log({ILVm_variable_effects} ({lambda_var} * ind_term + soc_term)) {gamma_target_increment_statement};"
             )
 
             log_lik_statement <- glue::glue(
-                "log_lik_matrix[trial, n] = log({ILVm_variable_effects} ({lambda_var} * ind_term + soc_term){gamma_statement}) - cum_hazard;"
+                "log_lik_matrix[trial, n] = log({ILVm_variable_effects} ({lambda_var} * ind_term + soc_term)) {gamma_target_increment_statement} - cum_hazard;"
             )
         }
     } else if (model_type == "asocial") {
         psoc_code <- ""
         social_info_statement <- ""
-        lambda_statement <- glue::glue("real lambda =  {lambda_var} * ind_term * D[trial, time_step]{gamma_statement};")
-        lambda_statement_estAcq <- glue::glue("real lambda =  {lambda_var} * ind_term{eA_gamma_statement};")
-        target_increment_statement <- glue::glue("target += log( {lambda_var} * ind_term{gamma_statement});")
-        log_lik_statement <- glue::glue("log_lik_matrix[trial, n] = log({lambda_var} * ind_term{gamma_statement}) - cum_hazard;")
+        lambda_statement <- glue::glue("real lambda =  {lambda_var} * ind_term * {gamma_statement};")
+        lambda_statement_estAcq <- glue::glue("real lambda =  {lambda_var} * ind_term;")
+        target_increment_statement <- glue::glue("target += log( {lambda_var} * ind_term) * {gamma_statement};")
+        log_lik_statement <- glue::glue("log_lik_matrix[trial, n] = log({lambda_var} * ind_term) {gamma_target_increment_statement} - cum_hazard;")
+    }
+
+    delta_H_estAcq <- if (intrinsic_rate == "weibull") {
+        glue::glue(
+            "real delta_H = lambda {eA_gamma_statement};"
+        )
+    } else {
+        "real delta_H = lambda * dt;"
     }
 
     # Model block
@@ -792,7 +810,8 @@ model {{
 
             if (learn_time > 0) {{
                 for (time_step in 1:learn_time) {{
-                    {if (intrinsic_rate=='weibull') 'real elapsed_time = sum(D[trial, 1:time_step]);' else ''}
+                        {if (intrinsic_rate=='weibull') 'real t_end = sum(D[trial, 1:time_step]);
+                                                         real t_start = t_end - D[trial, time_step];' else ''}
                     real ind_term = {ILVi_variable_effects};
                     {network_term}
                     {social_info_statement}
@@ -809,7 +828,8 @@ model {{
             for (c in 1:N_c[trial]) {{
                 int id = ind_id[trial, N[trial] + c];
                     for (time_step in 1:T[trial]) {{
-                        {if (intrinsic_rate=='weibull') 'real elapsed_time = sum(D[trial, 1:time_step]);' else ''}
+                        {if (intrinsic_rate=='weibull') 'real t_end = sum(D[trial, 1:time_step]);
+                                                         real t_start = t_end - D[trial, time_step];' else ''}
                         real ind_term = {ILVi_variable_effects};
                         {network_term}
                         {social_info_statement}
@@ -838,22 +858,24 @@ model {{
             acquisition_time[trial, n] = -1; // any ind predicted as censored will take -1 val
             real cum_hazard = 0;
             real threshold = -log(uniform_rng(0,1));
-            int global_time = 1;
+            real global_time = 0;
 
             for (time_step in 1:T[trial]) {{
+                real dt = D[trial, time_step];   // inter-event interval length
+                {if (intrinsic_rate=='weibull') 'real t_end = global_time + dt;
+                                                 real t_start = global_time;' else ''}
                 real ind_term = {ILVi_variable_effects};
                 {network_term}
                 {social_info_statement}
                 {lambda_statement_estAcq}
-                int dt = D_int[trial, time_step];   // inter-event interval length
-                real delta_H = lambda * dt;
+                {delta_H_estAcq}
 
                 // will the event happen during this interval?
                 // if so update acquisition time
                 if (cum_hazard + delta_H > threshold) {{
-                    real tau = (threshold - cum_hazard) / lambda;
-                    acquisition_time[trial, n] = global_time + tau;
-                    break;
+                  {t_event_estAcq}
+                  acquisition_time[trial, n] = t_event;
+                  break;
                 }}
                 //otherwise accumulate time and hazard
                 cum_hazard += delta_H;
@@ -877,21 +899,27 @@ model {{
             acquisition_time[trial, n] = -1; // any ind predicted as censored will take -1 val
             real cum_hazard = 0;
             real threshold = -log(uniform_rng(0, 1));
+            int dt = 1; // dumbly set this so i don't need to add more logic to the code generator
             int global_time = 1;
-
-
             for (time_step in 1:T[trial]) {{
                 for (micro_time in 1:D_int[trial, time_step]){{
+                   {if (intrinsic_rate=='weibull') 'real t_end = global_time + dt;
+                   real t_start = global_time;' else ''}
                     real ind_term = {ILVi_variable_effects};
                     {network_term}
                     {social_info_statement}
-                    {lambda_statement_estAcq}
-                    cum_hazard += lambda;
-                    if (cum_hazard > threshold) {{
-                        acquisition_time[trial, n] = global_time;
-                        break;  // exit inner loop
+                   {lambda_statement_estAcq}
+                   {delta_H_estAcq}
+
+                    if (cum_hazard + delta_H > threshold) {{
+                      {t_event_estAcq}
+                      acquisition_time[trial, n] = t_event;
+                      cum_hazard += delta_H;
+                      break;
                     }}
-                    global_time += 1;
+                    //otherwise accumulate time and hazard
+                    cum_hazard += delta_H;
+                    global_time += dt;
                 }}
                 if (cum_hazard > threshold) break;  // exit outer loop
              }}
@@ -939,7 +967,8 @@ generated quantities {{
             if (learn_time > 0){{
                 real cum_hazard = 0; //set val before adding
                 for (time_step in 1:learn_time) {{
-                    {if (intrinsic_rate=='weibull') 'real elapsed_time = sum(D[trial, 1:time_step]);' else ''}
+                    {if (intrinsic_rate=='weibull') 'real t_end = sum(D[trial, 1:time_step]);
+                                                     real t_start = t_end - D[trial, time_step];' else ''}
                     real ind_term = {ILVi_variable_effects};
                     {network_term}
                     {social_info_statement}
@@ -962,7 +991,8 @@ generated quantities {{
                     // compute cumulative hazard up to the censoring time
                     real cum_hazard = 0;
                     for (time_step in 1:censor_time) {{
-                        {if (intrinsic_rate=='weibull') 'real elapsed_time = sum(D[trial, 1:time_step]);' else ''}
+                       {if (intrinsic_rate=='weibull') 'real t_end = sum(D[trial, 1:time_step]);
+                                                        real t_start = t_end - D[trial, time_step];' else ''}
                         real ind_term = {ILVi_variable_effects};
                         {network_term}
                         {social_info_statement}

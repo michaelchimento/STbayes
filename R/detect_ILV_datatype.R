@@ -5,6 +5,7 @@
 #' @param x column or vector of data
 #'
 #' @return string with category of variable
+#' @noRd
 detect_ILV_datatype <- function(x) {
     x <- stats::na.omit(x)
 

@@ -3,6 +3,7 @@
 #' @param veff_type string or character vector user entered
 #'
 #' @return formatted veffs, ofc
+#' @noRd
 check_veff_type <- function(veff_type) {
     if (!is.character(veff_type)) {
         stop("`veff_type` must be a character vector")

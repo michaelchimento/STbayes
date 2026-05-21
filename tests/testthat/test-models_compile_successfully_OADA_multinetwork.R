@@ -117,7 +117,6 @@ test_that("veff_params=c(s, f) veff_type=c(id,trial) OADA compiles", {
     )
 
     stan_code <- generate_STb_model(data_list,
-        intrinsic_rate = "weibull",
         transmission_func = "freqdep_f",
         veff_params = c("s", "f"),
         veff_type = c("id", "trial"),

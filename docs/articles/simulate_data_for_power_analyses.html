@@ -36,6 +36,7 @@
 <li><a class="dropdown-item" href="../articles/advanced_recipes.html">Advanced recipes</a></li>
     <li><a class="dropdown-item" href="../articles/getting_started.html">Getting started with STbayes</a></li>
     <li><a class="dropdown-item" href="../articles/simulate_data_for_power_analyses.html">Simulate data for power analyses</a></li>
+    <li><a class="dropdown-item" href="../articles/weibull_shaped_hazards.html">Weibull shaped hazards</a></li>
   </ul>
 </li>
       </ul>
@@ -261,7 +262,16 @@ transmission model over the asocial constrained model:</p>
 <span><span class="co">#&gt; ░▒▓█►─═ Sanity check ═─◄█▓▒░</span></span>
 <span><span class="co">#&gt; User provided data about:</span></span>
 <span><span class="co">#&gt; 30 individuals across 10 independent diffusions (trials).</span></span>
-<span><span class="co">#&gt; There were 30 individuals in each trial.</span></span>
+<span><span class="co">#&gt; 30 of 30 individuals learned in trial 1</span></span>
+<span><span class="co">#&gt; 30 of 30 individuals learned in trial 2</span></span>
+<span><span class="co">#&gt; 30 of 30 individuals learned in trial 3</span></span>
+<span><span class="co">#&gt; 30 of 30 individuals learned in trial 4</span></span>
+<span><span class="co">#&gt; 30 of 30 individuals learned in trial 5</span></span>
+<span><span class="co">#&gt; 30 of 30 individuals learned in trial 6</span></span>
+<span><span class="co">#&gt; 30 of 30 individuals learned in trial 7</span></span>
+<span><span class="co">#&gt; 30 of 30 individuals learned in trial 8</span></span>
+<span><span class="co">#&gt; 30 of 30 individuals learned in trial 9</span></span>
+<span><span class="co">#&gt; 30 of 30 individuals learned in trial 10</span></span>
 <span><span class="co">#&gt; User supplied 1 networks: assoc</span></span>
 <span><span class="co">#&gt; ILV for asocial learning: ILVabsent</span></span>
 <span><span class="co">#&gt; ILV for social learning: ILVabsent</span></span>
@@ -279,7 +289,7 @@ transmission model over the asocial constrained model:</p>
 <span><span class="co">#&gt; z_veff ~ normal(0,1)</span></span>
 <span><span class="co">#&gt; sigma_veff ~ normal(0,1)</span></span>
 <span><span class="co">#&gt; rho_veff ~ lkj_corr_cholesky(3)</span></span>
-<span><span class="co">#&gt; gamma ~ normal(0,1)</span></span>
+<span><span class="co">#&gt; gamma ~ normal(0,.5)</span></span>
 <span><span class="va">fit_full</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_STb.html">fit_STb</a></span><span class="op">(</span><span class="va">data_list</span>, <span class="va">model_full</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Detected N_veff = 0</span></span>
 <span><span class="co">#&gt; ⏳ Sampling...</span></span>
@@ -297,7 +307,7 @@ transmission model over the asocial constrained model:</p>
 <span><span class="co">#&gt; Chain 1 Iteration: 800 / 1000 [ 80%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 1 Iteration: 900 / 1000 [ 90%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 1 Iteration: 1000 / 1000 [100%]  (Sampling) </span></span>
-<span><span class="co">#&gt; Chain 1 finished in 4.2 seconds.</span></span>
+<span><span class="co">#&gt; Chain 1 finished in 4.1 seconds.</span></span>
 <span><span class="co">#&gt; 🫴 Use STb_save() to save the fit and chain csvs to a single RDS file. Or don't!</span></span>
 <span></span>
 <span><span class="co"># fit constrained model</span></span>
@@ -311,7 +321,7 @@ transmission model over the asocial constrained model:</p>
 <span><span class="co">#&gt; z_veff ~ normal(0,1)</span></span>
 <span><span class="co">#&gt; sigma_veff ~ normal(0,1)</span></span>
 <span><span class="co">#&gt; rho_veff ~ lkj_corr_cholesky(3)</span></span>
-<span><span class="co">#&gt; gamma ~ normal(0,1)</span></span>
+<span><span class="co">#&gt; gamma ~ normal(0,.5)</span></span>
 <span><span class="va">fit_asoc</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_STb.html">fit_STb</a></span><span class="op">(</span><span class="va">data_list</span>, <span class="va">model_asoc</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Detected N_veff = 0</span></span>
 <span><span class="co">#&gt; ⏳ Sampling...</span></span>
@@ -340,7 +350,7 @@ transmission model over the asocial constrained model:</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">loo_output</span><span class="op">$</span><span class="va">comparison</span><span class="op">)</span></span>
 <span><span class="co">#&gt;          elpd_diff se_diff</span></span>
 <span><span class="co">#&gt; fit_full    0.0       0.0 </span></span>
-<span><span class="co">#&gt; fit_asoc -193.6      14.5</span></span></code></pre></div>
+<span><span class="co">#&gt; fit_asoc -651.9      31.5</span></span></code></pre></div>
 <p>Given enough trials, and a large enough population size, the social
 model should be correctly supported. A power analysis table with
 differing numbers of individuals and trials is available in the
@@ -393,7 +403,16 @@ as an additive effect to social learning.</p>
 <span><span class="co">#&gt; ░▒▓█►─═ Sanity check ═─◄█▓▒░</span></span>
 <span><span class="co">#&gt; User provided data about:</span></span>
 <span><span class="co">#&gt; 30 individuals across 10 independent diffusions (trials).</span></span>
-<span><span class="co">#&gt; There were 30 individuals in each trial.</span></span>
+<span><span class="co">#&gt; 30 of 30 individuals learned in trial 1</span></span>
+<span><span class="co">#&gt; 30 of 30 individuals learned in trial 2</span></span>
+<span><span class="co">#&gt; 30 of 30 individuals learned in trial 3</span></span>
+<span><span class="co">#&gt; 30 of 30 individuals learned in trial 4</span></span>
+<span><span class="co">#&gt; 30 of 30 individuals learned in trial 5</span></span>
+<span><span class="co">#&gt; 30 of 30 individuals learned in trial 6</span></span>
+<span><span class="co">#&gt; 30 of 30 individuals learned in trial 7</span></span>
+<span><span class="co">#&gt; 30 of 30 individuals learned in trial 8</span></span>
+<span><span class="co">#&gt; 30 of 30 individuals learned in trial 9</span></span>
+<span><span class="co">#&gt; 30 of 30 individuals learned in trial 10</span></span>
 <span><span class="co">#&gt; User supplied 1 networks: assoc</span></span>
 <span><span class="co">#&gt; ILV for asocial learning: ILVabsent</span></span>
 <span><span class="co">#&gt; ILV for social learning: cont_ILV</span></span>
@@ -410,7 +429,7 @@ as an additive effect to social learning.</p>
 <span><span class="co">#&gt; z_veff ~ normal(0,1)</span></span>
 <span><span class="co">#&gt; sigma_veff ~ normal(0,1)</span></span>
 <span><span class="co">#&gt; rho_veff ~ lkj_corr_cholesky(3)</span></span>
-<span><span class="co">#&gt; gamma ~ normal(0,1)</span></span>
+<span><span class="co">#&gt; gamma ~ normal(0,.5)</span></span>
 <span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_STb.html">fit_STb</a></span><span class="op">(</span><span class="va">data_list</span>, <span class="va">model</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Detected N_veff = 0</span></span>
 <span><span class="co">#&gt; ⏳ Sampling...</span></span>
@@ -428,7 +447,7 @@ as an additive effect to social learning.</p>
 <span><span class="co">#&gt; Chain 1 Iteration: 800 / 1000 [ 80%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 1 Iteration: 900 / 1000 [ 90%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 1 Iteration: 1000 / 1000 [100%]  (Sampling) </span></span>
-<span><span class="co">#&gt; Chain 1 finished in 5.9 seconds.</span></span>
+<span><span class="co">#&gt; Chain 1 finished in 6.0 seconds.</span></span>
 <span><span class="co">#&gt; 🫴 Use STb_save() to save the fit and chain csvs to a single RDS file. Or don't!</span></span>
 <span><span class="fu"><a href="../reference/STb_summary.html">STb_summary</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
 <span><span class="co">#&gt;            Parameter Median   MAD CI_Lower CI_Upper ess_bulk ess_tail  Rhat</span></span>

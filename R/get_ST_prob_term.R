@@ -33,7 +33,12 @@ get_ST_prob_term <- function(transmission_func, is_distribution = FALSE,
         if ("s" %in% veff_params) glue::glue("{s_var}[{veff_idx}]") else glue::glue("{s_var}")
     }
 
-    full_s_term <- glue::glue("{s_term} * D[{trial_var}, {time_var}] {ILVs_variable_effects} {weibull_term}")
+    if (nchar(weibull_term)) {
+        full_s_term <- glue::glue("{s_term} {ILVs_variable_effects} * {weibull_term}")
+    } else {
+        full_s_term <- glue::glue("{s_term} * D[{trial_var}, {time_var}] {ILVs_variable_effects}")
+    }
+
 
     net_expr <- if (is_distribution) {
         glue::glue("{net_var}[network][{id_var}, ]")

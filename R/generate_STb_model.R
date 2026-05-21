@@ -88,6 +88,10 @@ generate_STb_model <- function(STb_data,
     stopifnot(is.logical(est_acqTime), length(est_acqTime) == 1)
     est_acqTime_option <- match.arg(est_acqTime_option, choices = c("a", "b"))
 
+    if (data_type == "order" && intrinsic_rate == "weibull") {
+        stop("Weibull shaped hazard cannot be specified in OADA-type model.")
+    }
+
     if (data_type == "order" && any(c("lambda_0", "gamma") %in% veff_params)) {
         stop("Intrinsic rate parameters (lambda_0, gamma) cannot be a varying effect in an OADA-type model.")
     }
@@ -105,7 +109,7 @@ generate_STb_model <- function(STb_data,
         z_veff = "normal(0,1)",
         sigma_veff = "normal(0,1)",
         rho_veff = "lkj_corr_cholesky(3)",
-        gamma = "normal(0,1)"
+        gamma = "normal(0,.5)"
     )
 
     priors <- utils::modifyList(default_priors, priors)

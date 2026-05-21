@@ -167,15 +167,19 @@ plot_data_obs <- event_data %>%
     select(trial, time, cum_prop, type) %>%
     ungroup()
 
-# add in 0,0 starting point
-plot_data_obs <- bind_rows(
-    plot_data_obs,
-    plot_data_obs %>%
-        distinct(trial) %>%
-        mutate(time = 0, cum_prop = 0, type = "observed")
-) %>%
+# add in 0,0 starting point for diffusions w/o demonstrators
+starting_points <- plot_data_obs %>%
+    distinct(trial) %>%
+    anti_join(
+        plot_data_obs %>% filter(time == 0) %>% distinct(trial),
+        by = "trial"
+    ) %>%
+    mutate(time = 0, cum_prop = 0, type = "observed")
+plot_data_obs <- bind_rows(plot_data_obs, starting_points) %>%
     arrange(trial, time)
 ```
+
+Note that for diffusions where there are no demonstrators (i.e. individuals knowledgeable at time 0), I added in a starting point using anti-join. This is only to make the curve look nice. Demonstrators do not have an event time to predict, so you could exclude them altogether from PPC plots, with nothing of value lost. The Stan code ensures they will receive a predicted time of "0" in each draw, and you can filter them out the same way we filter out censored individuals. Just be consistent: if you exclude them here, you must also exclude them in the predicted draws below. This example has no demonstrators, so there's no choice to make. But, with real data, you'll have to decide. 
 
 Next, we can extract the draws of estimated acquisition times, excluding warm-up iterations, as a data-frame. We can then pivot it into a long format and calculate the cumulative curves for each draw as we did our observed data. If an individual is predicted as censored for a particular draw, it's estimated event time will be $-1$, and they should be filtered out before plotting. Note that I thinned the draws for the sake of visualization.
 
@@ -220,14 +224,19 @@ plot_data_ppc <- ppc_long %>%
     arrange(time) %>%
     mutate(cum_prop = cumsum(n) / n_trial)
 
-# add in 0,0 starting point
-plot_data_ppc <- bind_rows(
-    plot_data_ppc,
-    plot_data_ppc %>%
-        distinct(trial, draw) %>%
-        mutate(time = 0, cum_prop = 0, type = "ppc")
-) %>%
-    arrange(trial, time)
+# add in 0,0 starting point when no demos, similar to above
+starting_points_ppc <- plot_data_ppc %>%
+    distinct(trial, draw) %>%
+    anti_join(
+        plot_data_ppc %>%
+            filter(time == 0) %>%
+            distinct(trial, draw),
+        by = c("trial", "draw")
+    ) %>%
+    mutate(time = 0, cum_prop = 0, type = "ppc")
+
+plot_data_ppc <- bind_rows(plot_data_ppc, starting_points_ppc) %>%
+    arrange(trial, draw, time)
 
 # plot it
 ggplot() +

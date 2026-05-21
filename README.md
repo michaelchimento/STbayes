@@ -41,6 +41,7 @@ Chimento, M., & Hoppitt, W. (2025). STbayes: An R package for creating, fitting 
 - [Setting priors](https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#setting-priors)
 - [High resolution data mode](https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#high-resolution-data-mode)
 - [Import NBDA Objects](https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#import-nbda-data-objects)
+- [Weibull shaped hazards](https://michaelchimento.github.io/STbayes/articles/weibull_shaped_hazards.html)
 
 ## Simulating data for power analyses
 
