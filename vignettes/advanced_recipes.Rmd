@@ -19,7 +19,7 @@ knitr::opts_chunk$set(
 
 This vignette gives some examples of more advanced/involved uses of STbayes.
 
-```{r setup, eval=T}
+```{r setup, eval=T, warning=F, message=F}
 library(STbayes)
 library(dplyr)
 ```

@@ -1,25 +1,47 @@
-#' Import user data 2
+#' import_user_STb2()
 #'
-#' First step of analysis pipeline: create STbayes data object from user
+#' Create STbayes data object from user
 #' supplied data to be used for generating and fitting models. This function is
-#' basically used when *fitting models of complex transmission to high-resolution data.*
+#' basically only used when *fitting models of complex transmission to high-resolution data.*
 #' Rather than pre-process high res data, this will just create a massive
 #' data-list to be sent to Stan. Models created with this function will take much longer to run.
 #'
 #' @param event_data dataframe with columns id, trial, time, t_end
-#' @param networks Either a dataframe, a bisonr fit, or a list of bisonr fits.
-#' If dataframe: with columns trial, focal, other, and one or more columns of edge weights named descriptively.
+#' @param networks Either a dataframe, a bisonr/STRAND fit, a posterior-draw
+#' array, or a list of bisonr/STRAND fits or posterior-draw arrays. If
+#' dataframe: with columns trial, focal, other, and one or more columns of edge
+#' weights named descriptively. Edge weights describe the influence that other
+#' has on focal. Optionally an integer time column can be provided for dynamic
+#' network analysis, although networks must be provided for each inter-event
+#' interval. If array: user-supplied posterior draws must be on the logit scale.
+#' Arrays must have named dimensions of either ```[draw, focal_ID, other_ID]```,
+#' ```[trial, draw, focal_ID, other_ID]``` or ```[trial, time, draw, focal_ID, other_ID]```, depending
+#' on the level of detail users have regarding the networks. If trial or time is not provided, the same network
+#' is used for all trials and/or times respectively. To create a multi-network NBDA with
+#' posterior arrays, provide a list of arrays, one for each network.
 #' @param network_type "undirected" or "directed".
-#' @param ILV_c optional dataframe with columns id, and any constant individual-level variables that might be of interest
-#' @param ILV_tv optional dataframe with columns trial, id, time and any time-varying variables. Variable values should summarize the variable for each inter-acquisition period.
-#' @param ILVi Optional character vector of column names from ILV metadata to be considered when estimating intrinsic rate. If not specified, all ILV are applied to both.
-#' @param ILVs Optional character vector of column names from ILV metadata to be considered when estimating social transmission rate. If not specified, all ILV are applied to both.
-#' @param ILVm Optional character vector of column names from ILV metadata to be considered in a multiplicative model.
-#' @param t_weights Optional dataframe with columns trial, id, time and t_weight. Transmission rates represent rates of production/relevant cues per inter-event period.
-#' @param high_res Boolean indicating whether or not user is providing networks and transmission weights per period duration=1
+#' @param ILV_c optional dataframe with columns id, and any constant
+#' individual-level variables. Variables can be binary, categorical or continuous.
+#' Categorical variables must be factors.
+#' @param ILV_tv optional dataframe with columns trial, id, time and any
+#' time-varying variables. Variable values should summarize the variable for
+#' each inter-acquisition period.
+#' @param ILVi Optional character vector of column names from ILV metadata to be
+#' considered when estimating intrinsic rate. If not specified, all ILV are
+#' applied to both.
+#' @param ILVs Optional character vector of column names from ILV metadata to be
+#'  considered when estimating social transmission rate. If not specified,
+#'  all ILV are applied to both.
+#' @param ILVm Optional character vector of column names from ILV metadata to be
+#' considered in a multiplicative model.
+#' @param t_weights Optional dataframe with columns trial, id, time and t_weight.
+#' Transmission rates represent rates of production/relevant cues per inter-event period.
+#' @param high_res Boolean indicating whether or not user is providing networks
+#' and transmission weights per period duration=1
+#'
+#' @return A list object containing properly formatted data to run social transmission models.
 #' @importFrom Rcpp evalCpp
 #' @importFrom stats qlogis median cov aggregate
-#' @return A list object containing properly formatted data to run social transmission models.
 #' @export
 import_user_STb2 <- function(event_data,
                              networks,
@@ -46,15 +68,15 @@ import_user_STb2 <- function(event_data,
     if (inherits(networks, "data.frame")) {
         message("User supplied edge weights as point estimates \U0001F4CD")
         is_distribution <- FALSE
-    } else if (inherits(networks, "bison_model") || inherits(networks, "STRAND Results Object")) {
+    } else if (inherits(networks, "bison_model") || inherits(networks, "STRAND Results Object") || inherits(networks, "array")) {
         message("User supplied edge weights as posterior distributions \U0001F308")
         networks <- list(networks)
         is_distribution <- TRUE
-    } else if (is.list(networks) && all(sapply(networks, function(x) inherits(x, "bison_model") || inherits(x, "STRAND Results Object")))) {
+    } else if (is.list(networks) && all(sapply(networks, function(x) inherits(x, "bison_model") || inherits(x, "STRAND Results Object") || inherits(x, "array")))) {
         message("User supplied a list of Bayesian network fits [\U0001F308 , \U0001F308] ")
         is_distribution <- TRUE
     } else {
-        stop("\U0001F614 Please feed me a dataframe for the networks argument, or a bisonR model fit, or a list of fits.")
+        stop("\U0001F614 For the networks argument, please provide i) a dataframe of edgeweights (point estimates), ii) an array of posterior draws with named structure, iii) a bisonR/STRAND model fit, or iv) a list of fits or arrays.")
     }
 
     if (all(is.null(ILVi), is.null(ILVs), is.null(ILVm)) & (!is.null(ILV_c) | !is.null(ILV_tv))) {
@@ -192,6 +214,8 @@ import_user_STb2 <- function(event_data,
         # data_list$Z <- data_list$W
     }
 
+    # create attribute for returned object
+    attr(data_list, "df_t_weights") <- t_weights
     # ILV processing BEGINS HERE
     ILV_datatypes <- c()
     ILV_names <- c()
@@ -254,6 +278,8 @@ import_user_STb2 <- function(event_data,
         P <- max(ILV_tv$id_numeric)
         T_max <- max(ILV_tv$discrete_time)
 
+        # create attribute for returned object
+        attr(data_list, "df_ILV_tv") <- ILV_tv
         for (col in ILV_cols) {
             datatype <- detect_ILV_datatype(ILV_tv[[col]])
             ILV_datatypes[[paste0("ILV_", col)]] <- datatype
@@ -330,17 +356,17 @@ import_user_STb2 <- function(event_data,
 
     if (!is_distribution) {
         if (data_list$P != length(unique(c(networks$focal, networks$other)))) {
-            stop("Networks do not contain the same number of unique individuals as the event data.")
+            stop("\U0001F614 Networks and event data do not contain the same number of unique individuals. If individuals did not experience an event, please include them with column time = t_end+1.")
         }
         if (data_list$K != length(unique(networks$trial))) {
-            stop("Networks do not contain the same number of trials as the event data.")
+            stop("\U0001F614 Networks do not contain the same number of trials as the event data.")
         }
         is_dynamic <- "time" %in% names(networks)
         if (!is_dynamic) {
             message("User input indicates static network(s). If dynamic, include 'time' column.")
             networks$time <- 1
         }
-        exclude_cols <- c("trial", "time", "focal", "other")
+        exclude_cols <- c("trial", "time", "focal", "other", "focal_numeric", "other_numeric", "trial_numeric", "discrete_time")
         network_cols <- setdiff(names(networks), exclude_cols)
 
         temp_names <- data.frame(
@@ -355,13 +381,15 @@ import_user_STb2 <- function(event_data,
         } else {
             networks$discrete_time <- networks$time
         }
+        # create attribute for returned object
+        attr(data_list, "df_networks") <- networks
         is_symmetric <- nrow(networks[networks$trial_numeric == 1 & networks$discrete_time == min(networks$discrete_time), ]) == data_list$P * (data_list$P - 1)
         max_timesteps <- if (high_res) max(event_data$t_end) else max(data_list$T)
 
         dims <- c(length(network_cols), data_list$K, max_timesteps, data_list$P, data_list$P)
         A_array <- array(0, dim = dims)
 
-        # flatten ONCE
+        # flatten
         A_flat <- as.numeric(aperm(A_array, c(1, 2, 3, 4, 5)))
 
         # fill in-place
@@ -383,7 +411,7 @@ import_user_STb2 <- function(event_data,
             }
         }
 
-        # reshape ONCE after all fill_array calls
+        # reshape after all fill_array calls
         A_array <- aperm(array(A_flat, dim = dims), c(1, 2, 3, 4, 5))
 
         # replicate across time for static networks
@@ -403,82 +431,127 @@ import_user_STb2 <- function(event_data,
                 }
             }
         }
-        if (min(A_array) < 0) stop("Edgeweights below zero detected. Rescale so that 0 = no connection.")
+        if (min(A_array) < 0) stop("\U0001F614 Edgeweights below zero detected. Rescale so that 0 = no connection.")
         data_list$A <- A_array
         data_list$network_names <- network_cols
         data_list$N_networks <- length(network_cols)
     }
     # IF DISTRIBUTION
     else {
-        N_networks <- length(networks)
+        is_array_net <- vapply(networks, inherits, logical(1), what = "array")
+        is_external_net <- vapply(
+            networks,
+            function(x) inherits(x, "bison_model") || inherits(x, "STRAND Results Object"),
+            logical(1)
+        )
+        if (any(is_array_net) && any(is_external_net)) {
+            stop("\U0001F614 Please do not mix user-supplied posterior arrays with bisonR/STRAND fits in the same multi-network model.")
+        }
 
-        for (i in seq_along(networks)) {
+        N_networks <- length(networks)
+        data_list$focal_ID <- c()
+        data_list$other_ID <- c()
+
+        data_list$network_distribution_dynamic <- TRUE
+
+        edge_mu_list <- list()
+        edge_cov_list <- list()
+        edge_set_count <- 0L
+        N_dyad <- NULL
+
+        edge_set_idx <- array(
+            NA_integer_,
+            dim = c(N_networks, data_list$K, data_list$T_max)
+        )
+
+        add_edge_set <- function(edges) {
+            if (is.null(N_dyad)) {
+                N_dyad <<- ncol(edges)
+            } else if (ncol(edges) != N_dyad) {
+                stop("\U0001F614 All posterior network inputs must contain the same number of dyads.")
+            }
+
+            edge_set_count <<- edge_set_count + 1L
+            edge_mu_list[[edge_set_count]] <<- apply(edges, 2, median)
+            edge_cov_list[[edge_set_count]] <<- cov(edges)
+
+            edge_set_count
+        }
+
+        for (i in 1:N_networks) {
             net_obj <- networks[[i]]
 
-            if (inherits(net_obj, "bison_model")) {
-                # BISON handling
-                dyads <- if (net_obj$directed) {
-                    strsplit(net_obj$dyad_names, " -> ")
-                } else {
-                    strsplit(net_obj$dyad_names, " <-> ")
-                }
-
-                dyad_matrix <- do.call(rbind, dyads)
-                dyad_df <- data.frame(
-                    focal = as.integer(dyad_matrix[, 1]),
-                    other = as.integer(dyad_matrix[, 2]),
-                    stringsAsFactors = FALSE
+            if (inherits(net_obj, "array")) {
+                validate_posterior_array(
+                    net_obj = net_obj,
+                    network_index = i,
+                    K = data_list$K,
+                    T_max = data_list$T_max,
+                    P = data_list$P
                 )
 
-                # Drop self-loops
-                edge_samples <- net_obj$edge_samples[, dyad_df$focal != dyad_df$other, drop = FALSE]
-                dyad_df <- dyad_df[dyad_df$focal != dyad_df$other, ]
-                data_list$focal_ID <- dyad_df$focal
-                data_list$other_ID <- dyad_df$other
-
-                if (net_obj$directed) {
-                    # Use samples as-is
-                    edges <- edge_samples
-                } else {
-                    edges <- edge_samples
+                if (i == 1) {
+                    dyads <- get_full_dyad_ids(data_list$P)
+                    data_list$focal_ID <- dyads$focal_ID
+                    data_list$other_ID <- dyads$other_ID
                 }
-            } else if (inherits(net_obj, "STRAND Results Object")) {
-                # STRAND handling
-                ass_matrix <- net_obj$samples$predicted_network_sample # [draws, focal, other]
-                draws <- dim(ass_matrix)[1]
-                P <- dim(ass_matrix)[2]
 
-                # Create edge sample matrix: [draws, dyads]
-                edge_mat <- matrix(NA, nrow = draws, ncol = P * (P - 1))
-                idx <- 1
-                for (i_focal in 1:P) {
-                    for (i_other in 1:P) {
-                        if (i_focal != i_other) {
-                            edge_mat[, idx] <- ass_matrix[, i_focal, i_other]
-                            idx <- idx + 1
+                nd <- length(dim(net_obj))
+
+                if (nd == 3) {
+                    edges <- array_to_edge_matrix(net_obj)
+                    edge_set <- add_edge_set(edges)
+
+                    edge_set_idx[i, , ] <- edge_set
+                } else if (nd == 4) {
+                    for (trial in 1:data_list$K) {
+                        edges <- array_to_edge_matrix(net_obj, trial = trial)
+                        edge_set <- add_edge_set(edges)
+
+                        edge_set_idx[i, trial, ] <- edge_set
+                    }
+                } else if (nd == 5) {
+                    for (trial in 1:data_list$K) {
+                        for (time in 1:data_list$T_max) {
+                            edges <- array_to_edge_matrix(net_obj, trial = trial, time = time)
+                            edge_set <- add_edge_set(edges)
+
+                            edge_set_idx[i, trial, time] <- edge_set
                         }
                     }
                 }
+            } else if (inherits(net_obj, "bison_model") || inherits(net_obj, "STRAND Results Object")) {
+                ext <- get_external_edges(net_obj)
+                edges <- ext$edges
 
-                edges <- qlogis(edge_mat) # convert to logit space
+                if (i == 1) {
+                    data_list$focal_ID <- ext$focal_ID
+                    data_list$other_ID <- ext$other_ID
+                }
+
+                edge_set <- add_edge_set(edges)
+                edge_set_idx[i, , ] <- edge_set
             } else {
-                stop("\u274C Unrecognized distributional network object. Expected bison_model.")
+                stop("\U0001F614 Unrecognized network object.")
             }
+        }
 
-            if (i == 1) {
-                N_dyad <- ncol(edges)
-                logit_edge_mu <- matrix(NA, nrow = N_networks, ncol = N_dyad)
-                logit_edge_cov <- array(NA, dim = c(N_networks, N_dyad, N_dyad))
-            }
+        logit_edge_mu <- do.call(rbind, edge_mu_list)
 
-            # Get point estimate and covariance
-            logit_edge_mu[i, ] <- apply(edges, 2, median)
-            logit_edge_cov[i, , ] <- cov(edges)
+        logit_edge_cov <- array(
+            NA_real_,
+            dim = c(edge_set_count, N_dyad, N_dyad)
+        )
+
+        for (edge_set in 1:edge_set_count) {
+            logit_edge_cov[edge_set, , ] <- edge_cov_list[[edge_set]]
         }
 
         # Assume same number of dyads for all networks
         data_list$logit_edge_mu <- logit_edge_mu
         data_list$logit_edge_cov <- logit_edge_cov
+        data_list$edge_set_idx <- edge_set_idx
+        data_list$N_edge_sets <- edge_set_count
         data_list$N_dyad <- N_dyad
         data_list$network_names <- paste0("net", seq_len(N_networks))
         data_list$N_networks <- N_networks

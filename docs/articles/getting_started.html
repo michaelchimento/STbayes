@@ -35,6 +35,7 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/advanced_recipes.html">Advanced recipes</a></li>
     <li><a class="dropdown-item" href="../articles/getting_started.html">Getting started with STbayes</a></li>
+    <li><a class="dropdown-item" href="../articles/LFO-CV_model_comparison.html">Model Comparison using Leave Future Out Cross Validation (LFO-CV)</a></li>
     <li><a class="dropdown-item" href="../articles/simulate_data_for_power_analyses.html">Simulate data for power analyses</a></li>
     <li><a class="dropdown-item" href="../articles/weibull_shaped_hazards.html">Weibull shaped hazards</a></li>
   </ul>
@@ -72,10 +73,10 @@ trial. First let’s load the package and import event and network data.
 It is possible to include co-variates, but not necessary.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://michaelchimento.github.io/STbayes">STbayes</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://mc-stan.org/posterior/" class="external-link">posterior</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tidyr.tidyverse.org" class="external-link">tidyr</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://mc-stan.org/posterior/" class="external-link">posterior</a></span><span class="op">)</span></span></code></pre></div>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span></code></pre></div>
 <div class="section level2">
 <h2 id="step-1-importing-data">Step 1: Importing data<a class="anchor" aria-label="anchor" href="#step-1-importing-data"></a>
 </h2>
@@ -348,24 +349,24 @@ more details</li>
 <span><span class="co">#&gt; Chain 4 Iteration:    1 / 2000 [  0%]  (Warmup) </span></span>
 <span><span class="co">#&gt; Chain 2 Iteration: 1000 / 2000 [ 50%]  (Warmup) </span></span>
 <span><span class="co">#&gt; Chain 2 Iteration: 1001 / 2000 [ 50%]  (Sampling) </span></span>
-<span><span class="co">#&gt; Chain 3 Iteration: 1000 / 2000 [ 50%]  (Warmup) </span></span>
-<span><span class="co">#&gt; Chain 3 Iteration: 1001 / 2000 [ 50%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 4 Iteration: 1000 / 2000 [ 50%]  (Warmup) </span></span>
 <span><span class="co">#&gt; Chain 4 Iteration: 1001 / 2000 [ 50%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 1 Iteration: 1000 / 2000 [ 50%]  (Warmup) </span></span>
 <span><span class="co">#&gt; Chain 1 Iteration: 1001 / 2000 [ 50%]  (Sampling) </span></span>
-<span><span class="co">#&gt; Chain 2 Iteration: 2000 / 2000 [100%]  (Sampling) </span></span>
+<span><span class="co">#&gt; Chain 3 Iteration: 1000 / 2000 [ 50%]  (Warmup) </span></span>
+<span><span class="co">#&gt; Chain 3 Iteration: 1001 / 2000 [ 50%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 4 Iteration: 2000 / 2000 [100%]  (Sampling) </span></span>
-<span><span class="co">#&gt; Chain 2 finished in 6.9 seconds.</span></span>
-<span><span class="co">#&gt; Chain 4 finished in 6.8 seconds.</span></span>
+<span><span class="co">#&gt; Chain 4 finished in 6.7 seconds.</span></span>
+<span><span class="co">#&gt; Chain 2 Iteration: 2000 / 2000 [100%]  (Sampling) </span></span>
+<span><span class="co">#&gt; Chain 2 finished in 6.8 seconds.</span></span>
 <span><span class="co">#&gt; Chain 3 Iteration: 2000 / 2000 [100%]  (Sampling) </span></span>
-<span><span class="co">#&gt; Chain 3 finished in 7.0 seconds.</span></span>
+<span><span class="co">#&gt; Chain 3 finished in 6.9 seconds.</span></span>
 <span><span class="co">#&gt; Chain 1 Iteration: 2000 / 2000 [100%]  (Sampling) </span></span>
-<span><span class="co">#&gt; Chain 1 finished in 7.4 seconds.</span></span>
+<span><span class="co">#&gt; Chain 1 finished in 7.0 seconds.</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; All 4 chains finished successfully.</span></span>
-<span><span class="co">#&gt; Mean chain execution time: 7.0 seconds.</span></span>
-<span><span class="co">#&gt; Total execution time: 7.6 seconds.</span></span>
+<span><span class="co">#&gt; Mean chain execution time: 6.8 seconds.</span></span>
+<span><span class="co">#&gt; Total execution time: 7.3 seconds.</span></span>
 <span><span class="co">#&gt; 🫴 Use STb_save() to save the fit and chain csvs to a single RDS file. Or don't!</span></span></code></pre></div>
 <p>This function calls cmdstanr’s $sample(), and you can add any extra
 valid arguments to pass on here. In this call, I’ve made sure that we
@@ -620,10 +621,10 @@ to the full model fit.</p>
 <span><span class="co">#&gt; Chain 2 Iteration: 1000 / 2000 [ 50%]  (Warmup) </span></span>
 <span><span class="co">#&gt; Chain 2 Iteration: 1001 / 2000 [ 50%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 3 Iteration:    1 / 2000 [  0%]  (Warmup) </span></span>
-<span><span class="co">#&gt; Chain 3 Iteration: 1000 / 2000 [ 50%]  (Warmup) </span></span>
-<span><span class="co">#&gt; Chain 3 Iteration: 1001 / 2000 [ 50%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 4 Iteration:    1 / 2000 [  0%]  (Warmup) </span></span>
 <span><span class="co">#&gt; Chain 1 Iteration: 2000 / 2000 [100%]  (Sampling) </span></span>
+<span><span class="co">#&gt; Chain 3 Iteration: 1000 / 2000 [ 50%]  (Warmup) </span></span>
+<span><span class="co">#&gt; Chain 3 Iteration: 1001 / 2000 [ 50%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 4 Iteration: 1000 / 2000 [ 50%]  (Warmup) </span></span>
 <span><span class="co">#&gt; Chain 4 Iteration: 1001 / 2000 [ 50%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 1 finished in 0.2 seconds.</span></span>
@@ -635,7 +636,7 @@ to the full model fit.</p>
 <span><span class="co">#&gt; Chain 4 finished in 0.3 seconds.</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; All 4 chains finished successfully.</span></span>
-<span><span class="co">#&gt; Mean chain execution time: 0.2 seconds.</span></span>
+<span><span class="co">#&gt; Mean chain execution time: 0.3 seconds.</span></span>
 <span><span class="co">#&gt; Total execution time: 0.4 seconds.</span></span>
 <span><span class="co">#&gt; 🫴 Use STb_save() to save the fit and chain csvs to a single RDS file. Or don't!</span></span></code></pre></div>
 <p>If you are familiar with loo or have your own pipeline, then you can

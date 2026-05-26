@@ -3,7 +3,6 @@
 #' Helper function to generate network terms for STAN
 #'
 #' @param transmission_func simple or complex transmission
-#' @param is_distribution did the user supply a posterior distribution for edges
 #' @param num_networks integer of number of networks
 #' @param veff_params vector of varying effects
 #' @param s_var string used to represent s term ("s_prime" or "s_direct")
@@ -18,7 +17,7 @@
 #' @return string of stan code to be used in the model for calculating network effects
 #' @noRd
 
-get_network_term <- function(transmission_func = "standard", is_distribution = FALSE, num_networks = 1, veff_params = c(), s_var = "s_prime", net_var = "A",
+get_network_term <- function(transmission_func = "standard", num_networks = 1, veff_params = c(), s_var = "s_prime", net_var = "A",
                              net_index = "network", id_var = "id", veff_type = c(), veff_idx = "id", trial_var = "trial", time_var = "time_step", high_res = F) {
     net_effect_term <- if (id_var == "j") "net_effect_j" else "net_effect"
     if (id_var == "j" & is.element("id", veff_type)) veff_idx <- gsub("id", "j", veff_idx)
@@ -29,11 +28,7 @@ get_network_term <- function(transmission_func = "standard", is_distribution = F
         if ("s" %in% veff_params) glue::glue("{s_var}[{veff_idx}]") else glue::glue("{s_var}")
     }
 
-    net_expr <- if (is_distribution) {
-        glue::glue("{net_var}[{net_index}][{id_var}, ]")
-    } else {
-        glue::glue("{net_var}[{net_index}, {trial_var}, {time_var}][{id_var}, ]")
-    }
+    net_expr <- glue::glue("{net_var}[{net_index}, {trial_var}, {time_var}][{id_var}, ]")
 
     base_term <- glue::glue("dot_product({net_expr},Z[{trial_var}][{time_var}, ])")
 

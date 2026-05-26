@@ -6,7 +6,6 @@
 \usage{
 get_ST_prob_term(
   transmission_func,
-  is_distribution = FALSE,
   separate_s = FALSE,
   veff_params = c(),
   veff_idx = "id",
@@ -23,8 +22,6 @@ get_ST_prob_term(
 }
 \arguments{
 \item{transmission_func}{String (e.g. "standard", "freqdep_f", "freqdep_k")}
-
-\item{is_distribution}{Boolean: Are edges drawn from posterior?}
 
 \item{separate_s}{Boolean: Is s estimated separately per network?}
 

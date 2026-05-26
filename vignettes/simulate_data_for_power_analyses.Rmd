@@ -14,7 +14,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r setup}
+```{r setup, warning=F, message=F}
 library(STbayes)
 library(igraph)
 library(dplyr)

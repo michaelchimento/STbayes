@@ -18,12 +18,12 @@ knitr::opts_chunk$set(
 
 This vignette will walk you through a simple cTADA analysis pipeline using STbayes. We will use some simulated data from a single diffusion trial. First let's load the package and import event and network data. It is possible to include co-variates, but not necessary.
 
-```{r loadpkg, warning=F, message=F}
+```{r setup, warning=F, message=F}
 library(STbayes)
+library(posterior)
 library(ggplot2)
 library(tidyr)
 library(dplyr)
-library(posterior)
 ```
 
 ## Step 1: Importing data

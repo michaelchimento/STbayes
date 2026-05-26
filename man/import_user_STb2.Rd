@@ -2,7 +2,7 @@
 % Please edit documentation in R/import_user_STb2.R
 \name{import_user_STb2}
 \alias{import_user_STb2}
-\title{Import user data 2}
+\title{import_user_STb2()}
 \usage{
 import_user_STb2(
   event_data,
@@ -20,32 +20,53 @@ import_user_STb2(
 \arguments{
 \item{event_data}{dataframe with columns id, trial, time, t_end}
 
-\item{networks}{Either a dataframe, a bisonr fit, or a list of bisonr fits.
-If dataframe: with columns trial, focal, other, and one or more columns of edge weights named descriptively.}
+\item{networks}{Either a dataframe, a bisonr/STRAND fit, a posterior-draw
+array, or a list of bisonr/STRAND fits or posterior-draw arrays. If
+dataframe: with columns trial, focal, other, and one or more columns of edge
+weights named descriptively. Edge weights describe the influence that other
+has on focal. Optionally an integer time column can be provided for dynamic
+network analysis, although networks must be provided for each inter-event
+interval. If array: user-supplied posterior draws must be on the logit scale.
+Arrays must have named dimensions of either \verb{[draw, focal_ID, other_ID]},
+\verb{[trial, draw, focal_ID, other_ID]} or \verb{[trial, time, draw, focal_ID, other_ID]}, depending
+on the level of detail users have regarding the networks. If trial or time is not provided, the same network
+is used for all trials and/or times respectively. To create a multi-network NBDA with
+posterior arrays, provide a list of arrays, one for each network.}
 
 \item{network_type}{"undirected" or "directed".}
 
-\item{ILV_c}{optional dataframe with columns id, and any constant individual-level variables that might be of interest}
+\item{ILV_c}{optional dataframe with columns id, and any constant
+individual-level variables. Variables can be binary, categorical or continuous.
+Categorical variables must be factors.}
 
-\item{ILV_tv}{optional dataframe with columns trial, id, time and any time-varying variables. Variable values should summarize the variable for each inter-acquisition period.}
+\item{ILV_tv}{optional dataframe with columns trial, id, time and any
+time-varying variables. Variable values should summarize the variable for
+each inter-acquisition period.}
 
-\item{ILVi}{Optional character vector of column names from ILV metadata to be considered when estimating intrinsic rate. If not specified, all ILV are applied to both.}
+\item{ILVi}{Optional character vector of column names from ILV metadata to be
+considered when estimating intrinsic rate. If not specified, all ILV are
+applied to both.}
 
-\item{ILVs}{Optional character vector of column names from ILV metadata to be considered when estimating social transmission rate. If not specified, all ILV are applied to both.}
+\item{ILVs}{Optional character vector of column names from ILV metadata to be
+considered when estimating social transmission rate. If not specified,
+all ILV are applied to both.}
 
-\item{ILVm}{Optional character vector of column names from ILV metadata to be considered in a multiplicative model.}
+\item{ILVm}{Optional character vector of column names from ILV metadata to be
+considered in a multiplicative model.}
 
-\item{t_weights}{Optional dataframe with columns trial, id, time and t_weight. Transmission rates represent rates of production/relevant cues per inter-event period.}
+\item{t_weights}{Optional dataframe with columns trial, id, time and t_weight.
+Transmission rates represent rates of production/relevant cues per inter-event period.}
 
-\item{high_res}{Boolean indicating whether or not user is providing networks and transmission weights per period duration=1}
+\item{high_res}{Boolean indicating whether or not user is providing networks
+and transmission weights per period duration=1}
 }
 \value{
 A list object containing properly formatted data to run social transmission models.
 }
 \description{
-First step of analysis pipeline: create STbayes data object from user
+Create STbayes data object from user
 supplied data to be used for generating and fitting models. This function is
-basically used when \emph{fitting models of complex transmission to high-resolution data.}
+basically only used when \emph{fitting models of complex transmission to high-resolution data.}
 Rather than pre-process high res data, this will just create a massive
 data-list to be sent to Stan. Models created with this function will take much longer to run.
 }

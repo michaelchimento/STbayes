@@ -20,16 +20,24 @@ import_user_STb(
 \arguments{
 \item{event_data}{dataframe with columns id, trial, time, t_end}
 
-\item{networks}{Either a dataframe, a bisonr/STRAND fit, or a list of bisonr/STRAND fits.
-If dataframe: with columns trial, focal, other, and one or more columns of edge
-weights named descriptively. Edge weights describe the influence that other has on focal. Optionally an integer time column can be
-provided for dynamic network analysis, although networks must be provided for
-each inter-event interval.}
+\item{networks}{Either a dataframe, a bisonr/STRAND fit, a posterior-draw
+array, or a list of bisonr/STRAND fits or posterior-draw arrays. If
+dataframe: with columns trial, focal, other, and one or more columns of edge
+weights named descriptively. Edge weights describe the influence that other
+has on focal. Optionally an integer time column can be provided for dynamic
+network analysis, although networks must be provided for each inter-event
+interval. If array: user-supplied posterior draws must be on the logit scale.
+Arrays must have named dimensions of either \verb{[draw, focal_ID, other_ID]},
+\verb{[trial, draw, focal_ID, other_ID]} or \verb{[trial, time, draw, focal_ID, other_ID]}, depending
+on the level of detail users have regarding the networks. If trial or time is not provided, the same network
+is used for all trials and/or times respectively. To create a multi-network NBDA with
+posterior arrays, provide a list of arrays, one for each network.}
 
 \item{network_type}{"undirected" or "directed".}
 
 \item{ILV_c}{optional dataframe with columns id, and any constant
-individual-level variables. Variables can be binary, categorical or continuous. Categorical variables must be factors.}
+individual-level variables. Variables can be binary, categorical or continuous.
+Categorical variables must be factors.}
 
 \item{ILV_tv}{optional dataframe with columns trial, id, time and any
 time-varying variables. Variable values should summarize the variable for

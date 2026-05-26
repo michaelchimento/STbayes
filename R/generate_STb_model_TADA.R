@@ -53,7 +53,7 @@ generate_STb_model_TADA <- function(STb_data,
 
     # check if edgeweights are sampled from posterior distribution
     if ("N_dyad" %in% names(STb_data)) is_distribution <- TRUE else is_distribution <- FALSE
-    if ("N_dyad" %in% names(STb_data)) est_acqTime <- FALSE # don't want to deal with that rn
+    # if ("N_dyad" %in% names(STb_data)) est_acqTime <- FALSE # don't want to deal with that rn <<< this should work now!
 
     network_names <- STb_data$network_names
     num_networks <- length(network_names)
@@ -64,48 +64,74 @@ generate_STb_model_TADA <- function(STb_data,
     # make custom declarations for distributions:
     if (is_distribution && model_type == "full") {
         # data declaration
-        distribution_data_declaration <- glue::glue("    matrix[N_networks, N_dyad] logit_edge_mu;  // logit edge values
-                      array[N_networks] matrix[N_dyad, N_dyad] logit_edge_cov;  // covariance matrix
-                                                    array[N_dyad] int<lower=1> focal_ID;
-                                                    array[N_dyad] int<lower=1> other_ID;")
+        distribution_data_declaration <- glue::glue("
+            int<lower=1> N_edge_sets;
+            array[N_networks, K, T_max] int<lower=1, upper=N_edge_sets> edge_set_idx;
+            array[N_edge_sets] vector[N_dyad] logit_edge_mu;
+            array[N_edge_sets] matrix[N_dyad, N_dyad] logit_edge_cov;
+            array[N_dyad] int<lower=1> focal_ID;
+            array[N_dyad] int<lower=1> other_ID;
+        ")
         distribution_data_declaration <- glue::glue("int N_dyad;  // number of dyads\n\n{distribution_data_declaration}")
 
         # param declaration
-        distribution_param_declaration <-
-            glue::glue_collapse(glue::glue("matrix[N_networks, N_dyad] edge_logit;"), sep = "\n")
+        distribution_param_declaration <- glue::glue("
+            array[N_edge_sets] vector[N_dyad] edge_logit;
+        ")
 
         # transformed param declaration
         distribution_transformed_declaration <- {
-            # Declare matrices
-            matrix_decls <- glue::glue_collapse(glue::glue("array[N_networks] matrix[P, P] A;
-                                                           for (network in 1:N_networks) {{
-                                                              A[network] = rep_matrix(0, P, P);
-                                                            }}"), sep = "\n")
+            matrix_decls <- glue::glue("
+                                array[N_networks, K, T_max] matrix[P, P] A;
 
-            if (STb_data$directed == T) {
+                                for (network in 1:N_networks) {{
+                                    for (trial in 1:K) {{
+                                        for (time_step in 1:T_max) {{
+                                            A[network, trial, time_step] = rep_matrix(0, P, P);
+                                        }}
+                                    }}
+                                }}
+                            ")
+
+            if (STb_data$directed == TRUE) {
                 glue::glue("{matrix_decls}
-                        for (network in 1:N_networks){{
-                          for (edge_idx in 1:N_dyad) {{
-                                real w = inv_logit(edge_logit[network, edge_idx]);
-                                A[network, focal_ID[edge_idx], other_ID[edge_idx]] = w;
-                          }}
-                        }}")
+                            for (network in 1:N_networks) {{
+                                for (trial in 1:K) {{
+                                    for (time_step in 1:T_max) {{
+                                        int edge_set = edge_set_idx[network, trial, time_step];
+
+                                        for (edge_idx in 1:N_dyad) {{
+                                            real w = inv_logit(edge_logit[edge_set, edge_idx]);
+                                            A[network, trial, time_step, focal_ID[edge_idx], other_ID[edge_idx]] = w;
+                                        }}
+                                    }}
+                                }}
+                            }}")
             } else {
                 glue::glue("{matrix_decls}
-                        for (network in 1:N_networks){{
-                       for (edge_idx in 1:N_dyad) {{
-                                real w = inv_logit(edge_logit[network, edge_idx]);
-                                A[network, focal_ID[edge_idx], other_ID[edge_idx]] = w;
-                                A[network, other_ID[edge_idx], focal_ID[edge_idx]] = w;
-                       }}
-                        }}")
+                            for (network in 1:N_networks) {{
+                                for (trial in 1:K) {{
+                                    for (time_step in 1:T_max) {{
+                                        int edge_set = edge_set_idx[network, trial, time_step];
+
+                                        for (edge_idx in 1:N_dyad) {{
+                                            real w = inv_logit(edge_logit[edge_set, edge_idx]);
+                                            A[network, trial, time_step, focal_ID[edge_idx], other_ID[edge_idx]] = w;
+                                            A[network, trial, time_step, other_ID[edge_idx], focal_ID[edge_idx]] = w;
+                                        }}
+                                    }}
+                                }}
+                            }}")
             }
         }
         # model declaration
         distribution_model_block <- "
-        for (n in 1:N_networks) {
-            edge_logit[n] ~ multi_normal(logit_edge_mu[n], logit_edge_cov[n]);
-        }"
+            for (edge_set in 1:N_edge_sets) {
+                edge_logit[edge_set] ~ multi_normal(
+                    logit_edge_mu[edge_set],
+                    logit_edge_cov[edge_set]
+                );
+            }"
     } else {
         distribution_data_declaration <- ""
         distribution_param_declaration <- ""
@@ -163,7 +189,6 @@ generate_STb_model_TADA <- function(STb_data,
 
         network_term <- get_network_term(
             transmission_func = transmission_func,
-            is_distribution = is_distribution,
             num_networks = num_networks,
             veff_params = veff_params,
             veff_type = veff_type,
@@ -724,7 +749,6 @@ transformed parameters {{
         psoc_code <- if (model_type == "full") {
             get_ST_prob_term(
                 transmission_func = transmission_func,
-                is_distribution = is_distribution,
                 separate_s = separate_s,
                 veff_params = veff_params,
                 veff_idx = veff_idx,

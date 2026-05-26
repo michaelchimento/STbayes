@@ -3,7 +3,6 @@
 #' Helper function that generates Stan code to compute P(e via ST) for %ST calculation
 #'
 #' @param transmission_func String (e.g. "standard", "freqdep_f", "freqdep_k")
-#' @param is_distribution Boolean: Are edges drawn from posterior?
 #' @param separate_s Boolean: Is s estimated separately per network?
 #' @param veff_params Character vector: Which params vary by ID
 #' @param veff_idx string of how to index veffs
@@ -17,7 +16,7 @@
 #' @param weibull_term String containing gamma etc
 #' @param high_res boolean indicating if high_res
 #' @return String of Stan code for GQ block to accumulate psoc and psocn
-get_ST_prob_term <- function(transmission_func, is_distribution = FALSE,
+get_ST_prob_term <- function(transmission_func,
                              separate_s = FALSE, veff_params = c(), veff_idx = "id",
                              num_networks = 1,
                              s_var = "s_prime",
@@ -40,11 +39,7 @@ get_ST_prob_term <- function(transmission_func, is_distribution = FALSE,
     }
 
 
-    net_expr <- if (is_distribution) {
-        glue::glue("{net_var}[network][{id_var}, ]")
-    } else {
-        glue::glue("{net_var}[network, {trial_var}, {time_var}][{id_var}, ]")
-    }
+    net_expr <- glue::glue("{net_var}[network, {trial_var}, {time_var}][{id_var}, ]")
 
     active_expr <- glue::glue("dot_product({net_expr}, Z[{trial_var}][{time_var}, ])")
     inactive_expr <- glue::glue("dot_product({net_expr}, (1 - Zn[{trial_var}][{time_var}, ]))")

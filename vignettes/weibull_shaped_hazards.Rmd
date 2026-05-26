@@ -14,14 +14,16 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r setup}
+```{r setup, warning=F, message=F}
 library(STbayes)
 library(igraph)
-library(tidyverse)
 library(posterior)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
 ```
 
-This vignette uses the simulation code from the power analysis vignette to explore Weibull shaped hazards. The standard NBDA assumes a constant intrinsic rate, although we might instead assume that intrinsic rates increase or decrease over time. For example, if you are studying the discovery of a novel food patch, as that food patch becomes depleted, it reduces in size, and becomes more difficult to locate, and we might expect the hazard to diminish over time. There are many ways to formulate a variable baseline: [Hoppitt, Kandler, Kendal & Laland (2010)](https://link.springer.com/article/10.3758/LB.38.3.243) introduced a gamma distributed hazard, and [Hoppitt & Laland, 2013](https://academic.oup.com/princeton-scholarship-online/book/30658?login=false) write that another option would be a Weibull shaped hazard. Weibull shaped hazards are commonly found in survival analyses, and given that there is no a priori reason to prefer one approach over another, is what has been implemented in STbayes. Fitting a model with a Weibull distributed hazard can be done by calling ```{r} generate_STb_model(..., intrinsic_rate="weibull")```. This introduces a shape parameter $\gamma$ to the model. A value of $\gamma<1$ indicates that the rate decreases over time, $\gamma=1$ indicates a constant hazard, and $\gamma>1$ indicates an increasing hazard.
+This vignette uses the simulation code from the power analysis vignette to explore Weibull shaped hazards. The standard NBDA assumes a constant intrinsic rate, although we might instead assume that intrinsic rates increase or decrease over time. For example, if you are studying the discovery of a novel food patch, as that food patch becomes depleted, it reduces in size, and becomes more difficult to locate, and we might expect the hazard to diminish over time. There are many ways to formulate a variable baseline: [Hoppitt, Kandler, Kendal & Laland (2010)](https://link.springer.com/article/10.3758/LB.38.3.243) introduced a gamma distributed hazard, and [Hoppitt & Laland, 2013](https://academic.oup.com/princeton-scholarship-online/book/30658?login=false) write that another option would be a Weibull shaped hazard. Weibull shaped hazards are commonly found in survival analyses, and given that there is no a priori reason to prefer one approach over another, is what has been implemented in STbayes. Fitting a model with a Weibull distributed hazard can be done by calling ```generate_STb_model(..., intrinsic_rate="weibull")```. This introduces a shape parameter $\gamma$ to the model. A value of $\gamma<1$ indicates that the rate decreases over time, $\gamma=1$ indicates a constant hazard, and $\gamma>1$ indicates an increasing hazard.
 
 The plot below shows how gamma affects the instantaneous hazard over time:
 ```{r}
@@ -185,7 +187,7 @@ STb_summary(fit_full)
 ```
 Just to be sure, let's plot out the posterior predictive check, as in the Getting Started vignette:
 
-```{r}
+```{r, warning=FALSE}
 # we need to store num inds per trial to refer to later
 event_data <- results$event_data %>%
     group_by(trial) %>%

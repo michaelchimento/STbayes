@@ -58,7 +58,7 @@ standardize_ids <- function(networks, event_data, ILV_c = NULL, ILV_tv = NULL, t
         )
     } else if (inherits(networks, "array")) {
         ass_matrix <- networks[[1]] # [draws, focal, other]
-        P <- dim(ass_matrix)[2]
+        P <- dim(ass_matrix)[length(dim(ass_matrix)) - 1]
         net_ids <- c(1:P)
         id_factor <- as.factor(net_ids)
         id_map <- data.frame(
@@ -68,7 +68,7 @@ standardize_ids <- function(networks, event_data, ILV_c = NULL, ILV_tv = NULL, t
         )
     } else if (is.list(networks) && all(sapply(networks, function(x) inherits(x, "array")))) {
         ass_matrix <- networks[[1]] # [draws, focal, other]
-        P <- dim(ass_matrix)[2]
+        P <- dim(ass_matrix)[length(dim(ass_matrix)) - 1]
         net_ids <- c(1:P)
         id_factor <- as.factor(net_ids)
         id_map <- data.frame(

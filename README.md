@@ -42,6 +42,7 @@ Chimento, M., & Hoppitt, W. (2025). STbayes: An R package for creating, fitting 
 - [High resolution data mode](https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#high-resolution-data-mode)
 - [Import NBDA Objects](https://michaelchimento.github.io/STbayes/articles/advanced_recipes.html#import-nbda-data-objects)
 - [Weibull shaped hazards](https://michaelchimento.github.io/STbayes/articles/weibull_shaped_hazards.html)
+- [Model Comparison using Leave Future Out Cross Validation (LFO-CV)](https://michaelchimento.github.io/STbayes/articles/LFO-CV_model_comparison.html)
 
 ## Simulating data for power analyses
 

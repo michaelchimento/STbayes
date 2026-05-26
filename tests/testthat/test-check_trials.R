@@ -23,8 +23,17 @@ test_that("check_trials errors when trial is missing in event_data", {
     )
 })
 
-test_that("check_trials warns for Bayesian input with multiple trials", {
-    mock_net <- structure(list(), class = "bison_model") # mimic bison_model
+test_that("check_trials warns for bison input with multiple trials", {
+    mock_net <- structure(list(bisonr_fit), class = "bison_model") # mimic bison_model
+    event_data <- data.frame(trial = c(1, 2, 2))
+
+    expect_warning(
+        check_trials(event_data, mock_net)
+    )
+})
+
+test_that("check_trials warns for STRAND input with multiple trials", {
+    mock_net <- structure(list(strand_results_obj), class = "STRAND Results Object") # mimic bison_model
     event_data <- data.frame(trial = c(1, 2, 2))
 
     expect_warning(
