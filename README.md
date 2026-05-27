@@ -57,6 +57,6 @@ Chimento, M., & Hoppitt, W. (2025). STbayes: An R package for creating, fitting 
  - multiple trials with the same set, subsets, or different sets of individuals.
  - constant and time-varying ILVs for additive and multiplicative transmission models.
  - varying effects by individual, by trial, or by both for any parameter.
- - easy workflow for ELPD (loo-psis, waic) model comparison.
+ - easy workflow for model comparison (psis-loo-cv, psis-lfo-cv, waic).
  - propagation of uncertainty from network measures to transmission model
- - modeling of complex transmission and contagion
+ - complex transmission and contagion

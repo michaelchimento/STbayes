@@ -74,20 +74,22 @@
 <p>Diffusion data is time-series data, and using PSIS-LOO-CV for model
 comparison (as default in <code><a href="../reference/STb_compare.html">STb_compare()</a></code>) allows information
 from future events to influence the predictions for past observations,
-creating an “overly optimistic” ELPD. Future observations should ideally
-be excluded as well, in a procedure called leave-future-out cross
+creating an “overly optimistic” ELPD. To assess the predictiveness of
+models with time-dependencies, future observations should ideally be
+excluded as well, in a procedure called leave-future-out cross
 validation (LFO-CV) (<a href="https://www.tandfonline.com/doi/full/10.1080/00949655.2020.1783262" class="external-link">Bürkner,
 Gabry &amp; Vehtari 2020</a>). They propose a method for approximating
 LFO-CV using pareto-smoothed importance sampling, and only refitting
-models when
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>
-values exceed a certain threshold. This greatly reduces the computation
-time needed to perform LFO-CV, although this will take more time than
-using PSIS-LOO-CV or WAIC.</p>
-<p>Taking inspiration from code provided by <a href="https://cran.r-project.org/web/packages/loo/vignettes/loo2-lfo.html" class="external-link">Bürkner</a>,
-I have included functionality for approximate LFO-CV. This vignette will
-use simulated data to introduce users to model comparison using LFO-CV
-via STbayes.</p>
+models when the
+pareto-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>
+value (i.e. variability in importance ratios calculated during the PSIS
+procedure) exceeds a certain threshold. This greatly reduces the
+computation time needed to perform LFO-CV, although this will still take
+more time than using PSIS-LOO-CV or WAIC.</p>
+<p>Taking inspiration from code provided by <a href="https://cran.r-project.org/web/packages/loo/vignettes/loo2-lfo.html" class="external-link">Bürkner
+et al.</a>, I have included functionality for applying approximate
+LFO-CV to model comparison. This vignette will use simulated data to
+introduce users to this process.</p>
 <p>Let’s use the same code from the <a href="https://michaelchimento.github.io/STbayes/articles/simulate_data_for_power_analyses.html">Simulating
 Data for Power Analyses</a> vignette to simulate multiple diffusion
 trials:</p>
@@ -288,11 +290,11 @@ trials:</p>
 <p>The LFO-CV method presented by Bürkner, Gabry &amp; Vehtari is
 designed for a single sequential time-series, rather than multiple
 time-series in the same model. NBDA data may have multiple trials that
-can be treated as independent diffusions, or at least the order of the
-trials is not scientifically meaningful. To accommodate these cases,
-I’ve adjusted the LFO-CV method to proceed in parallel across the trials
-by default. This approach is appropriate for answering the question:
-“Given the first i events within each diffusion, how well does the model
+can be treated as independent diffusions, or at least where the order of
+the trials is not scientifically meaningful. To accommodate this, I’ve
+adjusted the LFO-CV method to proceed in parallel across the trials by
+default. This approach is appropriate for answering the question: “Given
+the first i events within each diffusion, how well does the model
 predict the next M events within each diffusion?” The original approach,
 sequential LFO-CV, answers the question: “Given all events observed so
 far, how well does the model predict the next M events (even if those
@@ -300,11 +302,12 @@ events are in a separate trial at some point in the future)?” This
 really only makes sense if the ordering of trials is scientifically
 meaningful, if you expect events from one trial to be predictive of
 events in another, or if you’re reusing individuals between trials and
-expect that information about them in one trial is meaningful for other
-trials. Also it will take longer to calculate. For the moment, it seems
-reasonable to me that parallel is the correct choice for most use-cases
-of NBDA, but either way, your choice can be input using argument
-<code>lfo_type</code> in the call to <code><a href="../reference/STb_lfo.html">STb_lfo()</a></code>.</p>
+expect that information about them in one trial is meaningful for
+predicting their behavior in other trials. Also it will take longer to
+calculate. For the moment, it seems reasonable to me that <em>parallel
+is the correct choice for most use-cases of NBDA</em>, but either way,
+your choice can be input using argument <code>lfo_type</code> in the
+call to <code><a href="../reference/STb_lfo.html">STb_lfo()</a></code>.</p>
 <p>In parallel LFO-CV, for each trial, we define a minimum number of
 observations
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>L</mi><annotation encoding="application/x-tex">L</annotation></semantics></math>
@@ -323,17 +326,39 @@ I denote
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>T</mi><mrow><mi>u</mi><mi>n</mi><mi>f</mi><mi>i</mi><mi>n</mi><mi>i</mi><mi>s</mi><mi>h</mi><mi>e</mi><mi>d</mi></mrow></msub><annotation encoding="application/x-tex">T_{unfinished}</annotation></semantics></math>
 here because, of course, once we have predicted all observations in a
 trial, there are none left to be included.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">L</span> <span class="op">&lt;-</span> <span class="fl">5</span></span>
+<span><span class="va">M</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
+<span><span class="va">k_thres</span> <span class="op">=</span> <span class="fl">0.7</span></span>
+<span></span>
+<span><span class="va">output_full</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/STb_lfo.html">STb_lfo</a></span><span class="op">(</span></span>
+<span>    lfo_type <span class="op">=</span> <span class="st">"parallel"</span>, </span>
+<span>    fit <span class="op">=</span> <span class="va">fit_full</span>, </span>
+<span>    STb_data <span class="op">=</span> <span class="va">data_list</span>, </span>
+<span>    stan_model <span class="op">=</span> <span class="va">model_full</span>,</span>
+<span>    M<span class="op">=</span><span class="va">M</span>, L<span class="op">=</span><span class="va">L</span>,</span>
+<span>    k_thres <span class="op">=</span> <span class="va">k_thres</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">output_asoc</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/STb_lfo.html">STb_lfo</a></span><span class="op">(</span></span>
+<span>    lfo_type <span class="op">=</span> <span class="st">"parallel"</span>, </span>
+<span>    fit <span class="op">=</span> <span class="va">fit_asoc</span>, </span>
+<span>    STb_data <span class="op">=</span> <span class="va">data_list</span>, </span>
+<span>    stan_model <span class="op">=</span> <span class="va">model_asoc</span>,</span>
+<span>    M<span class="op">=</span><span class="va">M</span>, L<span class="op">=</span><span class="va">L</span>,</span>
+<span>    k_thres <span class="op">=</span> <span class="va">k_thres</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 <p>You can plot the pareto-k values for each observation and see when
 the model was refitted.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_ks.html">plot_ks</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">output_full</span>, <span class="st">"pointwise"</span><span class="op">)</span><span class="op">$</span><span class="va">pareto_k</span>, L<span class="op">=</span><span class="va">L</span>, k_thres <span class="op">=</span> <span class="va">k_thres</span><span class="op">)</span></span></code></pre></div>
 <p><img src="LFO-CV_model_comparison_files/figure-html/unnamed-chunk-6-1.png" width="700"></p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_ks.html">plot_ks</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">output_asoc</span>, <span class="st">"pointwise"</span><span class="op">)</span><span class="op">$</span><span class="va">pareto_k</span>, L<span class="op">=</span><span class="va">L</span>, k_thres <span class="op">=</span> <span class="va">k_thres</span><span class="op">)</span></span></code></pre></div>
 <p><img src="LFO-CV_model_comparison_files/figure-html/unnamed-chunk-6-2.png" width="700"></p>
 <p>I’ve written a convenience function to output a comparison table, but
 for now I’ve kept it separate from <code><a href="../reference/STb_compare.html">STb_compare()</a></code>:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">lfo_comparison</span> <span class="op">=</span> <span class="fu"><a href="../reference/STb_compare_lfo.html">STb_compare_lfo</a></span><span class="op">(</span><span class="va">output_full</span>, <span class="va">output_asoc</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">lfo_comparison</span><span class="op">)</span></span>
 <span><span class="co">#&gt;        elpd_diff se_diff elpd_lfo se_elpd_lfo  lfoic se_lfoic</span></span>
@@ -342,7 +367,7 @@ for now I’ve kept it separate from <code><a href="../reference/STb_compare.htm
 <p>We can compare it to the results given by PSIS-LOO. This gives a
 larger elpd_diff, thus a more optimistic opinion about whether the full
 model is more predictive.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">loo_comparison</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/STb_compare.html">STb_compare</a></span><span class="op">(</span><span class="va">fit_full</span>, <span class="va">fit_asoc</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Calculating LOO-PSIS.</span></span>
 <span><span class="co">#&gt; Comparing models.</span></span>
@@ -356,7 +381,7 @@ examining the point-wise ELPD, you’ll see that there are a number of NA
 values. These are the
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>L</mi><annotation encoding="application/x-tex">L</annotation></semantics></math>
 values we removed before prediction.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pointwise_diff</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">output_full</span>, <span class="st">"pointwise"</span><span class="op">)</span><span class="op">$</span><span class="va">elpd_lfo</span> <span class="op">-</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">output_asoc</span>, <span class="st">"pointwise"</span><span class="op">)</span><span class="op">$</span><span class="va">elpd_lfo</span></span>
 <span><span class="va">elpd_diff</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">pointwise_diff</span>, na.rm <span class="op">=</span> <span class="cn">T</span><span class="op">)</span></span>
 <span><span class="va">se_diff</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">output_full</span>, <span class="st">"pointwise"</span><span class="op">)</span><span class="op">$</span><span class="va">elpd_lfo</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">*</span> <span class="fu">stats</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/stats/sd.html" class="external-link">sd</a></span><span class="op">(</span><span class="va">pointwise_diff</span>, na.rm <span class="op">=</span> <span class="cn">T</span><span class="op">)</span></span>
@@ -364,7 +389,7 @@ values we removed before prediction.</p>
 <span><span class="co">#&gt; [1] "elpd_diff: 86.84 se_diff 24.42"</span></span></code></pre></div>
 <p>For the sake of comparison, I rerun with
 <code>lfo_type="sequential"</code> below.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">lfo_comparison</span> <span class="op">=</span> <span class="fu"><a href="../reference/STb_compare_lfo.html">STb_compare_lfo</a></span><span class="op">(</span><span class="va">output_full</span>, <span class="va">output_asoc</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">lfo_comparison</span><span class="op">)</span></span>
 <span><span class="co">#&gt;        elpd_diff se_diff elpd_lfo se_elpd_lfo  lfoic se_lfoic</span></span>

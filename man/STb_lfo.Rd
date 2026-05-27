@@ -55,5 +55,5 @@ Estimate leave-future-out expected log predictive density for an STbayes model.
 The function refits the model at selected points and uses Pareto-smoothed
 importance sampling between refits to approximate M-step-ahead predictive
 performance. Cross-validation can be done either within trials in parallel or
-through the full event sequence.
+sequentially through the full event sequence.
 }

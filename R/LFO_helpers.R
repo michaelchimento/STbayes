@@ -5,7 +5,7 @@
 #' The function refits the model at selected points and uses Pareto-smoothed
 #' importance sampling between refits to approximate M-step-ahead predictive
 #' performance. Cross-validation can be done either within trials in parallel or
-#' through the full event sequence.
+#' sequentially through the full event sequence.
 #'
 #' @param lfo_type String specifying how future observations are left out.
 #' `"parallel"` predicts the next observations within each trial.
@@ -460,7 +460,8 @@ STb_compare_lfo <- function(..., model_names = NULL, n_obs = NULL, digits = 1) {
 
 #' plot_ks()
 #'
-#' Create diagnostic plot of Pareto-\eqn{k} values from LFO-CV.
+#' Create diagnostic plot of Pareto-\eqn{k} values from LFO-CV. This function
+#' was almost directly yoinked from [Bürkner et al.](https://cran.r-project.org/web/packages/loo/vignettes/loo2-lfo.html).
 #'
 #' @param ks Numeric vector of Pareto-\eqn{k} values from
 #'   `attr(x, "pointwise")$pareto_k` for an object returned by [STb_lfo()].

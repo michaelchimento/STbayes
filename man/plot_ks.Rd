@@ -17,5 +17,6 @@ begins.}
 Defaults to \code{0.7}.}
 }
 \description{
-Create diagnostic plot of Pareto-\eqn{k} values from LFO-CV.
+Create diagnostic plot of Pareto-\eqn{k} values from LFO-CV. This function
+was almost directly yoinked from \href{https://cran.r-project.org/web/packages/loo/vignettes/loo2-lfo.html}{Bürkner et al.}.
 }
