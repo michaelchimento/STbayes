@@ -249,7 +249,7 @@ If you inspect the model code above, you'll see that it's generated 2 different 
 
 So far we have been building continuous time of acquisition models---we have measured when individuals experienced an event. You might be less certain about the timing of events. If you have coarser data where you know that individuals learned within a given time period, but are uncertain of exactly when, you can create a discrete TADA (dTADA) model. If you have no time information, but only the order of acquisition, you can also create an OADA model. The ```data_type``` argument allows you to choose between these options:
 
-```{r oada1}
+```{r oada1, eval=F}
 model_cTADA = generate_STb_model(data_list, data_type = "continuous_time") #default
 model_dTADA = generate_STb_model(data_list, data_type = "discrete_time")
 model_OADA = generate_STb_model(data_list, data_type = "order")
@@ -266,31 +266,76 @@ event_data <- data.frame(
     trial = 1,
     #bison stores ids as characters, ids should match across dataframes
     id = as.character(c(1:10)),
-    time = sample(1:101, 10, replace = FALSE),
+    time = sample(1:100, 10, replace = FALSE),
     t_end = 100
 )
 
 # mock 1000 posterior draws.
-association <- array(rnorm(1000 * 10 * 10, mean = 0, sd = 1), 
-                     dim = c(1000, 10, 10))
+association <- array(rnorm(1000 * 10 * 10, mean = 0, sd = 1),
+    dim = c(1000, 10, 10),
+    dimnames = list( #dims should be named for your sanity and mine.
+        draw = NULL,
+        focal_ID = NULL,
+        other_ID = NULL
+    )
+)
 
 data_list <- import_user_STb(event_data, networks = association)
 model <- generate_STb_model(data_list)
+#... and so on
+```
 
-fit_STb(data_list = data_list,
-        model_obj = model)
-
-# it's also possible to do multi-network models
-visual_contact <- array(rnorm(1000 * 10 * 10, mean = 0, sd = 1), 
-                     dim = c(1000, 10, 10))
+It's also possible to do multi-network models:
+```{r}
+visual_contact <- array(rnorm(1000 * 10 * 10, mean = 0, sd = 1),
+    dim = c(1000, 10, 10),
+    dimnames = list( #dims should be named for your sanity and mine.
+        draw = NULL,
+        focal_ID = NULL,
+        other_ID = NULL
+    )
+)
 
 data_list <- import_user_STb(event_data, 
                              networks = list(association, visual_contact))
 model <- generate_STb_model(data_list)
 ```
 
+If you have multiple trials, you can include a 4D array with different networks for different trials. Just make sure that dimensions 3 and 4 contains all possible combinations of focal and other IDs, with edge weight values of zero for IDs not present in a given trial.
+```{r}
+n_trials = 5 # for example
+network_4D <- array(
+        rnorm(n_trials * 1000 * 10 * 10),
+        dim = c(n_trials, 1000, 10, 10),
+        dimnames = list(
+            trial = NULL,
+            draw = NULL,
+            focal_ID = NULL,
+            other_ID = NULL
+        )
+    )
+```
+If you have time-varying networks, this also works with a 5D array:
+```{r}
+n_trials = 5
+# here we assume all indivduals learned by end of obs period. 
+# if not you'll potentially need n_ind+1 timesteps unless there are ties.
+n_inter_event_intervals = 10 
+network_5D <- array(
+        rnorm(n_trials * n_inter_event_intervals * 1000 * 10 * 10),
+        dim = c(1, 10, 1000, 10, 10),
+        dimnames = list(
+            trial = NULL,
+            time = NULL,
+            draw = NULL,
+            focal_ID = NULL,
+            other_ID = NULL
+        )
+    )
+```
 
-Importing from bisonr:
+If you have one trial with time-varying networks, just make the trial dimension size 1. And upon publication of the package, you can directly import from bisonr or STRAND packages. However, the safest procedure is to build your own arrays as above.
+
 ```{r}
 bisonr_fit <- STbayes::bisonr_fit
 

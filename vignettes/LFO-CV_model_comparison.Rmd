@@ -215,7 +215,7 @@ print(paste("elpd_diff:", round(elpd_diff,2), "se_diff", round(se_diff,2)))
 
 For the sake of comparison, I rerun with ```lfo_type="sequential"``` below.
 
-```{r message=FALSE, warning=FALSE, include=FALSE, results="hide"}
+```{r message=FALSE, warning=FALSE, results="hide"}
 output_full <- STb_lfo(
     lfo_type = "sequential", 
     fit = fit_full, 

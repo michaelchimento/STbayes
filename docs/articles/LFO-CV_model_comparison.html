@@ -390,6 +390,24 @@ values we removed before prediction.</p>
 <p>For the sake of comparison, I rerun with
 <code>lfo_type="sequential"</code> below.</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">output_full</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/STb_lfo.html">STb_lfo</a></span><span class="op">(</span></span>
+<span>    lfo_type <span class="op">=</span> <span class="st">"sequential"</span>, </span>
+<span>    fit <span class="op">=</span> <span class="va">fit_full</span>, </span>
+<span>    STb_data <span class="op">=</span> <span class="va">data_list</span>, </span>
+<span>    stan_model <span class="op">=</span> <span class="va">model_full</span>,</span>
+<span>    M<span class="op">=</span><span class="va">M</span>, L<span class="op">=</span><span class="va">L</span>,</span>
+<span>    k_thres <span class="op">=</span> <span class="va">k_thres</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">output_asoc</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/STb_lfo.html">STb_lfo</a></span><span class="op">(</span></span>
+<span>    lfo_type <span class="op">=</span> <span class="st">"sequential"</span>, </span>
+<span>    fit <span class="op">=</span> <span class="va">fit_asoc</span>, </span>
+<span>    STb_data <span class="op">=</span> <span class="va">data_list</span>, </span>
+<span>    stan_model <span class="op">=</span> <span class="va">model_asoc</span>,</span>
+<span>    M<span class="op">=</span><span class="va">M</span>, L<span class="op">=</span><span class="va">L</span>,</span>
+<span>    k_thres <span class="op">=</span> <span class="va">k_thres</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">lfo_comparison</span> <span class="op">=</span> <span class="fu"><a href="../reference/STb_compare_lfo.html">STb_compare_lfo</a></span><span class="op">(</span><span class="va">output_full</span>, <span class="va">output_asoc</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">lfo_comparison</span><span class="op">)</span></span>
 <span><span class="co">#&gt;        elpd_diff se_diff elpd_lfo se_elpd_lfo  lfoic se_lfoic</span></span>
