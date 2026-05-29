@@ -1,6 +1,6 @@
 Package: STbayes
 Title: Organize, Generate, Fit, and Analyze Bayesian Models of Social Transmission
-Version: 0.0.0.9000
+Version: 1.1.0
 Authors@R: 
     person("Michael", "Chimento", , "mchimento@ab.mpg.de", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0001-5697-1701"))
