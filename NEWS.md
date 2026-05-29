@@ -10,8 +10,8 @@
 
 ## Changes
 
-- If importing network edge-weights as draws from posterior distributions, arrays must have named dimensions for my sanity and yours. Please see [this vignette](articles/advanced_recipes.html#edge-weight-uncertainty) for more details.
-- The example code for plotting PPCs in the [Getting Started vignette](articles/getting_started.html) is now more generalisable, addresses cases where trials may have different numbers of individuals, and clarifies how to handle demonstrators.
+- If importing network edge-weights as draws from posterior distributions, arrays must have named dimensions for my sanity and yours. Please see [this vignette](../articles/advanced_recipes.html#edge-weight-uncertainty) for more details.
+- The example code for plotting PPCs in the [Getting Started vignette](../articles/getting_started.html) is now more generalisable, addresses cases where trials may have different numbers of individuals, and clarifies how to handle demonstrators.
 
 ## Bug fixes
 
@@ -20,8 +20,8 @@
 
 ## Documentation
 
-- Added [vignette for Weibull-shaped hazards](articles/weibull_shaped_hazards.html).
-- Added [vignette for LFO-CV](articles/LFO-CV_model_comparison.html)
+- Added [vignette for Weibull-shaped hazards](../articles/weibull_shaped_hazards.html).
+- Added [vignette for LFO-CV](../articles/LFO-CV_model_comparison.html)
 
 # STbayes 1.0.0
 
