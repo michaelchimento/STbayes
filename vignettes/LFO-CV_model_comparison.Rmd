@@ -2,7 +2,7 @@
 title: "Model Comparison using Leave Future Out Cross Validation (LFO-CV)"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{LFO-CV Model Comparison}
+  %\VignetteIndexEntry{Model Comparison using Leave Future Out Cross Validation (LFO-CV)}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

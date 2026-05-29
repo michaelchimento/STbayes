@@ -7,7 +7,7 @@
 
 ## Installation<a name="Installation"></a>
 
-STbayes depends on ```cmdstanr```, ```posterior```, ```bayestestR```, ```data.table``` and ```loo```. You can install ```cmdstanr``` by following these [instructions](https://mc-stan.org/cmdstanr/articles/cmdstanr.html). Vignettes use NBDA (install with ```devtools::install_github("whoppitt/NBDA"```), igraph, dplyr, ggplot2, and ggpubr.
+STbayes depends on ```cmdstanr```, ```posterior```, ```bayestestR```, ```data.table``` and ```loo```. You can install ```cmdstanr``` by following these [instructions](https://mc-stan.org/cmdstanr/articles/cmdstanr.html). Vignettes use NBDA (install with ```devtools::install_github("whoppitt/NBDA"```), igraph, dplyr, tidyr, ggplot2, and ggpubr.
 
 To install STbayes:
 
