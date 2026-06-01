@@ -2,7 +2,7 @@
 
 ## New features
 
-- Package now supports PSIS-LFO-LOOCV for model comparison (inspiration from [Bürkner, Gabry & Vehtari 2020](https://cran.r-project.org/web/packages/loo/vignettes/loo2-lfo.html)), which is potentially more appropriate for NBDA than PSIS-LOOCV or WAIC, as it prevents information from the future observations to influence predictions abt the past.
+- Package now supports PSIS-LFO-LOOCV as another tool for for model comparison (inspiration from [Bürkner, Gabry & Vehtari 2020](https://cran.r-project.org/web/packages/loo/vignettes/loo2-lfo.html)).
 
 - Package now supports time-varying and trial-varying edge-weights when networks are given as posterior draws. Before, varying networks were only supported when edge-weights were point estimates. 
 

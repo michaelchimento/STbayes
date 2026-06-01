@@ -43,7 +43,7 @@
 <h2 class="pkg-version" data-toc-text="1.1.0" id="stbayes-110">STbayes 1.1.0<a class="anchor" aria-label="anchor" href="#stbayes-110"></a></h2>
 <div class="section level3">
 <h3 id="new-features-1-1-0">New features<a class="anchor" aria-label="anchor" href="#new-features-1-1-0"></a></h3>
-<ul><li><p>Package now supports PSIS-LFO-LOOCV for model comparison (inspiration from <a href="https://cran.r-project.org/web/packages/loo/vignettes/loo2-lfo.html" class="external-link">Bürkner, Gabry &amp; Vehtari 2020</a>), which is potentially more appropriate for NBDA than PSIS-LOOCV or WAIC, as it prevents information from the future observations to influence predictions abt the past.</p></li>
+<ul><li><p>Package now supports PSIS-LFO-LOOCV as another tool for for model comparison (inspiration from <a href="https://cran.r-project.org/web/packages/loo/vignettes/loo2-lfo.html" class="external-link">Bürkner, Gabry &amp; Vehtari 2020</a>).</p></li>
 <li><p>Package now supports time-varying and trial-varying edge-weights when networks are given as posterior draws. Before, varying networks were only supported when edge-weights were point estimates.</p></li>
 <li><p>Estimating acquisition times in generated quantities block has been optimized, now supports when using float event times and when supplying posterior draws of edge-weights.</p></li>
 </ul></div>

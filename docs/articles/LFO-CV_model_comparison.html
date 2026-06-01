@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">STbayes</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -76,9 +76,9 @@
 comparison (as default in <code><a href="../reference/STb_compare.html">STb_compare()</a></code>) allows information
 from future events to influence the predictions for past observations,
 creating an “overly optimistic” ELPD. To assess the predictiveness of
-models with time-dependencies, future observations should ideally be
-excluded as well, in a procedure called leave-future-out cross
-validation (LFO-CV) (<a href="https://www.tandfonline.com/doi/full/10.1080/00949655.2020.1783262" class="external-link">Bürkner,
+models with time-dependencies, future observations can be excluded as
+well, in a procedure called leave-future-out cross validation (LFO-CV)
+(<a href="https://www.tandfonline.com/doi/full/10.1080/00949655.2020.1783262" class="external-link">Bürkner,
 Gabry &amp; Vehtari 2020</a>). They propose a method for approximating
 LFO-CV using pareto-smoothed importance sampling, and only refitting
 models when the
@@ -87,6 +87,16 @@ value (i.e. variability in importance ratios calculated during the PSIS
 procedure) exceeds a certain threshold. This greatly reduces the
 computation time needed to perform LFO-CV, although this will still take
 more time than using PSIS-LOO-CV or WAIC.</p>
+<p>NB: model selection with time-dependencies is an active area of
+research. A recent paper by <a href="https://doi.org/10.1214/23-BA1409" class="external-link">Cooper et al.</a> argue that
+LFO-CV is overly conservative given that the training set is so small,
+and recommend practitioners to use LOO-CV as a first pass, and if there
+is a clear preference in model support, then to accept the results of
+LOO-CV. If there isn’t a clear preference, then they advise to perform a
+joint-CV procedure (currently not implemented in STbayes). Users of
+STbayes should view LFO-CV as one tool among many for model selection,
+which is why I have kept it’s functionality separate from
+<code><a href="../reference/STb_compare.html">STb_compare()</a></code> for the moment.</p>
 <p>Taking inspiration from code provided by <a href="https://cran.r-project.org/web/packages/loo/vignettes/loo2-lfo.html" class="external-link">Bürkner
 et al.</a>, I have included functionality for applying approximate
 LFO-CV to model comparison. This vignette will use simulated data to
