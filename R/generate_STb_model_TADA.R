@@ -742,7 +742,7 @@ transformed parameters {{
       real t_event = global_time + tau;")
     }
 
-    gamma_target_increment_statement <- if (intrinsic_rate == "weibull") glue::glue("+ log({gamma_term}) + ({gamma_term}-1) * log(t_end)") else ""
+    gamma_target_increment_statement <- if (intrinsic_rate == "weibull") glue::glue("+ log({gamma_term}) + ({gamma_term}-1) * log(t_end)") else "* 1.0"
     lambda_var <- if (is.element("lambda_0", veff_params)) glue::glue("lambda_0[{veff_idx}]") else "lambda_0"
 
     if (model_type == "full") {
@@ -798,7 +798,7 @@ transformed parameters {{
         social_info_statement <- ""
         lambda_statement <- glue::glue("real lambda =  {lambda_var} * ind_term * {gamma_statement};")
         lambda_statement_estAcq <- glue::glue("real lambda =  {lambda_var} * ind_term;")
-        target_increment_statement <- glue::glue("target += log( {lambda_var} * ind_term) * {gamma_statement};")
+        target_increment_statement <- glue::glue("target += log( {lambda_var} * ind_term) {gamma_target_increment_statement};")
         log_lik_statement <- glue::glue("log_lik_matrix[trial, n] = log({lambda_var} * ind_term) {gamma_target_increment_statement} - cum_hazard;")
     }
 
