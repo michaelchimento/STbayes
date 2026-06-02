@@ -192,6 +192,7 @@ import_user_STb <- function(event_data,
         message("\u26A0\uFE0F I will pre-process high-res data for standard transmission models. For complex transmission, please use import_user_STb2().")
         full_networks <- grid_networks(event_data, networks)
         networks_processed <- process_networks_x_weights_hires(event_data, t_weights, full_networks, D_data)
+        networks <- networks_processed
     }
 
     D_data <- D_data[, !(names(D_data) %in% "time")]
