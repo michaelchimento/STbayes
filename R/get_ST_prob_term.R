@@ -13,6 +13,7 @@
 #' @param time_var String: e.g., "time_step"
 #' @param net_var String: e.g., "A"
 #' @param ILVs_variable_effects String containing ILV effects on s
+#' @param ILVm_variable_effects String containing multiplicative ILV effects
 #' @param weibull_term String containing gamma etc
 #' @param high_res boolean indicating if high_res
 #' @return String of Stan code for GQ block to accumulate psoc and psocn
@@ -23,6 +24,7 @@ get_ST_prob_term <- function(transmission_func,
                              id_var = "id", trial_var = "trial", time_var = "time_step",
                              net_var = "A",
                              ILVs_variable_effects = "",
+                             ILVm_variable_effects = "",
                              weibull_term = "",
                              high_res = F) {
     # choose s term
@@ -33,9 +35,9 @@ get_ST_prob_term <- function(transmission_func,
     }
 
     if (nchar(weibull_term)) {
-        full_s_term <- glue::glue("{s_term} {ILVs_variable_effects} * {weibull_term}")
+        full_s_term <- glue::glue("{ILVm_variable_effects} {s_term} {ILVs_variable_effects} * {weibull_term}")
     } else {
-        full_s_term <- glue::glue("{s_term} * D[{trial_var}, {time_var}] {ILVs_variable_effects}")
+        full_s_term <- glue::glue("{ILVm_variable_effects} {s_term} * D[{trial_var}, {time_var}] {ILVs_variable_effects}")
     }
 
 

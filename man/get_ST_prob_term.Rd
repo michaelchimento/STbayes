@@ -16,6 +16,7 @@ get_ST_prob_term(
   time_var = "time_step",
   net_var = "A",
   ILVs_variable_effects = "",
+  ILVm_variable_effects = "",
   weibull_term = "",
   high_res = F
 )
@@ -42,6 +43,8 @@ get_ST_prob_term(
 \item{net_var}{String: e.g., "A"}
 
 \item{ILVs_variable_effects}{String containing ILV effects on s}
+
+\item{ILVm_variable_effects}{String containing multiplicative ILV effects}
 
 \item{weibull_term}{String containing gamma etc}
 

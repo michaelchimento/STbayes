@@ -7,34 +7,40 @@
 #' @return integer indicating order
 order_params <- function(p) {
     if (grepl("^log_lambda_0", p)) {
-        return(1)
+        return(111)
     }
     if (grepl("^log_s_prime_mean", p)) {
-        return(2)
+        return(112)
     }
     if (grepl("^lambda_0_mean", p)) {
-        return(3)
+        return(113)
     }
     if (grepl("^lambda_0", p)) {
-        return(4)
+        return(114)
     }
     if (grepl("^s_mean$", p)) {
-        return(5)
+        return(115)
+    }
+    if (grepl("^s_mean\\[", p)) {
+        return(115)
     }
     if (grepl("^s$", p)) {
-        return(6)
+        return(116)
     } # scalar s
     if (grepl("^s\\[", p)) {
-        return(7)
+        return(117)
     } # vector s[i]
-    if (grepl("^sigma_veff", p)) {
-        return(8)
-    }
     if (grepl("^beta_", p)) {
-        return(9)
+        return(118)
     }
     if (grepl("^percent_ST", p)) {
-        return(10)
+        return(119)
     }
-    return(11)
+    if (grepl("^sigma_id", p)) {
+        return(120)
+    }
+    if (grepl("^sigma_trial", p)) {
+        return(121)
+    }
+    return(122)
 }

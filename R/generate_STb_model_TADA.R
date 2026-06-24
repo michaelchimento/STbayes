@@ -754,6 +754,7 @@ transformed parameters {{
                 veff_idx = veff_idx,
                 num_networks = num_networks,
                 ILVs_variable_effects = ILVs_variable_effects,
+                ILVm_variable_effects = ILVm_variable_effects,
                 weibull_term = gamma_statement,
                 high_res = F
             )
