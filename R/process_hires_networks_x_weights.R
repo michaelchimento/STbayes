@@ -16,21 +16,33 @@ utils::globalVariables(c(
 #' @return dataframe where network weights are pre-processed to include cxn x t_weight
 
 process_networks_x_weights_hires <- function(event_data, t_weights, networks, D_data) {
-    t_weights$trial <- as.integer(as.factor(t_weights$trial))
-    t_weights$id <- as.integer(t_weights$id_numeric)
-
-    names(t_weights)[names(t_weights) == "id"] <- "other"
-    names(D_data)[names(D_data) == "trial_numeric"] <- "trial"
-    # join with networks
-
     message("|Hi-Rez|: Pre-processing for standard transmission.")
-    networks <- data.table::as.data.table(networks)
-    t_weights <- data.table::as.data.table(t_weights)
-    temp_net <- data.table::merge.data.table(networks, t_weights, by = c("trial", "time", "other"), all.x = TRUE)
-    weight_cols <- setdiff(names(temp_net), c("trial", "time", "other", "focal", "t_weight", "id_numeric"))
-    temp_net[, (weight_cols) := lapply(.SD, function(x) x * t_weight), .SDcols = weight_cols]
 
-    temp_net$t_weight <- NULL
+    names(D_data)[names(D_data) == "trial_numeric"] <- "trial"
+
+    networks <- data.table::as.data.table(networks)
+
+    if (!is.null(t_weights)) {
+        t_weights$trial <- as.integer(as.factor(t_weights$trial))
+        t_weights$id <- as.integer(t_weights$id_numeric)
+        names(t_weights)[names(t_weights) == "id"] <- "other"
+        t_weights <- data.table::as.data.table(t_weights)
+        # join with networks
+        temp_net <- data.table::merge.data.table(networks, t_weights, by = c("trial", "time", "other"), all.x = TRUE)
+        weight_cols <- setdiff(
+            names(temp_net),
+            c("trial", "time", "other", "focal", "t_weight", "id_numeric")
+        )
+        temp_net[, (weight_cols) := lapply(.SD, function(x) x * t_weight), .SDcols = weight_cols]
+        temp_net$t_weight <- NULL
+    } else {
+        temp_net <- data.table::copy(networks)
+
+        weight_cols <- setdiff(
+            names(temp_net),
+            c("trial", "time", "other", "focal", "id_numeric")
+        )
+    }
 
     # do the rolling joint
     network_dt <- temp_net
