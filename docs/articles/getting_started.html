@@ -357,17 +357,17 @@ more details</li>
 <span><span class="co">#&gt; Chain 3 Iteration: 1000 / 2000 [ 50%]  (Warmup) </span></span>
 <span><span class="co">#&gt; Chain 3 Iteration: 1001 / 2000 [ 50%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 4 Iteration: 2000 / 2000 [100%]  (Sampling) </span></span>
-<span><span class="co">#&gt; Chain 4 finished in 6.9 seconds.</span></span>
+<span><span class="co">#&gt; Chain 4 finished in 6.8 seconds.</span></span>
 <span><span class="co">#&gt; Chain 2 Iteration: 2000 / 2000 [100%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 2 finished in 7.1 seconds.</span></span>
-<span><span class="co">#&gt; Chain 1 Iteration: 2000 / 2000 [100%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 3 Iteration: 2000 / 2000 [100%]  (Sampling) </span></span>
-<span><span class="co">#&gt; Chain 1 finished in 7.2 seconds.</span></span>
 <span><span class="co">#&gt; Chain 3 finished in 7.3 seconds.</span></span>
+<span><span class="co">#&gt; Chain 1 Iteration: 2000 / 2000 [100%]  (Sampling) </span></span>
+<span><span class="co">#&gt; Chain 1 finished in 7.4 seconds.</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; All 4 chains finished successfully.</span></span>
 <span><span class="co">#&gt; Mean chain execution time: 7.1 seconds.</span></span>
-<span><span class="co">#&gt; Total execution time: 7.5 seconds.</span></span>
+<span><span class="co">#&gt; Total execution time: 7.7 seconds.</span></span>
 <span><span class="co">#&gt; 🫴 Use STb_save() to save the fit and chain csvs to a single RDS file. Or don't!</span></span></code></pre></div>
 <p>This function calls cmdstanr’s $sample(), and you can add any extra
 valid arguments to pass on here. In this call, I’ve made sure that we
@@ -626,18 +626,18 @@ to the full model fit.</p>
 <span><span class="co">#&gt; Chain 3 Iteration: 1001 / 2000 [ 50%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 4 Iteration:    1 / 2000 [  0%]  (Warmup) </span></span>
 <span><span class="co">#&gt; Chain 1 Iteration: 2000 / 2000 [100%]  (Sampling) </span></span>
+<span><span class="co">#&gt; Chain 2 Iteration: 2000 / 2000 [100%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 4 Iteration: 1000 / 2000 [ 50%]  (Warmup) </span></span>
 <span><span class="co">#&gt; Chain 4 Iteration: 1001 / 2000 [ 50%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 1 finished in 0.2 seconds.</span></span>
-<span><span class="co">#&gt; Chain 2 Iteration: 2000 / 2000 [100%]  (Sampling) </span></span>
+<span><span class="co">#&gt; Chain 2 finished in 0.2 seconds.</span></span>
 <span><span class="co">#&gt; Chain 3 Iteration: 2000 / 2000 [100%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 4 Iteration: 2000 / 2000 [100%]  (Sampling) </span></span>
-<span><span class="co">#&gt; Chain 2 finished in 0.3 seconds.</span></span>
-<span><span class="co">#&gt; Chain 3 finished in 0.3 seconds.</span></span>
-<span><span class="co">#&gt; Chain 4 finished in 0.3 seconds.</span></span>
+<span><span class="co">#&gt; Chain 3 finished in 0.2 seconds.</span></span>
+<span><span class="co">#&gt; Chain 4 finished in 0.2 seconds.</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; All 4 chains finished successfully.</span></span>
-<span><span class="co">#&gt; Mean chain execution time: 0.3 seconds.</span></span>
+<span><span class="co">#&gt; Mean chain execution time: 0.2 seconds.</span></span>
 <span><span class="co">#&gt; Total execution time: 0.4 seconds.</span></span>
 <span><span class="co">#&gt; 🫴 Use STb_save() to save the fit and chain csvs to a single RDS file. Or don't!</span></span></code></pre></div>
 <p>If you are familiar with loo or have your own pipeline, then you can
@@ -650,27 +650,44 @@ want, here we just compare these two.</p>
 <span><span class="co">#&gt; Comparing models.</span></span>
 <span><span class="co">#&gt; Calculating pareto-k diagnostic (only for loo-psis).</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">loo_output</span><span class="op">$</span><span class="va">comparison</span>, simplify <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="co">#&gt;             elpd_diff se_diff elpd_loo se_elpd_loo p_loo  se_p_loo looic </span></span>
-<span><span class="co">#&gt; full_fit       0.0       0.0  -290.8      6.3         2.0    0.5    581.5</span></span>
-<span><span class="co">#&gt; asocial_fit -292.5      30.2  -583.2     33.0         9.2    1.4   1166.5</span></span>
-<span><span class="co">#&gt;             se_looic</span></span>
-<span><span class="co">#&gt; full_fit      12.5  </span></span>
-<span><span class="co">#&gt; asocial_fit   66.1</span></span></code></pre></div>
+<span><span class="co">#&gt;        model elpd_diff se_diff p_worse diag_diff diag_elpd elpd_loo se_elpd_loo</span></span>
+<span><span class="co">#&gt;     full_fit       0.0     0.0      NA                       -290.8         6.3</span></span>
+<span><span class="co">#&gt;  asocial_fit     -21.3     5.3    1.00   N &lt; 100             -312.0         3.9</span></span>
+<span><span class="co">#&gt;  p_loo se_p_loo looic se_looic</span></span>
+<span><span class="co">#&gt;    2.0      0.5 581.5     12.5</span></span>
+<span><span class="co">#&gt;    0.3      0.0 624.1      7.7</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Diagnostic flags present.</span></span>
+<span><span class="co">#&gt; See ?`loo-glossary` (sections `diag_diff` and `diag_elpd`)</span></span>
+<span><span class="co">#&gt; or https://mc-stan.org/loo/reference/loo-glossary.html.</span></span></code></pre></div>
 <p>If you are not familiar with leave-out-out cross validation, I
-strongly suggest reading up on it, but the TLDR is that you should pay
-attention to the elpd_diff and se_diff columns. A model is credibly more
-predictive if the standard error in differences of ELPD does not cross
-0. Here, -21.2 + 5.3 &lt; 0, so we can conclude the full model is more
-predictive of out-of-sample data than an asocial only model. If you
-would rather see this graphically:</p>
+strongly suggest reading <a href="https://users.aalto.fi/~ave/CV-FAQ.html" class="external-link">this FAQ from Aki
+Vehtari</a>. The TLDR is that <code>elpd_diff</code> column gives us an
+idea of the magnitude of the difference in predictiveness between fits,
+the <code>se_diff</code> column gives an idea of the uncertainty around
+that difference. Following recent advice from <a href="https://projecteuclid.org/journals/bayesian-analysis/volume--1/issue--1/Uncertainty-in-Bayesian-Leave-One-Out-Cross-Validation-Based-Model/10.1214/25-BA1569.full" class="external-link">Sivula
+et al.</a>, a difference of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>&lt;</mo><mn>4</mn></mrow><annotation encoding="application/x-tex">&lt;4</annotation></semantics></math>
+is negligible, and we can interpret this as models do not significantly
+differ (even if the SE doesn’t cross 0). If you have the most recent
+version of loo installed, column <code>p_worse</code> will also be
+present in the output table, which is the probability that a model is
+worse than the most-predictive model. NB: this probability depends on an
+assumption of normality of uncertainty, and this assumption may be
+broken if there are &lt;100 observations in your dataset. In this case,
+we recommend that you use more stringent thresholds for interpretation
+(i.e. p_worse must be &gt;.99 rather than &gt;.95). In this example, so
+we can conclude the full model is more predictive of out-of-sample data
+than an asocial only model. If you would rather see this
+graphically:</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">comparison_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">loo_output</span><span class="op">$</span><span class="va">comparison</span><span class="op">)</span></span>
 <span><span class="va">comparison_df</span><span class="op">$</span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">comparison_df</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">comparison_df</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/reorder.factor.html" class="external-link">reorder</a></span><span class="op">(</span><span class="va">model</span>, <span class="va">elpd_diff</span><span class="op">)</span>, y <span class="op">=</span> <span class="va">elpd_diff</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
 <span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span>size <span class="op">=</span> <span class="fl">3</span><span class="op">)</span> <span class="op">+</span> <span class="co">#elpd_diff</span></span>
-<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_linerange.html" class="external-link">geom_errorbar</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>ymin <span class="op">=</span> <span class="va">elpd_diff</span> <span class="op">-</span> <span class="va">se_diff</span>, </span>
-<span>                      ymax <span class="op">=</span> <span class="va">elpd_diff</span> <span class="op">+</span> <span class="va">se_diff</span><span class="op">)</span>, width <span class="op">=</span> <span class="fl">0.2</span><span class="op">)</span> <span class="op">+</span> <span class="co">#SE of elpd diff</span></span>
+<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_linerange.html" class="external-link">geom_errorbar</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>ymin <span class="op">=</span> <span class="va">elpd_diff</span> <span class="op">-</span> <span class="fl">1.96</span><span class="op">*</span><span class="va">se_diff</span>, </span>
+<span>                      ymax <span class="op">=</span> <span class="va">elpd_diff</span> <span class="op">+</span> <span class="fl">1.96</span><span class="op">*</span><span class="va">se_diff</span><span class="op">)</span>, width <span class="op">=</span> <span class="fl">0.2</span><span class="op">)</span> <span class="op">+</span> <span class="co">#1.96*SE of elpd diff (95% interval)</span></span>
 <span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/coord_flip.html" class="external-link">coord_flip</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
 <span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>x <span class="op">=</span> <span class="st">"Model"</span>, y <span class="op">=</span> <span class="st">"ELPD Difference"</span>, title <span class="op">=</span> <span class="st">"Model Comparison"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>

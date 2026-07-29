@@ -95,7 +95,7 @@ is a clear preference in model support, then to accept the results of
 LOO-CV. If there isn’t a clear preference, then they advise to perform a
 joint-CV procedure (currently not implemented in STbayes). Users of
 STbayes should view LFO-CV as one tool among many for model selection,
-which is why I have kept it’s functionality separate from
+and so I have kept it’s functionality separate from
 <code><a href="../reference/STb_compare.html">STb_compare()</a></code> for the moment.</p>
 <p>Taking inspiration from code provided by <a href="https://cran.r-project.org/web/packages/loo/vignettes/loo2-lfo.html" class="external-link">Bürkner
 et al.</a>, I have included functionality for applying approximate
@@ -373,8 +373,8 @@ for now I’ve kept it separate from <code><a href="../reference/STb_compare.htm
 <code class="sourceCode R"><span><span class="va">lfo_comparison</span> <span class="op">=</span> <span class="fu"><a href="../reference/STb_compare_lfo.html">STb_compare_lfo</a></span><span class="op">(</span><span class="va">output_full</span>, <span class="va">output_asoc</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">lfo_comparison</span><span class="op">)</span></span>
 <span><span class="co">#&gt;        elpd_diff se_diff elpd_lfo se_elpd_lfo  lfoic se_lfoic</span></span>
-<span><span class="co">#&gt; model1       0.0     0.0   -942.9        18.4 1885.8     36.8</span></span>
-<span><span class="co">#&gt; model2     -86.8    24.4  -1029.7        27.1 2059.5     54.2</span></span></code></pre></div>
+<span><span class="co">#&gt; model2       0.0     0.0   -937.2        19.3 1874.4     38.7</span></span>
+<span><span class="co">#&gt; model1      -5.7    16.3   -942.9        18.4 1885.8     36.8</span></span></code></pre></div>
 <p>We can compare it to the results given by PSIS-LOO. This gives a
 larger elpd_diff, thus a more optimistic opinion about whether the full
 model is more predictive.</p>
@@ -384,9 +384,16 @@ model is more predictive.</p>
 <span><span class="co">#&gt; Comparing models.</span></span>
 <span><span class="co">#&gt; Calculating pareto-k diagnostic (only for loo-psis).</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">loo_comparison</span><span class="op">$</span><span class="va">comparison</span>, simplify <span class="op">=</span> <span class="cn">F</span><span class="op">)</span></span>
-<span><span class="co">#&gt;          elpd_diff se_diff elpd_loo se_elpd_loo p_loo  se_p_loo looic  se_looic</span></span>
-<span><span class="co">#&gt; fit_full    0.0       0.0  -217.5     22.6         1.8    0.3    435.1   45.1  </span></span>
-<span><span class="co">#&gt; fit_asoc -197.9      15.8  -415.5     10.6         2.9    0.2    830.9   21.2</span></span></code></pre></div>
+<span><span class="co">#&gt;     model elpd_diff se_diff p_worse diag_diff diag_elpd elpd_loo se_elpd_loo</span></span>
+<span><span class="co">#&gt;  fit_full       0.0     0.0      NA                       -217.5        22.6</span></span>
+<span><span class="co">#&gt;  fit_asoc     -17.9     5.8    1.00   N &lt; 100             -235.5        24.3</span></span>
+<span><span class="co">#&gt;  p_loo se_p_loo looic se_looic</span></span>
+<span><span class="co">#&gt;    1.8      0.3 435.1     45.1</span></span>
+<span><span class="co">#&gt;    0.8      0.0 470.9     48.6</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Diagnostic flags present.</span></span>
+<span><span class="co">#&gt; See ?`loo-glossary` (sections `diag_diff` and `diag_elpd`)</span></span>
+<span><span class="co">#&gt; or https://mc-stan.org/loo/reference/loo-glossary.html.</span></span></code></pre></div>
 <p>For illustration, below I calculate the elpd difference by hand. When
 examining the point-wise ELPD, you’ll see that there are a number of NA
 values. These are the
@@ -397,7 +404,7 @@ values we removed before prediction.</p>
 <span><span class="va">elpd_diff</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">pointwise_diff</span>, na.rm <span class="op">=</span> <span class="cn">T</span><span class="op">)</span></span>
 <span><span class="va">se_diff</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">output_full</span>, <span class="st">"pointwise"</span><span class="op">)</span><span class="op">$</span><span class="va">elpd_lfo</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">*</span> <span class="fu">stats</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/stats/sd.html" class="external-link">sd</a></span><span class="op">(</span><span class="va">pointwise_diff</span>, na.rm <span class="op">=</span> <span class="cn">T</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"elpd_diff:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">elpd_diff</span>,<span class="fl">2</span><span class="op">)</span>, <span class="st">"se_diff"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">se_diff</span>,<span class="fl">2</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "elpd_diff: 86.84 se_diff 24.42"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "elpd_diff: -5.73 se_diff 16.26"</span></span></code></pre></div>
 <p>For the sake of comparison, I rerun with
 <code>lfo_type="sequential"</code> below.</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
@@ -422,8 +429,8 @@ values we removed before prediction.</p>
 <code class="sourceCode R"><span><span class="va">lfo_comparison</span> <span class="op">=</span> <span class="fu"><a href="../reference/STb_compare_lfo.html">STb_compare_lfo</a></span><span class="op">(</span><span class="va">output_full</span>, <span class="va">output_asoc</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">lfo_comparison</span><span class="op">)</span></span>
 <span><span class="co">#&gt;        elpd_diff se_diff elpd_lfo se_elpd_lfo  lfoic se_lfoic</span></span>
-<span><span class="co">#&gt; model1       0.0     0.0  -1020.6        12.1 2041.2     24.3</span></span>
-<span><span class="co">#&gt; model2    -108.9    21.7  -1129.5        22.8 2259.0     45.6</span></span></code></pre></div>
+<span><span class="co">#&gt; model1       0.0     0.0  -1012.6        12.3 2025.2     24.5</span></span>
+<span><span class="co">#&gt; model2      -4.5     0.5  -1017.1        12.1 2034.2     24.3</span></span></code></pre></div>
   </main>
 </div>
 

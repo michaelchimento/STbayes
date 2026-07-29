@@ -12,7 +12,7 @@
 #' @param veff_params Vector of parameter names (string) for which to estimate varying effects. Default is no varying effects.
 #' @param veff_type string/vector specifying whether varying effects should be applied to "id", "trial" or both (c("id","trial")). Default is id, applied only if user also gives `veff_params`.
 #' @param gq Boolean to indicate whether the generated quantities block is added (incl. ll for WAIC)
-#' @param est_acqTime Boolean to indicate whether gq block includes estimates for acquisition time. At the moment this uses 'one weird trick' to accomplish this and does not support estimates for non-integer learning times.
+#' @param est_acqTime Boolean to indicate whether gq block includes estimates for acquisition time.
 #' @param est_acqTime_option character option "a" or "b" that determines how the model will estimate acquisition times. Default is "a", which is much faster, but *cannot* account for any time-varying values that change during inter-event intervals. Option "b" is much slower, but can account for these cases.
 #' @param priors named list with strings containing priors.
 #' @export

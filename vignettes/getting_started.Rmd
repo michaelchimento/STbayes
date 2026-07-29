@@ -35,27 +35,29 @@ event_data <- STbayes::event_data
 head(event_data)
 ```
 
-Event data gives information  about the spreading of the behavior or information and must contain columns:
+Event data gives information about the spreading of the behavior or information and must contain columns:
 
-- ```id```: Character or numeric individual identities.
-- ```trial```: Character or numeric column indicating which trial the event belongs to. There is only one trial in this data-set.
-- ```time```: Integer or float values indicating the time (TADA) or order (OADA) in which the individual was recorded as first informed/knowledgable. If an individual had the event occur prior to the start of the observation period (e.g. pre-trained demonstrator), set as 0. These left censored individuals will not contribute to the likelihood calculation. If an individual never learned during the observation period, set its value $t_{\text{end}}+1$. These will be treated as right-censored individuals in the likelihood calculation.
-- ```t_end```: Integer or float value representing the duration of the observation period for each trial. If the user observed a population for 30 days, ```t_end=30```. If there are no censored individuals set ```t_end=max(time)```.
+-   `id`: Character or numeric individual identities.
+-   `trial`: Character or numeric column indicating which trial the event belongs to. There is only one trial in this data-set.
+-   `time`: Integer or float values indicating the time (TADA) or order (OADA) in which the individual was recorded as first informed/knowledgable. If an individual had the event occur prior to the start of the observation period (e.g. pre-trained demonstrator), set as 0. These left censored individuals will not contribute to the likelihood calculation. If an individual never learned during the observation period, set its value $t_{\text{end}}+1$. These will be treated as right-censored individuals in the likelihood calculation.
+-   `t_end`: Integer or float value representing the duration of the observation period for each trial. If the user observed a population for 30 days, `t_end=30`. If there are no censored individuals set `t_end=max(time)`.
 
 Next let's look at the network data:
+
 ```{r import2}
 edge_list <- STbayes::edge_list
 head(edge_list)
 ```
+
 This edge list gives the network connections of each individual in a long format. You can give a sparse edge list that doesn't include all dyads, but importantly, all individuals must be accounted for in the edge list. The first three columns must be:
 
-- ```trial```: Character or numeric column indicating which trial the networks belong to.
-- ```focal```: Character or numeric  column of individual identities.
-- ```other```: Character or numeric  column of individual identities.
+-   `trial`: Character or numeric column indicating which trial the networks belong to.
+-   `focal`: Character or numeric column of individual identities.
+-   `other`: Character or numeric column of individual identities.
 
-Any remaining columns are descriptively named integer or float edge weights. If you were making a multi-network model, you could add as many columns as you want. Here, there is only one network named ```assoc```. **Important: for directed networks, the edge weight describes the influence that ```other``` may have on ```focal``` experiencing the target event. For example, if you wish to model vertical transmission from parent to offspring, this should contain rows ```mother, daughter, 0```; ```daughter, mother, 1```**.  Naming conventions for identities and trials must be consistent between these two dataframes (i.e. integers, or matching character strings). The networks dataframe is used as the reference for all unique IDs, thus each ID must be included at least once in either the focal or other column. If a dyad is absent, their connection is assumed to be zero. 
+Any remaining columns are descriptively named integer or float edge weights. If you were making a multi-network model, you could add as many columns as you want. Here, there is only one network named `assoc`. **Important: for directed networks, the edge weight describes the influence that `other` may have on `focal` experiencing the target event. For example, if you wish to model vertical transmission from parent to offspring, this should contain rows `mother, daughter, 0`; `daughter, mother, 1`**. Naming conventions for identities and trials must be consistent between these two dataframes (i.e. integers, or matching character strings). The networks dataframe is used as the reference for all unique IDs, thus each ID must be included at least once in either the focal or other column. If a dyad is absent, their connection is assumed to be zero.
 
-Let's import the data into a format that can be used with other STbayes functions. I've tried to abstract away as much complexity as possible, but please check the function arguments before sending in the data. The default values might not be what you want! In this case, it's simple---we have no covariates and a single trial with a static network. You can specify whether the network is directed or undirected using ```network_type```. This defaults to undirected.
+Let's import the data into a format that can be used with other STbayes functions. I've tried to abstract away as much complexity as possible, but please check the function arguments before sending in the data. The default values might not be what you want! In this case, it's simple---we have no covariates and a single trial with a static network. You can specify whether the network is directed or undirected using `network_type`. This defaults to undirected.
 
 ```{r import}
 data_list <- import_user_STb(event_data = event_data, 
@@ -65,42 +67,42 @@ data_list <- import_user_STb(event_data = event_data,
 
 This function does quite a bit behind the scenes to process the raw observational data into a named list of variables. I've tried to optimize as much as possible so it shouldn't take more than a second or two unless you're using gigantic networks. Important bits include:
 
-1. *Validates and standardizes inputs.* The function confirms that necessary columns are present, and maps individual and trial identifiers across data frames. The IDs present in the network data are used as the reference for any other data that you supply. For example, if an ID is in the edge list, but not in the event data, it will be automatically added as a censored individual into the event_data. We strongly suggest accounting for all individuals in all data provided to this function to avoid any surprises later on in the analysis.
-2. *Preprocesses event data.* The function sorts events by time within each trial and assigns a discrete time index that is used to refer to inter-event intervals. E.g. ```timestep=1``` corresponds to the start of the observation period until the first event. If ```high-res``` mode is used, all durations are set to 1. It also calculates the duration of each of these inter-event intervals. It identifies demonstrators (```time==0```) and right censored individuals (```time>t_end```).
-3. *Preprocesses network data.* If static, a single matrix is used for all times. If dynamic, it aligns edge weights across trials and inter-event intervals. If high resolution, it will collapse data into inter-event intervals, multiplying edge weights by transmission weights and then dividing by duration. When fitting, this term will be multiplied out again by duration, so for linear transmission, this is equivalent to running the likelihood in Stan for every single time-step and greatly speeds up model fitting. We note that this pre-processing is not possible complex transmission models.
-4. *Preprocesses covariates.* The function recognizes and stores the roles of ILVs as affecting (or not) the intrinsic rate, the social rate or both rates (multiplicative).
+1.  *Validates and standardizes inputs.* The function confirms that necessary columns are present, and maps individual and trial identifiers across data frames. The IDs present in the network data are used as the reference for any other data that you supply. For example, if an ID is in the edge list, but not in the event data, it will be automatically added as a censored individual into the event_data. We strongly suggest accounting for all individuals in all data provided to this function to avoid any surprises later on in the analysis.
+2.  *Preprocesses event data.* The function sorts events by time within each trial and assigns a discrete time index that is used to refer to inter-event intervals. E.g. `timestep=1` corresponds to the start of the observation period until the first event. If `high-res` mode is used, all durations are set to 1. It also calculates the duration of each of these inter-event intervals. It identifies demonstrators (`time==0`) and right censored individuals (`time>t_end`).
+3.  *Preprocesses network data.* If static, a single matrix is used for all times. If dynamic, it aligns edge weights across trials and inter-event intervals. If high resolution, it will collapse data into inter-event intervals, multiplying edge weights by transmission weights and then dividing by duration. When fitting, this term will be multiplied out again by duration, so for linear transmission, this is equivalent to running the likelihood in Stan for every single time-step and greatly speeds up model fitting. We note that this pre-processing is not possible complex transmission models.
+4.  *Preprocesses covariates.* The function recognizes and stores the roles of ILVs as affecting (or not) the intrinsic rate, the social rate or both rates (multiplicative).
 
 ## Step 2: Generate a model
 
-Next, we can pass this into a function that automatically creates Stan code that is customised to your data and modelling desires. Each time you generate a model, the function will display the default priors it'll use. You can specify your own priors using the argument ```priors``` and give it a named list.
+Next, we can pass this into a function that automatically creates Stan code that is customised to your data and modelling desires. Each time you generate a model, the function will display the default priors it'll use. You can specify your own priors using the argument `priors` and give it a named list.
 
 ```{r generate_model}
 model_full <- generate_STb_model(data_list, gq = T, est_acqTime = T)
 ```
 
-This returns a very long string containing the code. The argument ```gq``` indicates whether a generated quantities block will be created. This defaults to TRUE, as it's needed to output the log-likelihood of observations for any kind of model comparison later. The ```est_acqTime``` argument tells STbayes to automatically generate some code to return a posterior distribution of estimated times of events for each individual. 
+This returns a very long string containing the code. The argument `gq` indicates whether a generated quantities block will be created. This defaults to TRUE, as it's needed to output the log-likelihood of observations for any kind of model comparison later. The `est_acqTime` argument tells STbayes to automatically generate some code to return a posterior distribution of estimated times of events for each individual.
 
-To quickly check the model code in R, just use ```cat()```. Otherwise, I recommend saving it, as the formatting might need a bit of cleaning before it's readable:
+To quickly check the model code in R, just use `cat()`. Otherwise, I recommend saving it, as the formatting might need a bit of cleaning before it's readable:
 
 ```{r save_model, eval=F}
 write(model_full, file="../data/stan_models/my_first_model.stan")
 ```
 
-If you want to directly modify the code, go ahead. You can supply the file path of the model rather than ```model_obj``` in the next call to ```fit_STb()```. Here, we'll just use the model stored in the variable.
+If you want to directly modify the code, go ahead. You can supply the file path of the model rather than `model_obj` in the next call to `fit_STb()`. Here, we'll just use the model stored in the variable.
 
 ### Function arguments
 
-Here is a summary of each argument to ```generate_STb_model``` for easy reference:
+Here is a summary of each argument to `generate_STb_model` for easy reference:
 
-- ```data_type=c("continuous_time", "discrete_time", "order")``` distinguishes between cases where the times of events are known (TADA type models) or only the order of events is known (OADA type models). If exact times of acquisition are known the user can select ```"continuous_time"```, creating a cTADA model. If a population was regularly (or irregularly) sampled, so the exact time of events are unknown but the rough interval they occurred in is known, the user should select ```"discrete_time"```, which creates a dTADA model.
-- ```veff_params=c("lambda_0", "s", ...)``` is used to specify which variables should receive varying effects. For example, ```veff_ID=c("lambda_0", "s")``` will create a model that will attempt to fit varying effects for both intrinsic rate and strength of social transmission. It is possible to include other ILVs. The default value is none.
-- ```veff_type=c("id", "trial")``` is used to specify whether varying effects should be fit for individuals, trials or both. The default value is ```"id"```.
-- ```model_type=c("full","asocial")``` specifies whether to create a full model or an asocial model constrained to the intrinsic rate only.
-- ```intrinsic_rate=c("constant", "weibull")``` specifies whether or not the user wishes to use a constant intrinsic rate, or a Weibull shaped rate that can increase or decrease over time. This fits an additional parameter $\gamma$, where $\gamma<1$ indicates a decreasing hazard over time, and $\gamma>1$ indicates an increasing hazard over time. $\gamma=1$ indicates a constant hazard. This parameter is only possible to be estimated when fitting TADA-type models, i.e. when ```data_type != "order"```. The default value is ```"constant"```.
-- ```transmission_func=c("standard","freqdep_f", "freqdep_k")``` specifies whether the model uses simple or complex transmission.
-- ```gq``` specifies whether or not a generated quantities block is created in the Stan model. This defaults to true, as the log-likelihood of observations is output using generated quantities and is needed for model comparison.
-- ```est_acqTime``` specifies whether estimated acquisition times are also output by the generated quantities block. These are useful for posterior predictive checks, but this argument defaults to false for efficiency in fitting.
-- ```priors``` allows users to specify priors for parameters in the format of a named list. Please see the advanced recipes vignette for more details
+-   `data_type=c("continuous_time", "discrete_time", "order")` distinguishes between cases where the times of events are known (TADA type models) or only the order of events is known (OADA type models). If exact times of acquisition are known the user can select `"continuous_time"`, creating a cTADA model. If a population was regularly (or irregularly) sampled, so the exact time of events are unknown but the rough interval they occurred in is known, the user should select `"discrete_time"`, which creates a dTADA model.
+-   `veff_params=c("lambda_0", "s", ...)` is used to specify which variables should receive varying effects. For example, `veff_ID=c("lambda_0", "s")` will create a model that will attempt to fit varying effects for both intrinsic rate and strength of social transmission. It is possible to include other ILVs. The default value is none.
+-   `veff_type=c("id", "trial")` is used to specify whether varying effects should be fit for individuals, trials or both. The default value is `"id"`.
+-   `model_type=c("full","asocial")` specifies whether to create a full model or an asocial model constrained to the intrinsic rate only.
+-   `intrinsic_rate=c("constant", "weibull")` specifies whether or not the user wishes to use a constant intrinsic rate, or a Weibull shaped rate that can increase or decrease over time. This fits an additional parameter $\gamma$, where $\gamma<1$ indicates a decreasing hazard over time, and $\gamma>1$ indicates an increasing hazard over time. $\gamma=1$ indicates a constant hazard. This parameter is only possible to be estimated when fitting TADA-type models, i.e. when `data_type != "order"`. The default value is `"constant"`.
+-   `transmission_func=c("standard","freqdep_f", "freqdep_k")` specifies whether the model uses simple or complex transmission.
+-   `gq` specifies whether or not a generated quantities block is created in the Stan model. This defaults to true, as the log-likelihood of observations is output using generated quantities and is needed for model comparison.
+-   `est_acqTime` specifies whether estimated acquisition times are also output by the generated quantities block. These are useful for posterior predictive checks, but this argument defaults to false for efficiency in fitting.
+-   `priors` allows users to specify priors for parameters in the format of a named list. Please see the advanced recipes vignette for more details
 
 ## Step 3: Fit and save the model
 
@@ -117,9 +119,9 @@ full_fit <- fit_STb(data_list,
 )
 ```
 
-This function calls cmdstanr's $sample(), and you can add any extra valid arguments to pass on here. In this call, I've made sure that we run 4 chains in parallel for 4000 iterations, and only to update us on progress every 1000 iterations. By default, fit_STb() will do iter/2 worth of warmup, and iter/2 worth of sampling. Fitting can take anywhere from seconds to hours depending on your computer and the amount of data. Fitting this dataset _should_ be quick, under 10 seconds. If it's very slow, you might want to try running this on a different computer. I've tried to make things reasonably efficient, but have not parallelized the model block.
+This function calls cmdstanr's \$sample(), and you can add any extra valid arguments to pass on here. In this call, I've made sure that we run 4 chains in parallel for 4000 iterations, and only to update us on progress every 1000 iterations. By default, fit_STb() will do iter/2 worth of warmup, and iter/2 worth of sampling. Fitting can take anywhere from seconds to hours depending on your computer and the amount of data. Fitting this dataset *should* be quick, under 10 seconds. If it's very slow, you might want to try running this on a different computer. I've tried to make things reasonably efficient, but have not parallelized the model block.
 
-I strongly recommend using the convenience function below to save the output after fitting. If you only save the fit object to an rda using something like ```save()```, it will not include the data output from chains, making it useless. ```STb_save``` saves these alongside the fit in a single file:
+I strongly recommend using the convenience function below to save the output after fitting. If you only save the fit object to an rda using something like `save()`, it will not include the data output from chains, making it useless. `STb_save` saves these alongside the fit in a single file:
 
 ```{r save, eval=F}
 STb_save(full_fit, output_dir = "cmdstan_saves", name="my_first_fit")
@@ -137,19 +139,20 @@ We can inspect the parameter estimates using the convenience function below:
 STb_summary(full_fit, digits = 3)
 ```
 
-The most important output are the intrinsic rate (lambda_0), and the relative strength of social transmission (s), whose interpretations are the same as the NBDA package. The relative strength of social transmission (s = s_prime / lambda_0) is generally what we're after. %ST for network $n$ is reported as ```percent_ST[n]```. This is a single-network model, thus ```percent_ST[1]``` is the estimated percentage of events that occurred through social transmission. The [1] refers to the "assoc" network, as we've only given a single network. If you fit a multi-network model, all networks will have an estimate.  For a number of reasons, STbayes actually fits lambda_0 and social transmission rate (s_prime) on the log scale. The linear transformation of s_prime itself usually isn't reported and is excluded from the output, but you could calculate it yourself from the fit. 
+The most important output are the intrinsic rate (lambda_0), and the relative strength of social transmission (s), whose interpretations are the same as the NBDA package. The relative strength of social transmission (s = s_prime / lambda_0) is generally what we're after. %ST for network $n$ is reported as `percent_ST[n]`. This is a single-network model, thus `percent_ST[1]` is the estimated percentage of events that occurred through social transmission. The [1] refers to the "assoc" network, as we've only given a single network. If you fit a multi-network model, all networks will have an estimate. For a number of reasons, STbayes actually fits lambda_0 and social transmission rate (s_prime) on the log scale. The linear transformation of s_prime itself usually isn't reported and is excluded from the output, but you could calculate it yourself from the fit.
 
 At this point, you are just dealing with a cmdstanr fit, so if you have your own pipeline, adios! However, I have provided a few more useful functions for posterior predictive checks and model comparison.
 
 ## Step 5: Posterior predictive checks
 
-STbayes makes it relatively painless to perform posterior predictive checks (PPC) without having to manually simulate data after the fitting process. PPC are important to assess whether or not the model reproduces features of the observed data and make sure that your likelihood reasonably matches the data-generating process. 
+STbayes makes it relatively painless to perform posterior predictive checks (PPC) without having to manually simulate data after the fitting process. PPC are important to assess whether or not the model reproduces features of the observed data and make sure that your likelihood reasonably matches the data-generating process.
 
-Above, we used the argument ```est_acqTime=T```. As the Stan model runs, in each iteration it will generate an estimated event time based on the parameter values for that iteration. With this, we can make two types of PPC.
+Above, we used the argument `est_acqTime=T`. As the Stan model runs, in each iteration it will generate an estimated event time based on the parameter values for that iteration. With this, we can make two types of PPC.
 
 ### Cumulative diffusion curves
 
 We can plot the posterior distribution of cumulative diffusion curves and compare them with the observed curve. First, we create a dataframe for the cumulative number of individuals who experienced an event.
+
 ```{r PPC1}
 # we need to store num inds per trial to refer to later
 event_data <- event_data %>%
@@ -179,7 +182,7 @@ plot_data_obs <- bind_rows(plot_data_obs, starting_points) %>%
     arrange(trial, time)
 ```
 
-Note that for diffusions where there are no demonstrators (i.e. individuals knowledgeable at time 0), I added in a starting point using anti-join. This is only to make the curve look nice. Demonstrators do not have an event time to predict, so you could exclude them altogether from PPC plots, with nothing of value lost. The Stan code ensures they will receive a predicted time of "0" in each draw, and you can filter them out the same way we filter out censored individuals. Just be consistent: if you exclude them here, you must also exclude them in the predicted draws below. This example has no demonstrators, so there's no choice to make. But, with real data, you'll have to decide. 
+Note that for diffusions where there are no demonstrators (i.e. individuals knowledgeable at time 0), I added in a starting point using anti-join. This is only to make the curve look nice. Demonstrators do not have an event time to predict, so you could exclude them altogether from PPC plots, with nothing of value lost. The Stan code ensures they will receive a predicted time of "0" in each draw, and you can filter them out the same way we filter out censored individuals. Just be consistent: if you exclude them here, you must also exclude them in the predicted draws below. This example has no demonstrators, so there's no choice to make. But, with real data, you'll have to decide.
 
 Next, we can extract the draws of estimated acquisition times, excluding warm-up iterations, as a data-frame. We can then pivot it into a long format and calculate the cumulative curves for each draw as we did our observed data. If an individual is predicted as censored for a particular draw, it's estimated event time will be $-1$, and they should be filtered out before plotting. Note that I thinned the draws for the sake of visualization.
 
@@ -252,7 +255,7 @@ This looks pretty good, the observed curve falls within the variation of the pos
 
 ### Estimated vs. observed acquisition times
 
-For each individual, you could also compare the estimated versus observed event times. STbayes' function ```extract_acqTime``` conveniently extracts the times for each individual and re-aligns them with their identities.
+For each individual, you could also compare the estimated versus observed event times. STbayes' function `extract_acqTime` conveniently extracts the times for each individual and re-aligns them with their identities.
 
 ```{r PPC3}
 acqdata = extract_acqTime(full_fit, data_list)
@@ -273,7 +276,7 @@ Due to stochastic variation in orders of acquisition between draws, the cumulati
 
 ## Step 6: Model comparison
 
-Often, you'll want to make sure that a model with social transmission is more predictive than a model that excludes it. First, let's refit using a constrained model that only includes an intrinsic rate by using the argument ```model_type="asocial"``` when generating a model. For a fair comparison, make sure the chains and iterations are identical to the full model fit.
+Often, you'll want to make sure that a model with social transmission is more predictive than a model that excludes it. First, let's refit using a constrained model that only includes an intrinsic rate by using the argument `model_type="asocial"` when generating a model. For a fair comparison, make sure the chains and iterations are identical to the full model fit.
 
 ```{r model_comparison1}
 model_asoc = generate_STb_model(data_list, model_type="asocial")
@@ -293,7 +296,7 @@ loo_output = STb_compare(full_fit, asocial_fit, method="loo-psis")
 print(loo_output$comparison, simplify = FALSE)
 ```
 
-If you are not familiar with leave-out-out cross validation, I strongly suggest reading up on it, but the TLDR is that you should pay attention to the elpd_diff and se_diff columns. A model is credibly more predictive if the standard error in differences of ELPD does not cross 0. Here, -21.2 + 5.3 < 0, so we can conclude the full model is more predictive of out-of-sample data than an asocial only model. If you would rather see this graphically:
+If you are not familiar with leave-out-out cross validation, I strongly suggest reading [this FAQ from Aki Vehtari](https://users.aalto.fi/~ave/CV-FAQ.html). The TLDR is that ```elpd_diff``` column gives us an idea of the magnitude of the difference in predictiveness between fits, the ```se_diff``` column gives an idea of the uncertainty around that difference. Following recent advice from [Sivula et al.](https://projecteuclid.org/journals/bayesian-analysis/volume--1/issue--1/Uncertainty-in-Bayesian-Leave-One-Out-Cross-Validation-Based-Model/10.1214/25-BA1569.full), a difference of $<4$ is negligible, and we can interpret this as models do not significantly differ (even if the SE doesn't cross 0). If you have the most recent version of loo installed, column ```p_worse``` will also be present in the output table, which is the probability that a model is worse than the most-predictive model. NB: this probability depends on an assumption of normality of uncertainty, and this assumption may be broken if there are <100 observations in your dataset. In this case, we recommend that you use more stringent thresholds for interpretation (i.e. p_worse must be >.99 rather than >.95). In this example, so we can conclude the full model is more predictive of out-of-sample data than an asocial only model. If you would rather see this graphically:
 
 ```{r model_comparison3}
 comparison_df <- as.data.frame(loo_output$comparison)
@@ -301,14 +304,14 @@ comparison_df$model <- rownames(comparison_df)
 
 ggplot(comparison_df, aes(x = reorder(model, elpd_diff), y = elpd_diff)) +
     geom_point(size = 3) + #elpd_diff
-    geom_errorbar(aes(ymin = elpd_diff - se_diff, 
-                      ymax = elpd_diff + se_diff), width = 0.2) + #SE of elpd diff
+    geom_errorbar(aes(ymin = elpd_diff - 1.96*se_diff, 
+                      ymax = elpd_diff + 1.96*se_diff), width = 0.2) + #1.96*SE of elpd diff (95% interval)
     coord_flip() +
     labs(x = "Model", y = "ELPD Difference", title = "Model Comparison") +
     theme_minimal()
 ```
 
-PSIS-LOO is an approximation of LOO, and observations with pareto-k diagnostic values >.7 may indicate that the approximation is unreliable. The function above will warn you if that is the case, and you can visually inspect these diagnostics like so:
+PSIS-LOO is an approximation of LOO, and observations with pareto-k diagnostic values \>.7 may indicate that the approximation is unreliable. The function above will warn you if that is the case, and you can visually inspect these diagnostics like so:
 
 ```{r model_comparison4}
 pareto_df = as.data.frame(loo_output$pareto_diagnostics)
@@ -326,4 +329,3 @@ All of the pareto-k values are below the danger zone.
 ## Conclusion
 
 These are the basics of using STbayes. You only need event data and network data for a minimal model. However, the package is flexible and you can make use of many other types of data and formulations. Please see the "Advanced recipes" vignette for demonstrations of multi-network models, dynamic network models, and models with ILVs, transmission weights, varying effects, complex transmission, and marginalizing over edge-weight uncertainty.
-

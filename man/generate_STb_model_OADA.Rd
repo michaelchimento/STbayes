@@ -27,7 +27,7 @@ generate_STb_model_OADA(
 
 \item{gq}{Boolean to indicate whether the generated quantities block is added (incl. ll for WAIC)}
 
-\item{priors}{named list with strings containing the prior for log s or f. defaults to list(log_s = "uniform(-10, 10)", log_f = "normal(0,1)")}
+\item{priors}{named list with strings containing the prior for log s or f.}
 }
 \value{
 A STAN model (character) that is customized to the input data.

@@ -8,7 +8,7 @@
 #' @param veff_params Vector of parameter names (string) for which to estimate varying effects. For the moment, this is mutually exclusive for varying effects on trial or ID, you must choose one or the other using argument `veff_type`. Default is no varying effects.
 #' @param veff_type string specifying whether varying effects should be applied to "ID" or "trial". Default is ID.
 #' @param gq Boolean to indicate whether the generated quantities block is added (incl. ll for WAIC)
-#' @param priors named list with strings containing the prior for log s or f. defaults to list(log_s = "uniform(-10, 10)", log_f = "normal(0,1)")
+#' @param priors named list with strings containing the prior for log s or f.
 
 #' @return A STAN model (character) that is customized to the input data.
 generate_STb_model_OADA <- function(STb_data,
