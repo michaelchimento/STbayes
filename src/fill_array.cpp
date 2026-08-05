@@ -1,4 +1,5 @@
 #include <Rcpp.h>
+#include <cmath>
 using namespace Rcpp;
 
 //' @useDynLib STbayes, .registration = TRUE
@@ -36,7 +37,9 @@ void fill_array(NumericVector A_array,
             k * D0 +
             n;
 
-        A_array[index] = value[i];
+        // Take the max so a later zero-padded reciprocal row cannot clobber an
+        // already written weight for this cell.
+        A_array[index] = std::fmax(A_array[index], value[i]);
 
         if (symmetric && f != t_) {
             int index_sym = f * D3 * D2 * D1 * D0 +
@@ -44,7 +47,7 @@ void fill_array(NumericVector A_array,
                 ts * D1 * D0 +
                 k * D0 +
                 n;
-            A_array[index_sym] = value[i];
+            A_array[index_sym] = std::fmax(A_array[index_sym], value[i]);
         }
     }
 }

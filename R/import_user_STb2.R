@@ -383,7 +383,10 @@ import_user_STb2 <- function(event_data,
         }
         # create attribute for returned object
         attr(data_list, "df_networks") <- networks
-        is_symmetric <- nrow(networks[networks$trial_numeric == 1 & networks$discrete_time == min(networks$discrete_time), ]) == data_list$P * (data_list$P - 1)
+        # Undirected networks are always symmetrized. fill_array mirrors
+        # non-destructively (max), so this is idempotent on truly symmetric
+        # input and correctly recovers a one-directionally stored edge list.
+        symmetrize <- (network_type == "undirected")
         max_timesteps <- if (high_res) max(event_data$t_end) else max(data_list$T)
 
         dims <- c(length(network_cols), data_list$K, max_timesteps, data_list$P, data_list$P)
@@ -391,6 +394,10 @@ import_user_STb2 <- function(event_data,
 
         # flatten
         A_flat <- as.numeric(aperm(A_array, c(1, 2, 3, 4, 5)))
+        # for undirected networks, also assemble a directed (non-mirrored) copy
+        # so we can warn when the user-supplied edges are actually asymmetric.
+        # Must be a separate buffer: fill_array writes in place by reference.
+        A_flat_raw <- if (symmetrize) numeric(length(A_flat)) else NULL
 
         # fill in-place
         for (n in seq_along(network_cols)) {
@@ -406,13 +413,46 @@ import_user_STb2 <- function(event_data,
                     A_flat, dims,
                     focal, other, time, value,
                     n - 1, k - 1,
-                    (!is_symmetric && network_type == "undirected")
+                    symmetrize
                 )
+                if (symmetrize) {
+                    fill_array(
+                        A_flat_raw, dims,
+                        focal, other, time, value,
+                        n - 1, k - 1,
+                        FALSE
+                    )
+                }
             }
         }
 
         # reshape after all fill_array calls
         A_array <- aperm(array(A_flat, dim = dims), c(1, 2, 3, 4, 5))
+
+        # warn (once per network column) if an undirected network was supplied
+        # with asymmetric edges, e.g. stored in only one direction
+        if (symmetrize) {
+            A_array_raw <- aperm(array(A_flat_raw, dim = dims), c(1, 2, 3, 4, 5))
+            for (n in seq_along(network_cols)) {
+                asymmetric <- FALSE
+                for (k in 1:data_list$K) {
+                    for (t in 1:max_timesteps) {
+                        slice <- matrix(A_array_raw[n, k, t, , ], data_list$P, data_list$P)
+                        if (!isTRUE(all.equal(slice, t(slice), check.attributes = FALSE))) {
+                            asymmetric <- TRUE
+                            break
+                        }
+                    }
+                    if (asymmetric) break
+                }
+                if (asymmetric) {
+                    warning(sprintf(
+                        "⚠️ Undirected network '%s' was supplied with asymmetric edge weights. This network will be made symmetrical, please ensure this network is intended to be undirected.",
+                        network_cols[n]
+                    ))
+                }
+            }
+        }
 
         # replicate across time for static networks
         if (!is_dynamic) {
