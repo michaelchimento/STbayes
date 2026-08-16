@@ -4,10 +4,14 @@
 \alias{return_N_veff}
 \title{return_N_veff()}
 \usage{
-return_N_veff(text)
+return_N_veff(text, num_networks = 1)
 }
 \arguments{
 \item{text}{model object (text)}
+
+\item{num_networks}{integer, the number of networks (data value of N_networks).
+Loop-variable index forms such as \code{v_id[,n]} span this many columns.
+Defaults to 1, which leaves literal-digit models unchanged.}
 }
 \value{
 integer of number of varying effects present in model

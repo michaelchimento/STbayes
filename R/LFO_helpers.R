@@ -99,7 +99,7 @@ STb_lfo <- function(lfo_type = c("parallel", "sequential"), fit, STb_data, stan_
     init <- fit_star$draws(format = "list")
 
     # annoyingly need to get nveff from the stan model
-    N_veff <- return_N_veff(stan_model)
+    N_veff <- return_N_veff(stan_model, num_networks = if (is.null(STb_data$N_networks)) 1 else STb_data$N_networks)
     message(paste("Detected N_veff =", N_veff))
     STb_data$N_veff <- N_veff
 

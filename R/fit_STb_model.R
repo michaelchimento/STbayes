@@ -74,7 +74,7 @@ fit_STb <- function(data_list, model_obj, ...) {
     writeLines(model_code, temp_file)
 
     # Add N_veff
-    N_veff <- return_N_veff(model_code)
+    N_veff <- return_N_veff(model_code, num_networks = if (is.null(data_list$N_networks)) 1 else data_list$N_networks)
     message(paste("Detected N_veff =", N_veff))
     data_list$N_veff <- N_veff
 
