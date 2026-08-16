@@ -8,8 +8,8 @@
 return_N_veff <- function(text) {
     # regex match v_id/trial[,*]
     matches <- c(
-        regmatches(text, gregexpr("v_id\\[\\s*,\\s*(\\d+)\\]", text, perl = TRUE)),
-        regmatches(text, gregexpr("v_trial\\[\\s*,\\s*(\\d+)\\]", text, perl = TRUE))
+        regmatches(text, gregexpr("v_id\\[[^]]*\\]", text, perl = TRUE)),
+        regmatches(text, gregexpr("v_trial\\[[^]]*\\]", text, perl = TRUE))
     )
 
     # extract values
