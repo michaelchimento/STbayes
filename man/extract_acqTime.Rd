@@ -16,7 +16,7 @@ extract_acqTime(fit, data_list, prob = 0.95, var_name = "acquisition_time")
 \item{var_name}{variable name of acquisition time from GQ block (default = "acquisition_time")}
 }
 \value{
-Dataframe of trial, individual, id, observed_time, mean/median/HPD of estimated time
+Dataframe of trial, individual, id, observed_time, mean/median/HPD of estimated time. Rows for padded slots in \code{ind_id} (individuals not present in a given trial) are excluded, so only individuals actually present in each trial are returned.
 }
 \description{
 Extract estimated acquisition times for posterior predictive check.

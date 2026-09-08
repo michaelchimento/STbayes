@@ -46,7 +46,7 @@
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">return_N_veff</span><span class="op">(</span><span class="va">text</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">return_N_veff</span><span class="op">(</span><span class="va">text</span>, num_networks <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -55,6 +55,12 @@
 
 <dl><dt id="arg-text">text<a class="anchor" aria-label="anchor" href="#arg-text"></a></dt>
 <dd><p>model object (text)</p></dd>
+
+
+<dt id="arg-num-networks">num_networks<a class="anchor" aria-label="anchor" href="#arg-num-networks"></a></dt>
+<dd><p>integer, the number of networks (data value of N_networks).
+Loop-variable index forms such as <code>v_id[,n]</code> span this many columns.
+Defaults to 1, which leaves literal-digit models unchanged.</p></dd>
 
 </dl></div>
     <div class="section level2">

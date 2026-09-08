@@ -49,7 +49,7 @@ test_that("undirected network with self-loops + zero-padded reciprocals is symme
     event_data <- make_event_data()
     el <- make_asymmetric_edges(include_self_loops = TRUE)
 
-    expect_warning(
+    expect_message(
         data_list <- suppressMessages(
             import_user_STb(event_data, el, network_type = "undirected")
         ),
@@ -72,7 +72,7 @@ test_that("undirected network without self-loops (P*(P-1) rows) is still symmetr
     # "already symmetric" and skipped mirroring on.
     expect_equal(nrow(el), 4 * (4 - 1))
 
-    expect_warning(
+    expect_message(
         data_list <- suppressMessages(
             import_user_STb(event_data, el, network_type = "undirected")
         ),

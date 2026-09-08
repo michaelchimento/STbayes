@@ -31,7 +31,6 @@ test_that("No veff OADA compiles", {
         data_type = "order",
         model_type = "asocial"
     )
-    cat(stan_code)
     # write to a temporary .stan file
     tmp_stan_path <- cmdstanr::write_stan_file(stan_code)
 

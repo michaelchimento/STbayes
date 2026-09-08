@@ -869,9 +869,9 @@ model {{
     est_acqTime_code <- if (est_acqTime == TRUE && est_acqTime_option == "a") glue::glue("
     //the following will NOT work properly if
     //variables or networks change outside of event cutpoints
-    matrix[K, Q] acquisition_time;         // simulated acquisition times
+    matrix[K, Q] acquisition_time = rep_matrix(not_a_number(), K, Q);
     for (trial in 1:K) {{
-        for (n in 1:Q) {{
+        for (n in 1:(N[trial] + N_c[trial])) {{
             int id = ind_id[trial, n];
             int learn_time = t[trial, id];
             // if demonstrator, skip simulation
@@ -910,9 +910,9 @@ model {{
     }}") else if (est_acqTime == TRUE && est_acqTime_option == "b") glue::glue("
     // the following is quite slow for long diffusions but
     // allows variables and networks to flexibly change between events
-    matrix[K, Q] acquisition_time; // simulated acquisition times
+    matrix[K, Q] acquisition_time = rep_matrix(not_a_number(), K, Q);
     for (trial in 1:K) {{
-        for (n in 1:Q) {{
+        for (n in 1:(N[trial] + N_c[trial])) {{
             int id = ind_id[trial, n];
             int learn_time = t[trial, id];
             // if demonstrator, skip simulation

@@ -7,7 +7,7 @@
 #' @param prob interval for CI. defaults to .95
 #' @param var_name variable name of acquisition time from GQ block (default = "acquisition_time")
 #'
-#' @return Dataframe of trial, individual, id, observed_time, mean/median/HPD of estimated time
+#' @return Dataframe of trial, individual, id, observed_time, mean/median/HPD of estimated time. Rows for padded slots in `ind_id` (individuals not present in a given trial) are excluded, so only individuals actually present in each trial are returned.
 #' @export
 extract_acqTime <- function(fit, data_list, prob = .95, var_name = "acquisition_time") {
     if (!inherits(fit, c("CmdStanMCMC"))) {
@@ -60,6 +60,8 @@ extract_acqTime <- function(fit, data_list, prob = .95, var_name = "acquisition_
         lower_hpd = as.vector(lower_hpd),
         upper_hpd = as.vector(upper_hpd)
     )
+
+    df <- df[df$id != -1, ]
 
     return(df)
 }

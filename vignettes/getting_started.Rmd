@@ -209,6 +209,10 @@ ppc_long <- draws_df %>%
 sample_idx <- sample(c(1:max(ppc_long$draw)), 100)
 ppc_long <- ppc_long %>% filter(draw %in% sample_idx)
 
+# drop individuals not present in a given trial
+ppc_long <- ppc_long %>%
+    filter(!is.na(time))
+
 # same as before, we need a way to reference the number of individuals in each trial
 ppc_long <- ppc_long %>%
     group_by(draw, trial) %>%

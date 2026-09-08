@@ -250,6 +250,7 @@ transmission model over the asocial constrained model:</p>
 <span><span class="co">#&gt; User supplied edge weights as point estimates 📍</span></span>
 <span><span class="co">#&gt; No ILV supplied.</span></span>
 <span><span class="co">#&gt; User input indicates static network(s). If dynamic, include 'time' column.</span></span>
+<span><span class="co">#&gt; ⚠️ Undirected network 'assoc' was supplied with asymmetric edge weights. This network will be made symmetrical, please ensure this network is intended to be undirected.</span></span>
 <span><span class="co">#&gt; ░▒▓█►─═ Sanity check ═─◄█▓▒░</span></span>
 <span><span class="co">#&gt; User provided data about:</span></span>
 <span><span class="co">#&gt; 30 individuals across 10 independent diffusions (trials).</span></span>
@@ -307,7 +308,7 @@ the simulations.</p>
 <span><span class="co">#&gt; Chain 1 Iteration: 800 / 1000 [ 80%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 1 Iteration: 900 / 1000 [ 90%]  (Sampling) </span></span>
 <span><span class="co">#&gt; Chain 1 Iteration: 1000 / 1000 [100%]  (Sampling) </span></span>
-<span><span class="co">#&gt; Chain 1 finished in 30.2 seconds.</span></span>
+<span><span class="co">#&gt; Chain 1 finished in 29.2 seconds.</span></span>
 <span><span class="co">#&gt; 🫴 Use STb_save() to save the fit and chain csvs to a single RDS file. Or don't!</span></span>
 <span><span class="fu"><a href="../reference/STb_summary.html">STb_summary</a></span><span class="op">(</span><span class="va">fit_full</span><span class="op">)</span></span>
 <span><span class="co">#&gt;           Parameter Median   MAD CI_Lower CI_Upper ess_bulk ess_tail  Rhat</span></span>
@@ -370,6 +371,10 @@ the Getting Started vignette:</p>
 <span><span class="co"># thin sample for plotting</span></span>
 <span><span class="va">sample_idx</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">ppc_long</span><span class="op">$</span><span class="va">draw</span><span class="op">)</span><span class="op">)</span>, <span class="fl">100</span><span class="op">)</span></span>
 <span><span class="va">ppc_long</span> <span class="op">&lt;-</span> <span class="va">ppc_long</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">draw</span> <span class="op"><a href="https://mc-stan.org/posterior/reference/match.html" class="external-link">%in%</a></span> <span class="va">sample_idx</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># drop individuals not present in a given trial</span></span>
+<span><span class="va">ppc_long</span> <span class="op">&lt;-</span> <span class="va">ppc_long</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">time</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># same as before, we need a way to reference the number of individuals in each trial</span></span>
 <span><span class="va">ppc_long</span> <span class="op">&lt;-</span> <span class="va">ppc_long</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>

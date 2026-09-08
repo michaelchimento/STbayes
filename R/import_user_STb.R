@@ -487,7 +487,7 @@ import_user_STb <- function(event_data,
                     if (asymmetric) break
                 }
                 if (asymmetric) {
-                    warning(sprintf(
+                    message(sprintf(
                         "⚠️ Undirected network '%s' was supplied with asymmetric edge weights. This network will be made symmetrical, please ensure this network is intended to be undirected.",
                         network_cols[n]
                     ))
