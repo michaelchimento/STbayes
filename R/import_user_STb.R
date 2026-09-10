@@ -371,17 +371,17 @@ import_user_STb <- function(event_data,
         if (is.null(ILVi)) {
             data_list$ILVi_names <- "ILVabsent"
         } else {
-            data_list$ILVi_names <- ILVi
+            data_list$ILVi_names <- as.character(ILVi)
         }
         if (is.null(ILVs)) {
             data_list$ILVs_names <- "ILVabsent"
         } else {
-            data_list$ILVs_names <- ILVs
+            data_list$ILVs_names <- as.character(ILVs)
         }
         if (is.null(ILVm)) {
             data_list$ILVm_names <- "ILVabsent"
         } else {
-            data_list$ILVm_names <- ILVm
+            data_list$ILVm_names <- as.character(ILVm)
         }
         # write datatypes
         data_list$ILV_datatypes <- ILV_datatypes
