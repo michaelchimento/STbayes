@@ -46,6 +46,7 @@ STb_summary <- function(fit, depth = 1, prob = 0.95,
     param_names <- names(draws_df)
     s_prime_params <- grep("^log_s_prime_mean\\[", param_names, value = TRUE)
     sigma_veff_params <- grep("^sigma_(id|trial)\\[", param_names, value = TRUE)
+    s_prime_mean_params <- grep("^s_prime_mean\\[", param_names, value = TRUE)
     s_mean_params <- grep("^s_mean\\[", param_names, value = TRUE)
     s_params <- grep("^s\\[", param_names, value = TRUE)
     ST_params <- grep("^percent_ST\\[", param_names, value = TRUE)
@@ -61,6 +62,7 @@ STb_summary <- function(fit, depth = 1, prob = 0.95,
     keep_params <- Reduce(union, list(
         keep_params,
         s_prime_params,
+        s_prime_mean_params,
         s_mean_params,
         s_params,
         sigma_veff_params,

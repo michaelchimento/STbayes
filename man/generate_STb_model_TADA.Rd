@@ -9,6 +9,7 @@ generate_STb_model_TADA(
   model_type = "full",
   intrinsic_rate = "constant",
   transmission_func = "standard",
+  separate_s = TRUE,
   dTADA = F,
   veff_params = c(),
   veff_type = "id",

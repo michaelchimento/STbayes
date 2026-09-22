@@ -12,6 +12,9 @@ order_params <- function(p) {
     if (grepl("^log_s_prime_mean", p)) {
         return(112)
     }
+    if (grepl("^s_prime_mean", p)) {
+        return(112.5)
+    }
     if (grepl("^lambda_0_mean", p)) {
         return(113)
     }

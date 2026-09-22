@@ -94,7 +94,7 @@ data_list <- import_user_STb(
    networks = networks)
 ```
 
-When fitting a multi-network model, it will estimate an $s$ value for each network. If you are using a complex transmission function, it will also estimate separate $k$ or $f$ parameters for each network.
+When fitting a multi-network model, you can optionally use the ```separate_s``` argument in ```generate_STb_model()```. Its default value ```TRUE``` will estimate an $s$ value for each network. If you are using a complex transmission function, it will also estimate separate $k$ or $f$ parameters for each network. Setting ```separate_s=FALSE``` will build a constrained model where a single $s$ value is used for all networks. Any further customisation can be done by modifying the Stan code directly.
 
 ## Individual-level variables (ILVs)
 

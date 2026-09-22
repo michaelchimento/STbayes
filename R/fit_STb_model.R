@@ -34,14 +34,6 @@ fit_STb <- function(data_list, model_obj, ...) {
     )
     valid_args <- extra_args[names(extra_args) %in% allowed_sample_args]
 
-    # if (!"init" %in% names(valid_args)) {
-    #  if (data_list$multinetwork_s == "separate") {
-    #    valid_args$init <- function(chain_id) list(log_lambda_0_mean = -4, log_s_prime_mean = rep(-4, data_list$N_networks))
-    #  } else {
-    #    valid_args$init <- function(chain_id) list(log_lambda_0_mean = -4, log_s_prime_mean = -4)
-    #  }
-    # }
-
     if (!"iter" %in% names(extra_args)) {
         iter <- 1000
         valid_args$iter_warmup <- floor(iter / 2)

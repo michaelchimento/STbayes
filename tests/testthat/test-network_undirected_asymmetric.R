@@ -1,4 +1,4 @@
-# Regression tests for undirected networks supplied with asymmetric
+# Tests for undirected networks supplied with asymmetric
 # (one-directionally stored, zero-padded reciprocal) edge lists.
 #
 # Bug: such networks were silently collapsed toward all-zero because the
@@ -28,7 +28,7 @@ expected_A <- function() {
 }
 
 # Full ordered-pair edge list with weights stored in ONE direction only and
-# every reciprocal / non-edge padded with assoc = 0 (Sonja's storage shape).
+# every reciprocal / non-edge padded with assoc = 0.
 make_asymmetric_edges <- function(include_self_loops) {
     ids <- c("A", "B", "C", "D")
     grid <- expand.grid(focal = ids, other = ids, stringsAsFactors = FALSE)

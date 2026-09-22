@@ -8,6 +8,7 @@ generate_STb_model_OADA(
   STb_data,
   model_type = "full",
   transmission_func = "standard",
+  separate_s = TRUE,
   veff_params = c(),
   veff_type = "id",
   gq = TRUE,

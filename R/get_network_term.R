@@ -17,12 +17,12 @@
 #' @return string of stan code to be used in the model for calculating network effects
 #' @noRd
 
-get_network_term <- function(transmission_func = "standard", num_networks = 1, veff_params = c(), s_var = "s_prime", net_var = "A",
+get_network_term <- function(transmission_func = "standard", num_networks = 1, separate_s = num_networks > 1, veff_params = c(), s_var = "s_prime", net_var = "A",
                              net_index = "network", id_var = "id", veff_type = c(), veff_idx = "id", trial_var = "trial", time_var = "time_step", high_res = F) {
     net_effect_term <- if (id_var == "j") "net_effect_j" else "net_effect"
     if (id_var == "j" & is.element("id", veff_type)) veff_idx <- gsub("id", "j", veff_idx)
 
-    s_term <- if (num_networks > 1) {
+    s_term <- if (separate_s) {
         if ("s" %in% veff_params) glue::glue("{s_var}[{net_index},{veff_idx}]") else glue::glue("{s_var}[{net_index}]")
     } else {
         if ("s" %in% veff_params) glue::glue("{s_var}[{veff_idx}]") else glue::glue("{s_var}")
@@ -40,11 +40,11 @@ for (network in 1:N_networks) {{
     }
 
     if (transmission_func == "freqdep_f") {
-        f_term <- if ("f" %in% veff_params & num_networks == 1) {
+        f_term <- if ("f" %in% veff_params & !separate_s) {
             glue::glue("f[{veff_idx}]")
-        } else if ("f" %in% veff_params & num_networks > 1) {
+        } else if ("f" %in% veff_params & separate_s) {
             glue::glue("f[{net_index},{veff_idx}]")
-        } else if (!is.element("f", veff_params) & num_networks > 1) {
+        } else if (!is.element("f", veff_params) & separate_s) {
             glue::glue("f[{net_index}]")
         } else {
             "f"
@@ -62,11 +62,11 @@ for (network in 1:N_networks) {{
     }
 
     if (transmission_func == "freqdep_k" & !high_res) {
-        k_term <- if ("k" %in% veff_params & num_networks == 1) {
+        k_term <- if ("k" %in% veff_params & !separate_s) {
             glue::glue("k_shape[{veff_idx}]")
-        } else if ("k" %in% veff_params & num_networks > 1) {
+        } else if ("k" %in% veff_params & separate_s) {
             glue::glue("k_shape[{net_index},{veff_idx}]")
-        } else if (!is.element("k", veff_params) & num_networks > 1) {
+        } else if (!is.element("k", veff_params) & separate_s) {
             glue::glue("k_shape[{net_index}]")
         } else {
             "k_shape"

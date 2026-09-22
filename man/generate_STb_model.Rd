@@ -10,6 +10,7 @@ generate_STb_model(
   model_type = c("full", "asocial"),
   intrinsic_rate = c("constant", "weibull"),
   transmission_func = c("standard", "freqdep_f", "freqdep_k"),
+  separate_s = TRUE,
   veff_params = c(),
   veff_type = "id",
   gq = TRUE,
@@ -29,7 +30,9 @@ generate_STb_model(
 
 \item{transmission_func}{string specifying transmission function: "standard", "freqdep_f" or "freqdep_k" for frequency dependent complex contagion. Defaults to "standard".}
 
-\item{veff_params}{Vector of parameter names (string) for which to estimate varying effects. Default is no varying effects.}
+\item{separate_s}{Logical. When TRUE (default), multinetwork models estimate a separate s (and f, k) parameter per network. When FALSE, a single shared parameter is estimated across all networks. Ignored for single-network models.}
+
+\item{veff_params}{Vector of parameter names (strings) for which to estimate varying effects. Default is no varying effects.}
 
 \item{veff_type}{string/vector specifying whether varying effects should be applied to "id", "trial" or both (c("id","trial")). Default is id, applied only if user also gives \code{veff_params}.}
 

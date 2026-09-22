@@ -55,11 +55,11 @@ get_ST_prob_term <- function(transmission_func,
     count_ST += 1;
     "),
         "freqdep_f" = {
-            f_term <- if ("f" %in% veff_params & num_networks == 1) {
+            f_term <- if ("f" %in% veff_params & !separate_s) {
                 glue::glue("f[{veff_idx}]")
-            } else if ("f" %in% veff_params & num_networks > 1) {
+            } else if ("f" %in% veff_params & separate_s) {
                 glue::glue("f[network,{veff_idx}]")
-            } else if (!is.element("f", veff_params) & num_networks > 1) {
+            } else if (!is.element("f", veff_params) & separate_s) {
                 glue::glue("f[network]")
             } else {
                 "f"
@@ -75,11 +75,11 @@ get_ST_prob_term <- function(transmission_func,
       ")
         },
         "freqdep_k" = {
-            k_term <- if ("k" %in% veff_params & num_networks == 1) {
+            k_term <- if ("k" %in% veff_params & !separate_s) {
                 glue::glue("k_shape[{veff_idx}]")
-            } else if ("k" %in% veff_params & num_networks > 1) {
+            } else if ("k" %in% veff_params & separate_s) {
                 glue::glue("k_shape[network,{veff_idx}]")
-            } else if (!is.element("k", veff_params) & num_networks > 1) {
+            } else if (!is.element("k", veff_params) & separate_s) {
                 glue::glue("k_shape[network]")
             } else {
                 "k_shape"

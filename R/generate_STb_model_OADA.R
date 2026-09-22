@@ -14,6 +14,7 @@
 generate_STb_model_OADA <- function(STb_data,
                                     model_type = "full",
                                     transmission_func = "standard",
+                                    separate_s = TRUE,
                                     veff_params = c(),
                                     veff_type = "id",
                                     gq = TRUE,
@@ -47,7 +48,7 @@ generate_STb_model_OADA <- function(STb_data,
 
     network_names <- STb_data$network_names
     num_networks <- length(network_names)
-    separate_s <- num_networks > 1
+    if (num_networks == 1) separate_s <- FALSE
     network_key <- if (separate_s) "multi_network" else "single_network"
 
     # make custom declarations for distributions:
@@ -168,6 +169,7 @@ generate_STb_model_OADA <- function(STb_data,
         network_term <- get_network_term(
             transmission_func = transmission_func,
             num_networks = num_networks,
+            separate_s = separate_s,
             veff_params = veff_params,
             veff_type = veff_type,
             id_var = "id",
@@ -178,6 +180,7 @@ generate_STb_model_OADA <- function(STb_data,
         network_term_j <- get_network_term(
             transmission_func = transmission_func,
             num_networks = num_networks,
+            separate_s = separate_s,
             veff_params = veff_params,
             veff_type = veff_type,
             id_var = "j",
@@ -241,14 +244,14 @@ generate_STb_model_OADA <- function(STb_data,
                     decl = "real s_prime;",
                     calc = "s_prime = exp(log_s_prime_mean);"
                 ),
-                gq_block = ""
+                gq_block = "real s_prime_mean = exp(log_s_prime_mean);"
             ),
             multi_network = list(
                 transformed_params_block = list(
                     decl = "vector<lower=0>[N_networks] s_prime;",
                     calc = "s_prime = exp(log_s_prime_mean);"
                 ),
-                gq_block = ""
+                gq_block = "vector<lower=0>[N_networks] s_prime_mean = exp(log_s_prime_mean);"
             )
         ),
         veff_1 = list(

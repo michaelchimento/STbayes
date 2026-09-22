@@ -28,10 +28,10 @@ has on focal. Optionally an integer time column can be provided for dynamic
 network analysis, although networks must be provided for each inter-event
 interval. If array: user-supplied posterior draws must be on the logit scale.
 Arrays must have named dimensions of either \verb{[draw, focal_ID, other_ID]},
-\verb{[trial, draw, focal_ID, other_ID]} or \verb{[trial, time, draw, focal_ID, other_ID]}, depending
-on the level of detail users have regarding the networks. If trial or time is not provided, the same network
-is used for all trials and/or times respectively. To create a multi-network NBDA with
-posterior arrays, provide a list of arrays, one for each network.}
+\verb{[trial, draw, focal_ID, other_ID]} or \verb{[trial, time, draw, focal_ID, other_ID]},
+depending on the level of detail users have regarding the networks. If trial
+or time is not provided, the same network is used for all trials and/or times respectively.
+To create a multi-network NBDA with posterior arrays, provide a list of arrays, one for each network.}
 
 \item{network_type}{"undirected" or "directed".}
 

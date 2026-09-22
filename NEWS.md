@@ -1,3 +1,27 @@
+# STbayes 1.2.0
+
+## New features
+
+- Package now supports generating multinetwork models where the strength of social transmission is constrained to a single value for all networks.
+
+- Using STb_summary() on an OADA model now includes $s'$ summary statistics, rather than only $log(s')$.
+
+- Package now supports datasets with different numbers of individuals in each trial.
+
+## Bug fixes
+
+- Fixed bug where supplying non-character ILV names would throw an uncaught error.
+
+- Fixed bug where supplying asymmetric networks with self-loops would clobber imported edge-weight values.
+
+- Fixed bug where %ST was not calculated correctly and would exceed 1 when using multiplicative ILVs.
+
+- Fixed bug where hi-rez mode would throw an uncaught error if users did not supply transmission weights.
+
+## Documentation
+
+- Updated guidance for model comparison in the Getting Started vignette, include about ```p_worse``` feature in loo for model comparison. Please update loo, if you haven't recently!
+
 # STbayes 1.1.0
 
 ## New features

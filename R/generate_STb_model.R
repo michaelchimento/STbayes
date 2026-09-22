@@ -9,7 +9,8 @@
 #' @param model_type string specifying the model type: "full" or "asocial"
 #' @param intrinsic_rate Define shape of intrinsic rate (either "constant" or "weibull"). Weibull fits extra parameter (gamma) that allows for time-varying event rates.
 #' @param transmission_func string specifying transmission function: "standard", "freqdep_f" or "freqdep_k" for frequency dependent complex contagion. Defaults to "standard".
-#' @param veff_params Vector of parameter names (string) for which to estimate varying effects. Default is no varying effects.
+#' @param separate_s Logical. When TRUE (default), multinetwork models estimate a separate s (and f, k) parameter per network. When FALSE, a single shared parameter is estimated across all networks. Ignored for single-network models.
+#' @param veff_params Vector of parameter names (strings) for which to estimate varying effects. Default is no varying effects.
 #' @param veff_type string/vector specifying whether varying effects should be applied to "id", "trial" or both (c("id","trial")). Default is id, applied only if user also gives `veff_params`.
 #' @param gq Boolean to indicate whether the generated quantities block is added (incl. ll for WAIC)
 #' @param est_acqTime Boolean to indicate whether gq block includes estimates for acquisition time.
@@ -73,6 +74,7 @@ generate_STb_model <- function(STb_data,
                                model_type = c("full", "asocial"),
                                intrinsic_rate = c("constant", "weibull"),
                                transmission_func = c("standard", "freqdep_f", "freqdep_k"),
+                               separate_s = TRUE,
                                veff_params = c(),
                                veff_type = "id",
                                gq = TRUE,
@@ -84,6 +86,7 @@ generate_STb_model <- function(STb_data,
     intrinsic_rate <- match.arg(intrinsic_rate, choices = c("constant", "weibull"))
     transmission_func <- match.arg(transmission_func, choices = c("standard", "freqdep_f", "freqdep_k"))
     veff_type <- check_veff_type(veff_type)
+    stopifnot(is.logical(separate_s), length(separate_s) == 1)
     stopifnot(is.logical(gq), length(gq) == 1)
     stopifnot(is.logical(est_acqTime), length(est_acqTime) == 1)
     est_acqTime_option <- match.arg(est_acqTime_option, choices = c("a", "b"))
@@ -125,6 +128,7 @@ generate_STb_model <- function(STb_data,
             model_type = model_type,
             intrinsic_rate = intrinsic_rate,
             transmission_func = transmission_func,
+            separate_s = separate_s,
             dTADA = F,
             veff_params = veff_params,
             veff_type = veff_type,
@@ -143,6 +147,7 @@ generate_STb_model <- function(STb_data,
             model_type = model_type,
             intrinsic_rate = intrinsic_rate,
             transmission_func = transmission_func,
+            separate_s = separate_s,
             dTADA = T,
             veff_params = veff_params,
             veff_type = veff_type,
@@ -159,6 +164,7 @@ generate_STb_model <- function(STb_data,
             STb_data = STb_data,
             model_type = model_type,
             transmission_func = transmission_func,
+            separate_s = separate_s,
             veff_params = veff_params,
             veff_type = veff_type,
             gq = gq,

@@ -194,14 +194,20 @@ network.</p>
 <span><span class="va">data_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/import_user_STb.html">import_user_STb</a></span><span class="op">(</span></span>
 <span>   event_data <span class="op">=</span> <span class="va">event_data</span>,</span>
 <span>   networks <span class="op">=</span> <span class="va">networks</span><span class="op">)</span></span></code></pre></div>
-<p>When fitting a multi-network model, it will estimate an
+<p>When fitting a multi-network model, you can optionally use the
+<code>separate_s</code> argument in <code><a href="../reference/generate_STb_model.html">generate_STb_model()</a></code>.
+Its default value <code>TRUE</code> will estimate an
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>s</mi><annotation encoding="application/x-tex">s</annotation></semantics></math>
 value for each network. If you are using a complex transmission
 function, it will also estimate separate
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>
 or
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>f</mi><annotation encoding="application/x-tex">f</annotation></semantics></math>
-parameters for each network.</p>
+parameters for each network. Setting <code>separate_s=FALSE</code> will
+build a constrained model where a single
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>s</mi><annotation encoding="application/x-tex">s</annotation></semantics></math>
+value is used for all networks. Any further customisation can be done by
+modifying the Stan code directly.</p>
 </div>
 <div class="section level2">
 <h2 id="individual-level-variables-ilvs">Individual-level variables (ILVs)<a class="anchor" aria-label="anchor" href="#individual-level-variables-ilvs"></a>
