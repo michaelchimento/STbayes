@@ -492,10 +492,10 @@ import_user_STb2 <- function(event_data,
         data_list$focal_ID <- c()
         data_list$other_ID <- c()
 
-        data_list$network_distribution_dynamic <- TRUE
+        data_list$network_is_distribution <- TRUE
 
         edge_mu_list <- list()
-        edge_cov_list <- list()
+        edge_L_list <- list()
         edge_set_count <- 0L
         N_dyad <- NULL
 
@@ -512,8 +512,16 @@ import_user_STb2 <- function(event_data,
             }
 
             edge_set_count <<- edge_set_count + 1L
-            edge_mu_list[[edge_set_count]] <<- apply(edges, 2, median)
-            edge_cov_list[[edge_set_count]] <<- cov(edges)
+
+            mu <- colMeans(edges)
+            edge_mu_list[[edge_set_count]] <<- mu
+
+            centered <- sweep(edges, 2, mu)
+            svd_result <- svd(centered, nu = 0)
+            keep <- svd_result$d > max(svd_result$d) * 1e-10
+            d_scaled <- svd_result$d[keep] / sqrt(nrow(edges) - 1)
+            L <- svd_result$v[, keep, drop = FALSE] %*% diag(d_scaled, nrow = length(d_scaled))
+            edge_L_list[[edge_set_count]] <<- L
 
             edge_set_count
         }
@@ -578,18 +586,17 @@ import_user_STb2 <- function(event_data,
 
         logit_edge_mu <- do.call(rbind, edge_mu_list)
 
-        logit_edge_cov <- array(
-            NA_real_,
-            dim = c(edge_set_count, N_dyad, N_dyad)
-        )
+        edge_rank <- max(vapply(edge_L_list, ncol, integer(1)))
 
+        edge_L <- array(0, dim = c(edge_set_count, N_dyad, edge_rank))
         for (edge_set in 1:edge_set_count) {
-            logit_edge_cov[edge_set, , ] <- edge_cov_list[[edge_set]]
+            L_i <- edge_L_list[[edge_set]]
+            edge_L[edge_set, , seq_len(ncol(L_i))] <- L_i
         }
 
-        # Assume same number of dyads for all networks
         data_list$logit_edge_mu <- logit_edge_mu
-        data_list$logit_edge_cov <- logit_edge_cov
+        data_list$edge_L <- edge_L
+        data_list$edge_rank <- edge_rank
         data_list$edge_set_idx <- edge_set_idx
         data_list$N_edge_sets <- edge_set_count
         data_list$N_dyad <- N_dyad

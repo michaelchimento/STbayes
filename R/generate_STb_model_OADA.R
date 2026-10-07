@@ -58,7 +58,8 @@ generate_STb_model_OADA <- function(STb_data,
             int<lower=1> N_edge_sets;
             array[N_networks, K, T_max] int<lower=1, upper=N_edge_sets> edge_set_idx;
             array[N_edge_sets] vector[N_dyad] logit_edge_mu;
-            array[N_edge_sets] matrix[N_dyad, N_dyad] logit_edge_cov;
+            int<lower=1> edge_rank;
+            array[N_edge_sets] matrix[N_dyad, edge_rank] edge_L;
             array[N_dyad] int<lower=1> focal_ID;
             array[N_dyad] int<lower=1> other_ID;
         ")
@@ -66,12 +67,17 @@ generate_STb_model_OADA <- function(STb_data,
 
         # param declaration
         distribution_param_declaration <- glue::glue("
-            array[N_edge_sets] vector[N_dyad] edge_logit;
+            array[N_edge_sets] vector[edge_rank] edge_z;
         ")
 
         # transformed param declaration
         distribution_transformed_declaration <- {
             matrix_decls <- glue::glue("
+                                array[N_edge_sets] vector[N_dyad] edge_logit;
+                                for (edge_set in 1:N_edge_sets) {{
+                                    edge_logit[edge_set] = logit_edge_mu[edge_set] + edge_L[edge_set] * edge_z[edge_set];
+                                }}
+
                                 array[N_networks, K, T_max] matrix[P, P] A;
 
                                 for (network in 1:N_networks) {{
@@ -117,10 +123,7 @@ generate_STb_model_OADA <- function(STb_data,
         # model declaration
         distribution_model_block <- "
             for (edge_set in 1:N_edge_sets) {
-                edge_logit[edge_set] ~ multi_normal(
-                    logit_edge_mu[edge_set],
-                    logit_edge_cov[edge_set]
-                );
+                edge_z[edge_set] ~ std_normal();
             }"
     } else {
         distribution_data_declaration <- ""

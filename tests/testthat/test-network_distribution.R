@@ -238,7 +238,8 @@ testthat::test_that("Network structure is consistent using bisonr fit.", {
 
     testthat::expect_equal(data_imported$network_names, "net1")
     testthat::expect_equal(length(data_imported$logit_edge_mu), 90)
-    testthat::expect_equal(dim(data_imported$logit_edge_cov), c(1, 90, 90))
+    testthat::expect_equal(dim(data_imported$edge_L)[1:2], c(1, 90))
+    testthat::expect_true(data_imported$edge_rank > 0)
 
     # Import data
     data_imported <- import_user_STb(events, list(networks, networks))
@@ -249,5 +250,6 @@ testthat::test_that("Network structure is consistent using bisonr fit.", {
     events$id <- as.numeric(events$id)
     data_imported <- import_user_STb(event_data = events, networks = STbayes::strand_results_obj)
     testthat::expect_equal(length(data_imported$logit_edge_mu), 90)
-    testthat::expect_equal(dim(data_imported$logit_edge_cov), c(1, 90, 90))
+    testthat::expect_equal(dim(data_imported$edge_L)[1:2], c(1, 90))
+    testthat::expect_true(data_imported$edge_rank > 0)
 })

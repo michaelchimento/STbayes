@@ -15,13 +15,14 @@ data {
     array[K] matrix[T_max, P] Zn;   // Knowledge state
     int<lower=0> N_veff;
     int N_dyad;  // number of dyads
-    matrix[N_networks, N_dyad] logit_edge_mu;  // logit edge values
-    array[N_networks] matrix[N_dyad, N_dyad] logit_edge_cov;  // covariance matrix
+    int<lower=1> edge_rank;
+    array[N_networks] vector[N_dyad] logit_edge_mu;
+    array[N_networks] matrix[N_dyad, edge_rank] edge_L;
     array[N_dyad] int<lower=1> focal_ID;
     array[N_dyad] int<lower=1> other_ID;
 }
 parameters {
-    matrix[N_networks, N_dyad] edge_logit;
+    array[N_networks] vector[edge_rank] edge_z;
     real log_lambda_0_mean;  // Log baseline learning rate
     real log_s_prime_mean;
 }
@@ -30,6 +31,10 @@ transformed parameters {
     real<lower=0> lambda_0;
     s_prime = exp(log_s_prime_mean);
     lambda_0 = exp(log_lambda_0_mean);
+    array[N_networks] vector[N_dyad] edge_logit;
+    for (n in 1:N_networks) {
+        edge_logit[n] = logit_edge_mu[n] + edge_L[n] * edge_z[n];
+    }
     array[N_networks] matrix[P, P] A;
     for (network in 1:N_networks) {
         A[network] = rep_matrix(0, P, P);
@@ -46,7 +51,7 @@ model {
     log_lambda_0_mean ~ normal(-4, 2);
     log_s_prime_mean ~ normal(-4, 2);
     for (n in 1:N_networks) {
-        edge_logit[n] ~ multi_normal(logit_edge_mu[n], logit_edge_cov[n]);
+        edge_z[n] ~ std_normal();
     }
     for (trial in 1:K) {
         for (n in 1:N[trial]) {
