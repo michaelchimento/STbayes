@@ -1,3 +1,13 @@
+#' @noRd
+extract_ids_from_array <- function(arr) {
+    nd <- length(dim(arr))
+    focal_dim_pos <- nd - 1
+    P <- dim(arr)[focal_dim_pos]
+    dn <- dimnames(arr)
+    focal_ids <- if (!is.null(dn)) dn[[focal_dim_pos]] else NULL
+    if (!is.null(focal_ids)) as.character(focal_ids) else as.character(1:P)
+}
+
 #' standardize_ids()
 #'
 #' Helper function that maps IDs across data with networks as reference
@@ -37,43 +47,33 @@ standardize_ids <- function(networks, event_data, ILV_c = NULL, ILV_tv = NULL, t
             stringsAsFactors = FALSE
         )
     } else if (inherits(networks, "STRAND Results Object")) {
-        ass_matrix <- networks[[1]]$samples$predicted_network_sample # [draws, focal, other]
-        P <- dim(ass_matrix)[2]
-        net_ids <- c(1:P)
-        id_factor <- as.factor(net_ids)
+        ass_matrix <- networks[[1]]$samples$predicted_network_sample
+        net_ids <- extract_ids_from_array(ass_matrix)
         id_map <- data.frame(
             id = net_ids,
-            id_numeric = as.integer(id_factor),
+            id_numeric = seq_along(net_ids),
             stringsAsFactors = FALSE
         )
     } else if (is.list(networks) && all(sapply(networks, function(x) inherits(x, "STRAND Results Object")))) {
-        ass_matrix <- networks[[1]]$samples$predicted_network_sample # [draws, focal, other]
-        P <- dim(ass_matrix)[2]
-        net_ids <- c(1:P)
-        id_factor <- as.factor(net_ids)
+        ass_matrix <- networks[[1]]$samples$predicted_network_sample
+        net_ids <- extract_ids_from_array(ass_matrix)
         id_map <- data.frame(
             id = net_ids,
-            id_numeric = as.integer(id_factor),
+            id_numeric = seq_along(net_ids),
             stringsAsFactors = FALSE
         )
     } else if (inherits(networks, "array")) {
-        ass_matrix <- networks[[1]] # [draws, focal, other]
-        P <- dim(ass_matrix)[length(dim(ass_matrix)) - 1]
-        net_ids <- c(1:P)
-        id_factor <- as.factor(net_ids)
+        net_ids <- extract_ids_from_array(networks)
         id_map <- data.frame(
             id = net_ids,
-            id_numeric = as.integer(id_factor),
+            id_numeric = seq_along(net_ids),
             stringsAsFactors = FALSE
         )
     } else if (is.list(networks) && all(sapply(networks, function(x) inherits(x, "array")))) {
-        ass_matrix <- networks[[1]] # [draws, focal, other]
-        P <- dim(ass_matrix)[length(dim(ass_matrix)) - 1]
-        net_ids <- c(1:P)
-        id_factor <- as.factor(net_ids)
+        net_ids <- extract_ids_from_array(networks[[1]])
         id_map <- data.frame(
             id = net_ids,
-            id_numeric = as.integer(id_factor),
+            id_numeric = seq_along(net_ids),
             stringsAsFactors = FALSE
         )
     }

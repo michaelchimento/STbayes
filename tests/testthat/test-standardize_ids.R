@@ -85,3 +85,66 @@ test_that("Error if ILV_tv contains unknown IDs", {
 
     expect_error(standardize_ids(networks, event_data, ILV_tv = ILV))
 })
+
+test_that("standardize_ids extracts character IDs from array dimnames", {
+    bird_ids <- c("0700ED8BF7", "0700ED8C01", "0700ED8C02")
+
+    net_array <- array(
+        rnorm(100 * 3 * 3),
+        dim = c(100, 3, 3),
+        dimnames = list(draw = NULL, focal_ID = bird_ids, other_ID = bird_ids)
+    )
+
+    event_data <- data.frame(
+        id = bird_ids, trial = 1, time = c(0, 1, 2), t_end = 3,
+        stringsAsFactors = FALSE
+    )
+
+    result <- standardize_ids(list(net_array), event_data)
+
+    expect_equal(sort(result$id_map$id), sort(bird_ids))
+    expect_equal(nrow(result$id_map), 3)
+    expect_true(all(event_data$id %in% result$id_map$id))
+    expect_equal(result$id_map$id[result$id_map$id_numeric == 1], bird_ids[1])
+    expect_equal(result$id_map$id[result$id_map$id_numeric == 2], bird_ids[2])
+    expect_equal(result$id_map$id[result$id_map$id_numeric == 3], bird_ids[3])
+})
+
+test_that("standardize_ids falls back to 1:P for arrays with NULL dimnames values", {
+    net_array <- array(
+        rnorm(100 * 3 * 3),
+        dim = c(100, 3, 3),
+        dimnames = list(draw = NULL, focal_ID = NULL, other_ID = NULL)
+    )
+
+    event_data <- data.frame(
+        id = as.character(1:3), trial = 1, time = c(0, 1, 2), t_end = 3,
+        stringsAsFactors = FALSE
+    )
+
+    result <- standardize_ids(list(net_array), event_data)
+
+    expect_equal(result$id_map$id, c("1", "2", "3"))
+    expect_equal(result$id_map$id_numeric, 1:3)
+})
+
+test_that("standardize_ids preserves positional order for character IDs", {
+    ids <- c("Zebra", "Ant", "Mole")
+
+    net_array <- array(
+        rnorm(50 * 3 * 3),
+        dim = c(50, 3, 3),
+        dimnames = list(draw = NULL, focal_ID = ids, other_ID = ids)
+    )
+
+    event_data <- data.frame(
+        id = ids, trial = 1, time = c(0, 1, 2), t_end = 3,
+        stringsAsFactors = FALSE
+    )
+
+    result <- standardize_ids(list(net_array), event_data)
+
+    expect_equal(result$id_map$id_numeric[result$id_map$id == "Zebra"], 1)
+    expect_equal(result$id_map$id_numeric[result$id_map$id == "Ant"], 2)
+    expect_equal(result$id_map$id_numeric[result$id_map$id == "Mole"], 3)
+})
