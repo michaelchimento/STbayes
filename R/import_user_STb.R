@@ -356,9 +356,9 @@ import_user_STb <- function(event_data,
                     X_t <- generate_X_matrix(ilv_vector = g[[col]], ilv_name = col, n_levels = n_levels)
 
                     if (ncol(X_t) == 0) next
-                    # fill in X_array
+                    ids <- g$id_numeric
                     for (l in seq_len(ncol(X_t))) {
-                        X_array[tr, t, , l] <- X_t[, l]
+                        X_array[tr, t, ids, l] <- X_t[, l]
                     }
                 }
                 # store in data_list
